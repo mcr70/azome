@@ -1,0 +1,16 @@
+<div class="resource-group-container" style="padding: 15px; border: 1px solid #ccc; border-radius: 4px;">
+  <h3>Azure Resource Groups</h3>
+  
+  <div *ngIf="loading">Loading resource groups...</div>
+  <div *ngIf="error" style="color: red;">Error: {{ error }}</div>
+  
+  <ul *ngIf="resourceGroups.length > 0">
+    <li *ngFor="let rg of resourceGroups" style="margin-bottom: 8px;">
+      <strong>{{ rg.name }}</strong> — <small>Location: {{ rg.location }} ({{ rg.properties?.provisioningState }})</small>
+    </li>
+  </ul>
+  
+  <div *ngIf="!loading && resourceGroups.length === 0 && !error">
+    No resource groups found or subscription empty.
+  </div>
+</div>
