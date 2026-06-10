@@ -9,13 +9,13 @@ import { takeUntil } from 'rxjs/operators';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet], // RouterOutlet tarvitaan, jotta reitit toimivat
+  imports: [CommonModule, RouterOutlet], 
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit, OnDestroy {
   public activeUserEmail: string | null = null;
-  public userName: string | null = null; // Tähän tallennetaan Azuresta haettu nimi
+  public userName: string | null = null; 
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -25,7 +25,7 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // 1. Kuunnellaan kirjautumisen tilaa ja ohjataan oikealle sivulle
+    // Listen for authentication state changes and react accordingly
     this.auth.isAuthenticated$
       .pipe(takeUntil(this.destroy$))
       .subscribe((isAuth) => {
@@ -39,7 +39,7 @@ export class AppComponent implements OnInit, OnDestroy {
         }
       });
 
-    // Seurataan sähköpostia MSAL-tokenista
+    // track active user email for header display
     this.auth.user$
       .pipe(takeUntil(this.destroy$))
       .subscribe((account) => {
@@ -47,7 +47,7 @@ export class AppComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Tämä metodi pidettiin tallessa! Haetaan sillä oikea nimi profiilista
+  // Fetch Azure profile data to display in the header
   private loadAzureData(): void {
     this.azure.getMyProfile()
       .pipe(takeUntil(this.destroy$))
@@ -57,7 +57,7 @@ export class AppComponent implements OnInit, OnDestroy {
         },
         error: (err) => {
           console.error('Failed to pull Azure profile data:', err);
-          this.userName = 'Mika (Fallback Mode)'; // Varmistus, jos API pätkii
+          this.userName = 'Unknown User'; 
         }
       });
   }

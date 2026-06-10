@@ -2,7 +2,7 @@
   <div>
     <strong style="font-size: 18px;">Azome UI</strong> 
     <span style="margin-left: 20px; color: #2ecc71;">
-      ● Käyttäjä: {{ userName || 'Ladataan...' }} ({{ activeUserEmail }})
+      {{ userName || 'Loading...' }} ({{ activeUserEmail }})
     </span>
   </div>
   <button (click)="auth.logout()" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">

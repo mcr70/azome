@@ -17,7 +17,7 @@ export class AuthInterceptor implements HttpInterceptor {
       scope = ['User.Read'];
     } 
     else {
-      return next.handle(req); // Ei suojattu resurssi
+      return next.handle(req); // An API request that doesn't match known patterns, skip token acquisition
     }
 
     return from(this.authService.acquireTokenSilent({ scopes: scope })).pipe(
