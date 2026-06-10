@@ -28,8 +28,7 @@ export class ResourceGroupService {
 
 public getResourceGroups(): Observable<ResourceGroup[]> {
     const url = `${environment.azure.resourceManagerUrl}/subscriptions/${environment.azure.subscriptionId}/resourcegroups?api-version=${environment.azure.apiVersion}`;
-    
-    // Interceptorin tulee hoitaa headerin lisäys automaattisesti!
+
     return this.http.get<AzureResponse<ResourceGroup>>(url).pipe(
       map(response => response.value)
     );

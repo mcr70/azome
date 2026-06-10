@@ -48,7 +48,6 @@ export class AuthService {
       });
 
     // 3. Trigger initial boot-up flow and evaluate incoming redirect URLs
-// 3. Trigger initial boot-up flow and evaluate incoming redirect URLs
     console.log('[MSAL-Auth] Launching msalService.initialize()...');
     this.msalService.initialize().subscribe({
       next: () => {
