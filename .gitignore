@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.angular/
+.vscode/
+src/environments/environment.ts
+.DS_Store
+
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup

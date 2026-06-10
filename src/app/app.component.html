@@ -1,0 +1,15 @@
+<header *ngIf="auth.isAuthenticated$ | async" style="padding: 15px 20px; background: #2c3e50; color: white; display: flex; justify-content: space-between; align-items: center;">
+  <div>
+    <strong style="font-size: 18px;">Azome UI</strong> 
+    <span style="margin-left: 20px; color: #2ecc71;">
+      ● Käyttäjä: {{ userName || 'Ladataan...' }} ({{ activeUserEmail }})
+    </span>
+  </div>
+  <button (click)="auth.logout()" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">
+    Sign Out
+  </button>
+</header>
+
+<main style="padding: 20px;">
+  <router-outlet></router-outlet>
+</main>
