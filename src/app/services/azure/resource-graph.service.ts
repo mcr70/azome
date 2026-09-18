@@ -93,6 +93,7 @@ export interface NetworkTopology {
 
 export interface NetworkPeering {
   name: string;
+  remoteVirtualNetworkId: string | null;
   remoteVirtualNetworkName: string | null;
   peeringState: string | null;
 }
@@ -169,6 +170,7 @@ export class ResourceGraphService {
       })),
       peerings: (resource.properties.virtualNetworkPeerings ?? []).map((peering) => ({
         name: peering.name,
+        remoteVirtualNetworkId: peering.properties.remoteVirtualNetwork?.id ?? null,
         remoteVirtualNetworkName: this.resourceName(peering.properties.remoteVirtualNetwork?.id),
         peeringState: peering.properties.peeringState ?? null
       }))

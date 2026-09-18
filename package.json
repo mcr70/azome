@@ -20,6 +20,10 @@
     "@angular/router": "^19.0.0",
     "@azure/msal-angular": "^5.2.6",
     "@azure/msal-browser": "^5.12.0",
+    "@types/cytoscape": "^3.21.9",
+    "cytoscape": "^3.34.3",
+    "cytoscape-dagre": "^4.0.1",
+    "dagre": "^0.8.5",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
@@ -28,6 +32,7 @@
     "@angular-devkit/build-angular": "^19.0.6",
     "@angular/cli": "^19.0.6",
     "@angular/compiler-cli": "^19.0.0",
+    "@types/dagre": "^0.7.54",
     "@types/jasmine": "~5.1.0",
     "jasmine-core": "~5.4.0",
     "karma": "~6.4.0",

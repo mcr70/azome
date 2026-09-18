@@ -10,6 +10,11 @@
     </button>
   </div>
 
+  <div class="view-toggle" role="group" aria-label="View mode">
+    <button type="button" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">List</button>
+    <button type="button" [class.active]="viewMode === 'graph'" (click)="viewMode = 'graph'">Graph</button>
+  </div>
+
   <p *ngIf="loading" class="status-message">Loading network topology...</p>
 
   <div *ngIf="error" class="error-message" role="alert">
@@ -21,7 +26,11 @@
     No virtual networks were found in this subscription.
   </div>
 
-  <div *ngIf="!loading && !error" class="topology-list">
+  <div *ngIf="!loading && !error && viewMode === 'graph'">
+    <app-network-graph [topologies]="topologies" (subnetSelected)="onSubnetSelected($event)" />
+  </div>
+
+  <div *ngIf="!loading && !error && viewMode === 'list'" class="topology-list">
     <article *ngFor="let topology of topologies" class="virtual-network">
       <header class="network-header">
         <div>
