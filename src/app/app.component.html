@@ -1,15 +1,20 @@
-<header *ngIf="auth.isAuthenticated$ | async" style="padding: 15px 20px; background: #2c3e50; color: white; display: flex; justify-content: space-between; align-items: center;">
-  <div>
-    <strong style="font-size: 18px;">Azome UI</strong> 
-    <span style="margin-left: 20px; color: #2ecc71;">
-      {{ userName || 'Loading...' }} ({{ activeUserEmail }})
-    </span>
+<header *ngIf="auth.isAuthenticated$ | async" class="app-toolbar">
+  <div class="toolbar-start">
+    <strong class="app-name">Azome UI</strong>
+    <label class="perspective-picker">
+      <span>Perspective</span>
+      <select [value]="selectedPerspective" (change)="changePerspective($event)" aria-label="Select perspective">
+        <option value="resources">Resources</option>
+        <option value="networking">Networking</option>
+      </select>
+    </label>
   </div>
-  <button (click)="auth.logout()" style="padding: 6px 12px; background: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer;">
-    Sign Out
-  </button>
+  <div class="toolbar-end">
+    <span class="user-details">{{ userName || 'Loading...' }} ({{ activeUserEmail }})</span>
+    <button (click)="auth.logout()" class="sign-out-button">Sign Out</button>
+  </div>
 </header>
 
-<main style="padding: 20px;">
+<main class="app-content">
   <router-outlet></router-outlet>
 </main>

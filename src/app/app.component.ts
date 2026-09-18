@@ -15,7 +15,8 @@ import { takeUntil } from 'rxjs/operators';
 })
 export class AppComponent implements OnInit, OnDestroy {
   public activeUserEmail: string | null = null;
-  public userName: string | null = null; 
+  public userName: string | null = null;
+  public selectedPerspective = 'resources';
   private readonly destroy$ = new Subject<void>();
 
   constructor(
@@ -45,6 +46,12 @@ export class AppComponent implements OnInit, OnDestroy {
       .subscribe((account) => {
         this.activeUserEmail = account ? account.username : null;
       });
+  }
+
+  public changePerspective(event: Event): void {
+    const perspective = (event.target as HTMLSelectElement).value;
+    this.selectedPerspective = perspective;
+    this.router.navigate([perspective === 'networking' ? '/networking' : '/rg']);
   }
 
   // Fetch Azure profile data to display in the header
