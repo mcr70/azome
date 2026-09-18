@@ -1,45 +1,51 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import { NetworkTopology, ResourceGraphService } from '../../services/azure/resource-graph.service';
 
 @Component({
   selector: 'app-networking-perspective',
   standalone: true,
-  template: `
-    <section class="networking-perspective" aria-labelledby="networking-title">
-      <p class="eyebrow">Perspective</p>
-      <h1 id="networking-title">Networking</h1>
-      <p>Explore the network topology, connections, and security boundaries across this subscription.</p>
-    </section>
-  `,
-  styles: `
-    .networking-perspective {
-      max-width: 960px;
-      padding: 32px;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      background: #ffffff;
-      color: #172033;
-    }
-
-    .eyebrow {
-      margin: 0 0 8px;
-      color: #0f766e;
-      font-size: 0.75rem;
-      font-weight: 700;
-      letter-spacing: 0;
-      text-transform: uppercase;
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-
-    p:last-child {
-      max-width: 560px;
-      margin: 12px 0 0;
-      color: #475569;
-      line-height: 1.5;
-    }
-  `
+  imports: [CommonModule, RouterLink],
+  templateUrl: './networking-perspective.component.html',
+  styleUrl: './networking-perspective.component.scss'
 })
-export class NetworkingPerspectiveComponent {}
+export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
+  public topologies: NetworkTopology[] = [];
+  public loading = false;
+  public error: string | null = null;
+
+  private readonly destroy$ = new Subject<void>();
+
+  constructor(private resourceGraph: ResourceGraphService) {}
+
+  ngOnInit(): void {
+    this.loadTopologies();
+  }
+
+  public loadTopologies(): void {
+    this.loading = true;
+    this.error = null;
+
+    this.resourceGraph.getNetworkTopologies()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (topologies) => {
+          this.topologies = topologies;
+          this.loading = false;
+        },
+        error: (error) => {
+          console.error('Failed to load network topology:', error);
+          this.error = error.message || 'Azure Resource Graph did not return the network topology.';
+          this.loading = false;
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+}

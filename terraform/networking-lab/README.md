@@ -3,11 +3,13 @@
 This standalone Terraform configuration creates free Azure networking control-plane resources for developing the Azome Networking Perspective:
 
 - Resource group
-- Virtual network with application and data subnets
+- Two peered virtual networks with application and data subnets
 - Network security groups associated with both subnets
 - Empty route table associated with the data subnet
 
 It intentionally does not create billable workload or edge resources such as virtual machines, public IP addresses, NAT Gateway, Azure Firewall, Application Gateway, VPN Gateway, or private endpoints.
+
+The virtual networks use non-overlapping address spaces (`10.42.0.0/16` and `10.43.0.0/16`) and are connected with bidirectional VNet peering. VNet peering data transfer can incur Azure charges even though the lab does not create workload resources.
 
 This module stores its state in the same Azure Storage Account and container as `terraform/`, but uses its own blob key: `networking-lab.tfstate`. It does not share state with `terraform/azome.tfstate`.
 
