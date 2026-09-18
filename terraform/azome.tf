@@ -25,8 +25,8 @@ resource "azuread_application" "azome" {
 
   single_page_application {
     redirect_uris = [
-      "http://localhost:4200/", 
-      "http://localhost:4200/auth-blank.html",
+      "http://localhost:4100/",
+      "http://localhost:4100/auth-blank.html",
       azurerm_storage_account.azome_storage.primary_web_endpoint
     ]
   }
