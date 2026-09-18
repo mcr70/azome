@@ -26,8 +26,8 @@ export function MSALInstanceFactory() {
     auth: {
       clientId: environment.azure.clientId,
       authority: `https://login.microsoftonline.com/${environment.azure.tenantId}/oauth2/v2.0/token`,
-      redirectUri: 'http://localhost:4200/',
-      postLogoutRedirectUri: 'http://localhost:4200/'
+      redirectUri: 'http://localhost:4100/',
+      postLogoutRedirectUri: 'http://localhost:4100/'
     },
     cache: {
       cacheLocation: 'localStorage'

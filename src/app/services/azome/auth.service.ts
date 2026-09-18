@@ -132,7 +132,7 @@ export class AuthService {
     this.isAuthenticatedSubject.next(false);
 
     this.msalService.logoutRedirect({
-      postLogoutRedirectUri: 'http://localhost:4200/'
+      postLogoutRedirectUri: 'http://localhost:4100/'
     });
   }
 
