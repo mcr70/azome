@@ -1,0 +1,78 @@
+.app-toolbar {
+	display: flex;
+	min-height: 64px;
+	align-items: center;
+	justify-content: space-between;
+	gap: 20px;
+	padding: 0 24px;
+	background: #172033;
+	color: #f8fafc;
+}
+
+.toolbar-start,
+.toolbar-end {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+}
+
+.app-name {
+	font-size: 1.125rem;
+}
+
+.perspective-picker {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	color: #cbd5e1;
+	font-size: 0.875rem;
+}
+
+.perspective-picker select {
+	min-width: 150px;
+	padding: 7px 28px 7px 10px;
+	border: 1px solid #64748b;
+	border-radius: 4px;
+	background: #24314b;
+	color: #ffffff;
+	font: inherit;
+}
+
+.user-details {
+	color: #86efac;
+	font-size: 0.875rem;
+}
+
+.sign-out-button {
+	padding: 7px 12px;
+	border: 0;
+	border-radius: 4px;
+	background: #dc2626;
+	color: #ffffff;
+	cursor: pointer;
+	font: inherit;
+}
+
+.app-content {
+	padding: 20px;
+}
+
+@media (max-width: 720px) {
+	.app-toolbar,
+	.toolbar-start,
+	.toolbar-end {
+		align-items: flex-start;
+	}
+
+	.app-toolbar {
+		flex-direction: column;
+		gap: 12px;
+		padding: 16px;
+	}
+
+	.toolbar-start,
+	.toolbar-end {
+		flex-wrap: wrap;
+		gap: 12px;
+	}
+}
