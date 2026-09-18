@@ -1,14 +1,16 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { NetworkTopology, ResourceGraphService } from '../../services/azure/resource-graph.service';
+import { NetworkGraphComponent } from './network-graph.component';
+import { SubnetNavigation } from './network-graph.model';
 
 @Component({
   selector: 'app-networking-perspective',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, NetworkGraphComponent],
   templateUrl: './networking-perspective.component.html',
   styleUrl: './networking-perspective.component.scss'
 })
@@ -16,10 +18,11 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
   public topologies: NetworkTopology[] = [];
   public loading = false;
   public error: string | null = null;
+  public viewMode: 'list' | 'graph' = 'list';
 
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private resourceGraph: ResourceGraphService) {}
+  constructor(private resourceGraph: ResourceGraphService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadTopologies();
@@ -44,8 +47,19 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
-  ngOnDestroy(): void {
+  public ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+  }
+
+  public onSubnetSelected(navigation: SubnetNavigation): void {
+    this.router.navigate(['/networking/subnets', navigation.subnetName], {
+      queryParams: {
+        subnetName: navigation.subnetName,
+        addressPrefixes: navigation.addressPrefixes.join(','),
+        nsgId: navigation.networkSecurityGroupId,
+        routeTableId: navigation.routeTableId
+      }
+    });
   }
 }
