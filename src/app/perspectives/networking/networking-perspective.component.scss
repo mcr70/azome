@@ -1,0 +1,236 @@
+:host {
+  display: block;
+}
+
+.networking-perspective {
+  max-width: 1180px;
+  color: #172033;
+}
+
+.perspective-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.eyebrow,
+.resource-kind {
+  margin: 0;
+  color: #0f766e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: 1.75rem;
+}
+
+.description {
+  margin-bottom: 0;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.refresh-button {
+  padding: 8px 14px;
+  border: 1px solid #0f766e;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #0f766e;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.refresh-button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.status-message,
+.empty-state,
+.error-message {
+  padding: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #475569;
+}
+
+.error-message {
+  display: grid;
+  gap: 4px;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.topology-list {
+  display: grid;
+  gap: 20px;
+}
+
+.virtual-network {
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.network-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+
+.network-header h2 {
+  margin: 4px 0 0;
+  font-size: 1.25rem;
+}
+
+.network-header dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: 20px;
+  margin: 0;
+}
+
+.network-header dt {
+  margin-bottom: 4px;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.network-header dd {
+  margin: 0;
+  color: #334155;
+  font-size: 0.875rem;
+}
+
+.peering-list {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.peering-label {
+  color: #64748b;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+}
+
+.peering-chip {
+  padding: 4px 10px;
+  border: 1px solid #99f6e4;
+  border-radius: 999px;
+  background: #f0fdfa;
+  color: #0f766e;
+  font-size: 0.8125rem;
+}
+
+.peering-chip.inactive {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.peering-chip small {
+  color: inherit;
+  opacity: 0.8;
+}
+
+.subnet-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1px;
+  background: #e2e8f0;
+}
+
+.subnet {
+  display: block;
+  min-height: 172px;
+  padding: 22px 24px;
+  background: #ffffff;
+  color: inherit;
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+
+.subnet:hover {
+  background: #f8fafc;
+}
+
+.subnet-label {
+  display: flex;
+  gap: 12px;
+}
+
+.connection-dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #14b8a6;
+  box-shadow: 0 0 0 4px #ccfbf1;
+}
+
+.subnet h3 {
+  margin: 4px 0 2px;
+  font-size: 1rem;
+}
+
+.address-prefixes {
+  margin-bottom: 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.controls {
+  display: grid;
+  gap: 6px;
+  margin: 18px 0 0 22px;
+}
+
+.control {
+  color: #155e75;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+}
+
+.control.unassigned {
+  color: #64748b;
+}
+
+@media (max-width: 720px) {
+  .perspective-heading,
+  .network-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .network-header dl {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+}

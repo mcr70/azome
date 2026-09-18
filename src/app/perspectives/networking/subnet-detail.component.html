@@ -1,0 +1,117 @@
+<section class="subnet-detail" aria-labelledby="subnet-detail-title">
+  <a routerLink="/networking" class="back-link">&larr; Back to Networking</a>
+
+  <div class="perspective-heading">
+    <p class="eyebrow">Subnet</p>
+    <h1 id="subnet-detail-title">{{ subnetName || 'Subnet' }}</h1>
+    <p class="description">{{ addressPrefixes.join(', ') || 'No address prefix' }}</p>
+  </div>
+
+  <p *ngIf="loading" class="status-message">Loading subnet detail...</p>
+
+  <div *ngIf="error" class="error-message" role="alert">
+    <strong>Subnet detail could not be loaded.</strong>
+    <span>{{ error }}</span>
+  </div>
+
+  <div *ngIf="!loading && !error && detail as d" class="detail-grid">
+    <article class="detail-card">
+      <header>
+        <p class="resource-kind">Security</p>
+        <h2>{{ d.networkSecurityGroupName || 'No network security group assigned' }}</h2>
+      </header>
+
+      <ng-container *ngIf="d.networkSecurityGroupName">
+        <h3 class="rule-group-title">Custom rules</h3>
+        <p *ngIf="d.securityRules.length === 0" class="empty-note">No custom rules defined.</p>
+        <table *ngIf="d.securityRules.length > 0" class="rule-table">
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Name</th>
+              <th>Direction</th>
+              <th>Access</th>
+              <th>Protocol</th>
+              <th>Source</th>
+              <th>Destination</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let rule of d.securityRules">
+              <td>{{ rule.priority }}</td>
+              <td>{{ rule.name }}</td>
+              <td>{{ rule.direction }}</td>
+              <td [class.deny]="rule.access === 'Deny'">{{ rule.access }}</td>
+              <td>{{ rule.protocol }}</td>
+              <td>{{ rule.sourceAddressPrefix || '*' }}:{{ rule.sourcePortRange || '*' }}</td>
+              <td>{{ rule.destinationAddressPrefix || '*' }}:{{ rule.destinationPortRange || '*' }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3 class="rule-group-title">System defaults</h3>
+        <table *ngIf="d.defaultSecurityRules.length > 0" class="rule-table subtle">
+          <thead>
+            <tr>
+              <th>Priority</th>
+              <th>Name</th>
+              <th>Direction</th>
+              <th>Access</th>
+              <th>Protocol</th>
+              <th>Source</th>
+              <th>Destination</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let rule of d.defaultSecurityRules">
+              <td>{{ rule.priority }}</td>
+              <td>{{ rule.name }}</td>
+              <td>{{ rule.direction }}</td>
+              <td [class.deny]="rule.access === 'Deny'">{{ rule.access }}</td>
+              <td>{{ rule.protocol }}</td>
+              <td>{{ rule.sourceAddressPrefix || '*' }}:{{ rule.sourcePortRange || '*' }}</td>
+              <td>{{ rule.destinationAddressPrefix || '*' }}:{{ rule.destinationPortRange || '*' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </ng-container>
+    </article>
+
+    <article class="detail-card">
+      <header>
+        <p class="resource-kind">Routing</p>
+        <h2>{{ d.routeTableName || 'No route table assigned' }}</h2>
+      </header>
+
+      <ng-container *ngIf="d.routeTableName">
+        <p *ngIf="d.routes.length === 0" class="empty-note">
+          This route table has no custom routes. Azure's default system routes apply: traffic within the virtual network,
+          traffic to the internet, and traffic between peered virtual networks.
+        </p>
+        <table *ngIf="d.routes.length > 0" class="rule-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Address prefix</th>
+              <th>Next hop type</th>
+              <th>Next hop IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let route of d.routes">
+              <td>{{ route.name }}</td>
+              <td>{{ route.addressPrefix || '-' }}</td>
+              <td>{{ route.nextHopType }}</td>
+              <td>{{ route.nextHopIpAddress || '-' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </ng-container>
+
+      <p *ngIf="!d.routeTableName" class="empty-note">
+        No route table is associated with this subnet. Azure's default system routes apply: traffic within the virtual
+        network, traffic to the internet, and traffic between peered virtual networks.
+      </p>
+    </article>
+  </div>
+</section>

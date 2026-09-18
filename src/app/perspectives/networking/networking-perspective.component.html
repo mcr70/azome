@@ -1,0 +1,87 @@
+<section class="networking-perspective" aria-labelledby="networking-title">
+  <div class="perspective-heading">
+    <div>
+      <p class="eyebrow">Perspective</p>
+      <h1 id="networking-title">Networking</h1>
+      <p class="description">Relationships between virtual networks, subnets, and their security controls.</p>
+    </div>
+    <button class="refresh-button" type="button" (click)="loadTopologies()" [disabled]="loading">
+      Refresh
+    </button>
+  </div>
+
+  <p *ngIf="loading" class="status-message">Loading network topology...</p>
+
+  <div *ngIf="error" class="error-message" role="alert">
+    <strong>Network topology could not be loaded.</strong>
+    <span>{{ error }}</span>
+  </div>
+
+  <div *ngIf="!loading && !error && topologies.length === 0" class="empty-state">
+    No virtual networks were found in this subscription.
+  </div>
+
+  <div *ngIf="!loading && !error" class="topology-list">
+    <article *ngFor="let topology of topologies" class="virtual-network">
+      <header class="network-header">
+        <div>
+          <p class="resource-kind">Virtual network</p>
+          <h2>{{ topology.name }}</h2>
+        </div>
+        <dl>
+          <div>
+            <dt>Resource group</dt>
+            <dd>{{ topology.resourceGroup }}</dd>
+          </div>
+          <div>
+            <dt>Address space</dt>
+            <dd>{{ topology.addressPrefixes.join(', ') || 'Not configured' }}</dd>
+          </div>
+          <div>
+            <dt>Region</dt>
+            <dd>{{ topology.location }}</dd>
+          </div>
+        </dl>
+      </header>
+
+      <div *ngIf="topology.peerings.length > 0" class="peering-list">
+        <span class="peering-label">Peered with</span>
+        <span *ngFor="let peering of topology.peerings" class="peering-chip" [class.inactive]="peering.peeringState !== 'Connected'">
+          {{ peering.remoteVirtualNetworkName || 'Unknown network' }}
+          <small>({{ peering.peeringState || 'Unknown state' }})</small>
+        </span>
+      </div>
+
+      <div class="subnet-grid">
+        <a
+          *ngFor="let subnet of topology.subnets"
+          class="subnet"
+          [routerLink]="['/networking/subnets', subnet.name]"
+          [queryParams]="{
+            subnetName: subnet.name,
+            addressPrefixes: subnet.addressPrefixes.join(','),
+            nsgId: subnet.networkSecurityGroupId,
+            routeTableId: subnet.routeTableId
+          }"
+        >
+          <div class="subnet-label">
+            <span class="connection-dot" aria-hidden="true"></span>
+            <div>
+              <p class="resource-kind">Subnet</p>
+              <h3>{{ subnet.name }}</h3>
+              <p class="address-prefixes">{{ subnet.addressPrefixes.join(', ') || 'No address prefix' }}</p>
+            </div>
+          </div>
+          <div class="controls">
+            <span class="control" [class.unassigned]="!subnet.networkSecurityGroupName">
+              NSG: {{ subnet.networkSecurityGroupName || 'Unassigned' }}
+            </span>
+            <span class="control" [class.unassigned]="!subnet.routeTableName">
+              Route table: {{ subnet.routeTableName || 'System routes' }}
+            </span>
+          </div>
+        </a>
+      </div>
+    </article>
+  </div>
+</section>
