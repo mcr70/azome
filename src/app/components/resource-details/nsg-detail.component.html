@@ -1,0 +1,71 @@
+<div class="nsg-container">
+  <section class="rules-section">
+    <h3 class="resource-detail-heading">Inbound Security Rules</h3>
+    <div *ngIf="inboundRules.length === 0" class="resource-detail-empty">
+      No custom inbound rules configured.
+    </div>
+    <table *ngIf="inboundRules.length > 0" class="resource-detail-table">
+      <thead>
+        <tr>
+          <th>Pri</th>
+          <th>Name</th>
+          <th>Port</th>
+          <th>Protocol</th>
+          <th>Source</th>
+          <th>Destination</th>
+          <th>Access</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let rule of inboundRules">
+          <td><code class="resource-detail-code">{{ rule.properties?.priority }}</code></td>
+          <td><strong>{{ rule.name }}</strong></td>
+          <td><code class="resource-detail-code">{{ rule.properties?.destinationPortRange || '*' }}</code></td>
+          <td>{{ rule.properties?.protocol || '*' }}</td>
+          <td>{{ rule.properties?.sourceAddressPrefix || '*' }}</td>
+          <td>{{ rule.properties?.destinationAddressPrefix || '*' }}</td>
+          <td>
+            <span [class]="'badge ' + (rule.properties?.access?.toLowerCase() || '')">
+              {{ rule.properties?.access }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="rules-section">
+    <h3 class="resource-detail-heading">Outbound Security Rules</h3>
+    <div *ngIf="outboundRules.length === 0" class="resource-detail-empty">
+      No custom outbound rules configured.
+    </div>
+    <table *ngIf="outboundRules.length > 0" class="resource-detail-table">
+      <thead>
+        <tr>
+          <th>Pri</th>
+          <th>Name</th>
+          <th>Port</th>
+          <th>Protocol</th>
+          <th>Source</th>
+          <th>Destination</th>
+          <th>Access</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let rule of outboundRules">
+          <td><code class="resource-detail-code">{{ rule.properties?.priority }}</code></td>
+          <td><strong>{{ rule.name }}</strong></td>
+          <td><code class="resource-detail-code">{{ rule.properties?.destinationPortRange || '*' }}</code></td>
+          <td>{{ rule.properties?.protocol || '*' }}</td>
+          <td>{{ rule.properties?.sourceAddressPrefix || '*' }}</td>
+          <td>{{ rule.properties?.destinationAddressPrefix || '*' }}</td>
+          <td>
+            <span [class]="'badge ' + (rule.properties?.access?.toLowerCase() || '')">
+              {{ rule.properties?.access }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>

@@ -7,9 +7,7 @@ import { DefaultResourceDetailComponent } from './default-resource-detail.compon
   selector: 'app-resource-detail-host',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <ng-container *ngComponentOutlet="currentComponent; inputs: componentInputs"></ng-container>
-  `
+  templateUrl: './resource-detail-host.component.html'
 })
 export class ResourceDetailHostComponent implements OnChanges {
   @Input() resource: any;

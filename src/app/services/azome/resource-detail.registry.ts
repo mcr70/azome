@@ -1,5 +1,6 @@
 import { Injectable, Type } from '@angular/core';
 import { RouteTableDetailComponent } from '../../components/resource-details/route-table-detail.component';
+import { NsgDetailComponent } from '../../components/resource-details/nsg-detail.component';
 
 export interface ResourceDetailItem {
   resource: any;
@@ -13,7 +14,7 @@ export class ResourceDetailRegistryService {
 
   constructor() {
     this.register('microsoft.network/routetables', RouteTableDetailComponent);
-    // this.register('microsoft.network/networksecuritygroups', NsgDetailComponent);
+    this.register('microsoft.network/networksecuritygroups', NsgDetailComponent);
     // this.register('microsoft.network/virtualnetworks', VnetDetailComponent);
   }
 
