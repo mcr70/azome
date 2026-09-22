@@ -1,0 +1,26 @@
+<div class="routes-container">
+  <h3 class="resource-detail-heading">Routes</h3>
+
+  <div *ngIf="!routes || routes.length === 0" class="resource-detail-empty">
+    No routes configured in this route table.
+  </div>
+
+  <table *ngIf="routes && routes.length > 0" class="resource-detail-table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Address Prefix</th>
+        <th>Next Hop Type</th>
+        <th>Next Hop IP</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let route of routes">
+        <td><strong>{{ route.name }}</strong></td>
+        <td><code class="resource-detail-code">{{ route.properties?.addressPrefix }}</code></td>
+        <td>{{ route.properties?.nextHopType }}</td>
+        <td>{{ route.properties?.nextHopIpAddress || '-' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
