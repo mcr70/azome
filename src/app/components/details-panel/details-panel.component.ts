@@ -11,6 +11,7 @@ import { CommonModule } from '@angular/common';
 export class DetailsPanelComponent {
   @Input() title: string = '';
   @Input() subtitle: string = '';
+  @Input() variant: 'default' | 'wide' | 'content' = 'default';
   @Input() @HostBinding('class.open') isOpen: boolean = false;
 
   @Output() close = new EventEmitter<void>();

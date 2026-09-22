@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ResourceDetailItem } from '../../services/azome/resource-detail.registry';
+import { PanelVariant, ResourceDetailItem } from '../../services/azome/resource-detail.registry';
 
 @Component({
   selector: 'app-route-table-detail',
@@ -11,7 +11,8 @@ import { ResourceDetailItem } from '../../services/azome/resource-detail.registr
 })
 export class RouteTableDetailComponent implements ResourceDetailItem {
   @Input() resource: any;
-
+  static readonly preferredVariant: PanelVariant = 'content';
+  
   get routes(): any[] {
     return this.resource?.properties?.routes || [];
   }
