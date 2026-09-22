@@ -1,0 +1,44 @@
+.resource-detail-host {
+  margin-top: 16px;
+}
+
+.detail-tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+
+  .tab-btn {
+    background: none;
+    border: none;
+    padding: 6px 12px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+
+    &:hover {
+      color: #0f172a;
+    }
+
+    &.active {
+      color: #0284c7; // Azure/Primary accent color
+      border-bottom-color: #0284c7;
+    }
+  }
+}
+
+.json-view {
+  pre {
+    background: #0f172a;
+    color: #38bdf8;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-family: monospace;
+    overflow-x: auto;
+    max-height: 450px;
+  }
+}

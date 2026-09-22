@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -6,6 +6,7 @@ import { ResourceGroup, ResourceGroupService } from '../../services/azure/resour
 import { AzureResource, AzureResourceDetail, ResourceGraphService } from '../../services/azure/resource-graph.service';
 import { DetailsPanelComponent } from '../../components/details-panel/details-panel.component';
 import { ResourceDetailHostComponent } from '../../components/resource-details/resource-detail-host.component';
+import { ResourceDetailItem, ResourceDetailRegistryService } from '../../services/azome/resource-detail.registry';
 
 @Component({
   selector: 'app-resource-group-list',
@@ -15,6 +16,7 @@ import { ResourceDetailHostComponent } from '../../components/resource-details/r
   styleUrl: './resource-group-list.component.scss'
 })
 export class ResourceGroupListComponent implements OnInit, OnDestroy {
+
   public resourceGroups: ResourceGroup[] = [];
   public loading = false;
   public error: string | null = null;
@@ -30,11 +32,21 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
 
   constructor(
     private resourceGroupService: ResourceGroupService,
-    private resourceGraphService: ResourceGraphService
+    private resourceGraphService: ResourceGraphService,
+    private registryService: ResourceDetailRegistryService
   ) {}
 
   ngOnInit(): void {
     this.loadResourceGroups();
+  }
+
+  public get detailPanelVariant(): 'default' | 'wide' | 'content' {
+    if (!this.selectedResource?.type) return 'default';
+
+    const componentClass = this.registryService.getComponent(this.selectedResource.type) as any;
+    if (!componentClass) return 'default';
+
+    return componentClass.preferredVariant || 'default';
   }
 
   public loadResourceGroups(): void {

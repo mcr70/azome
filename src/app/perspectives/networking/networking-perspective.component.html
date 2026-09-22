@@ -26,9 +26,6 @@
     No virtual networks were found in this subscription.
   </div>
 
-  <div *ngIf="!loading && !error && viewMode === 'graph'">
-    <app-network-graph [topologies]="topologies" (subnetSelected)="onSubnetSelected($event)" />
-  </div>
 
   <div *ngIf="!loading && !error && viewMode === 'list'" class="topology-list">
     <article *ngFor="let topology of topologies" class="virtual-network">
@@ -61,36 +58,78 @@
         </span>
       </div>
 
-      <div class="subnet-grid">
-        <a
-          *ngFor="let subnet of topology.subnets"
-          class="subnet"
-          [routerLink]="['/networking/subnets', subnet.name]"
-          [queryParams]="{
-            subnetName: subnet.name,
-            addressPrefixes: subnet.addressPrefixes.join(','),
-            nsgId: subnet.networkSecurityGroupId,
-            routeTableId: subnet.routeTableId
-          }"
-        >
+<div class="subnet-grid">
+        <div *ngFor="let subnet of topology.subnets" class="subnet">
+          <!-- Subnet-tietokortti (ei klikattava) -->
           <div class="subnet-label">
             <span class="connection-dot" aria-hidden="true"></span>
             <div>
               <p class="resource-kind">Subnet</p>
               <h3>{{ subnet.name }}</h3>
-              <p class="address-prefixes">{{ subnet.addressPrefixes.join(', ') || 'No address prefix' }}</p>
+              <p class="address-prefixes">{{ subnet.addressPrefixes?.join(', ') || 'No address prefix' }}</p>
             </div>
           </div>
+
+          <!-- Liitetyt pääresurssit (NSG & Route Table) -->
           <div class="controls">
-            <span class="control" [class.unassigned]="!subnet.networkSecurityGroupName">
+            <button
+              type="button"
+              class="control-btn"
+              [class.unassigned]="!subnet.networkSecurityGroupName"
+              [disabled]="!subnet.networkSecurityGroupId"
+              (click)="openResourceDetails(subnet.networkSecurityGroupId, $event)"
+            >
               NSG: {{ subnet.networkSecurityGroupName || 'Unassigned' }}
-            </span>
-            <span class="control" [class.unassigned]="!subnet.routeTableName">
+            </button>
+
+            <button
+              type="button"
+              class="control-btn"
+              [class.unassigned]="!subnet.routeTableName"
+              [disabled]="!subnet.routeTableId"
+              (click)="openResourceDetails(subnet.routeTableId, $event)"
+            >
               Route table: {{ subnet.routeTableName || 'System routes' }}
-            </span>
+            </button>
           </div>
-        </a>
+        </div>
       </div>
+
     </article>
   </div>
+
+  <app-details-panel
+    *ngIf="selectedResource"
+    [isOpen]="true"
+    [title]="selectedResource.name"
+    [subtitle]="getShortType(selectedResource.type)"
+    [variant]="detailPanelVariant"
+    (close)="selectedResource = null"
+  >
+    <div class="resource-details">
+      <div *ngIf="loadingDetails" class="details-loading">
+        Loading details from Azure...
+      </div>
+
+      <ng-container *ngIf="!loadingDetails">
+        <section class="details-section">
+          <h3>General</h3>
+          <dl class="detail-list">
+            <div>
+              <dt>Resource Group</dt>
+              <dd>{{ selectedResource.resourceGroup || 'N/A' }}</dd>
+            </div>
+            <div>
+              <dt>Location</dt>
+              <dd>{{ selectedResource.location || 'N/A' }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <section class="details-section">
+          <app-resource-detail-host [resource]="selectedResource"></app-resource-detail-host>
+        </section>
+      </ng-container>
+    </div>
+  </app-details-panel>
 </section>

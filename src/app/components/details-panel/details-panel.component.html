@@ -1,6 +1,12 @@
 <div class="backdrop" (click)="close.emit()"></div>
 
-<div class="panel-container" role="dialog" aria-modal="true">
+<div
+  class="panel-container"
+  [class.panel-wide]="variant === 'wide'"
+  [class.panel-content-sized]="variant === 'content'"
+  role="dialog"
+  aria-modal="true"
+>
   <header class="panel-header">
     <div>
       <p class="resource-kind">{{ subtitle || 'Resource Details' }}</p>

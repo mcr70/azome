@@ -1,3 +1,9 @@
 .routes-container {
   width: 100%;
 }
+
+.route-table-wrapper .resource-detail-table {
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+}

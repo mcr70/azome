@@ -11,8 +11,14 @@
   font-style: italic;
 }
 
+.resource-detail-table-wrapper {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
 .resource-detail-table {
   width: 100%;
+  min-width: 680px;
   border-collapse: collapse;
   font-size: 0.8125rem;
 

@@ -81,7 +81,7 @@ interface AzureRoute {
   };
 }
 
-interface AzureSubnet {
+export interface AzureSubnet {
   name: string;
   properties: {
     addressPrefix?: string;
@@ -116,9 +116,9 @@ export interface NetworkSubnet {
   name: string;
   addressPrefixes: string[];
   networkSecurityGroupId: string | null;
-  networkSecurityGroupName: string | null;
+  networkSecurityGroupName?: string | null;
   routeTableId: string | null;
-  routeTableName: string | null;
+  routeTableName?: string | null;
 }
 
 export interface SecurityRule {
