@@ -3,12 +3,14 @@ import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ResourceGroup, ResourceGroupService } from '../../services/azure/resource-group.service';
-import { AzureResource, ResourceGraphService } from '../../services/azure/resource-graph.service';
+import { AzureResource, AzureResourceDetail, ResourceGraphService } from '../../services/azure/resource-graph.service';
+import { DetailsPanelComponent } from '../../components/details-panel/details-panel.component';
+import { ResourceDetailHostComponent } from '../../components/resource-details/resource-detail-host.component';
 
 @Component({
   selector: 'app-resource-group-list',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, DetailsPanelComponent, ResourceDetailHostComponent],
   templateUrl: './resource-group-list.component.html',
   styleUrl: './resource-group-list.component.scss'
 })
@@ -20,6 +22,9 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
   public expandedGroup: string | null = null;
   public groupResources: { [groupName: string]: AzureResource[] } = {};
   public loadingResources: { [groupName: string]: boolean } = {};
+
+  public selectedResource: AzureResourceDetail | null = null;
+  public loadingDetails = false;
 
   private readonly destroy$ = new Subject<void>();
 
@@ -62,6 +67,26 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
     if (!this.groupResources[groupName]) {
       this.fetchResourcesForGroup(groupName);
     }
+  }
+
+  public selectResource(resource: AzureResource): void {
+    //this.selectedResource = resource;
+    this.loadingDetails = true;
+
+    this.resourceGraphService.getResourceDetails(resource.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (details) => {
+          if (details) {
+            this.selectedResource = details;
+          }
+          this.loadingDetails = false;
+        },
+        error: (err) => {
+          console.error('Failed to fetch resource details:', err);
+          this.loadingDetails = false;
+        }
+      });
   }
 
   private fetchResourcesForGroup(groupName: string): void {

@@ -57,7 +57,12 @@
         *ngIf="!loadingResources[group.name] && (groupResources[group.name]?.length ?? 0) > 0"
         class="resource-grid"
       >
-        <div *ngFor="let resource of groupResources[group.name]" class="resource-item">
+        <div
+          *ngFor="let resource of groupResources[group.name]"
+          class="resource-item"
+          (click)="selectResource(resource)"
+          style="cursor: pointer;"
+        >
           <span class="resource-dot" aria-hidden="true"></span>
           <div class="resource-info">
             <p class="resource-kind">{{ getShortType(resource.type) }}</p>
@@ -69,4 +74,41 @@
       </div>
     </div>
   </div>
+
+  <app-details-panel
+    *ngIf="selectedResource"
+    [isOpen]="true"
+    [title]="selectedResource.name"
+    [subtitle]="getShortType(selectedResource.type)"
+    (close)="selectedResource = null"
+  >
+    <div class="resource-details">
+      <div *ngIf="loadingDetails" class="details-loading">
+        Loading details from Azure...
+      </div>
+
+      <ng-container *ngIf="!loadingDetails">
+        <!-- General information -->
+        <section class="details-section">
+          <h3>General</h3>
+          <dl class="detail-list">
+            <div>
+              <dt>Resource Group</dt>
+              <dd>{{ selectedResource.resourceGroup || 'N/A' }}</dd>
+            </div>
+            <div>
+              <dt>Location</dt>
+              <dd>{{ selectedResource.location || 'N/A' }}</dd>
+            </div>
+          </dl>
+        </section>
+
+        <!-- Dynamic type-specific view -->
+        <section class="details-section">
+          <app-resource-detail-host [resource]="selectedResource"></app-resource-detail-host>
+        </section>
+      </ng-container>
+    </div>
+  </app-details-panel>
+
 </div>
