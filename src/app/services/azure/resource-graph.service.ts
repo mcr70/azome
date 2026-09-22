@@ -4,6 +4,15 @@ import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 
+
+export interface AzureResource {
+  id: string;
+  name: string;
+  type: string;
+  location?: string;
+  resourceGroup?: string;
+}
+
 interface ResourceGraphResponse {
   data: AzureNetworkResource[];
 }
@@ -152,6 +161,23 @@ export class ResourceGraphService {
       map((response) => response.data.map((resource) => this.toTopology(resource)))
     );
   }
+
+
+  public getResourcesByResourceGroup(resourceGroupName: string): Observable<AzureResource[]> {
+    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
+    const query = `Resources | where resourceGroup =~ '${resourceGroupName}' | project id, name, type, location, resourceGroup | order by name asc`;
+
+    return this.http.post<{ data: AzureResource[] }>(url, {
+      subscriptions: [environment.azure.subscriptionId],
+      query,
+      options: {
+        resultFormat: 'objectArray'
+      }
+    }).pipe(
+      map((response) => response.data ?? [])
+    );
+  }
+
 
   private toTopology(resource: AzureNetworkResource): NetworkTopology {
     return {

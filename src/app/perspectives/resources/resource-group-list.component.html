@@ -1,16 +1,72 @@
-<div class="resource-group-container" style="padding: 15px; border: 1px solid #ccc; border-radius: 4px;">
-  <h2>Azure Resource Groups</h2>
+<div class="resource-groups-container">
+  <p *ngIf="loading" class="status-message">Loading resource groups...</p>
 
-  <div *ngIf="loading">Loading resource groups...</div>
-  <div *ngIf="error" style="color: red;">Error: {{ error }}</div>
+  <div *ngIf="error" class="error-message" role="alert">
+    <strong>Failed to load resource groups.</strong>
+    <span>{{ error }}</span>
+  </div>
 
-  <ul *ngIf="resourceGroups.length > 0">
-    <li *ngFor="let resourceGroup of resourceGroups" style="margin-bottom: 8px;">
-      <strong>{{ resourceGroup.name }}</strong> - <small>Location: {{ resourceGroup.location }} ({{ resourceGroup.properties?.provisioningState }})</small>
-    </li>
-  </ul>
-
-  <div *ngIf="!loading && resourceGroups.length === 0 && !error">
+  <div *ngIf="!loading && !error && resourceGroups.length === 0" class="empty-state">
     No resource groups found or subscription empty.
+  </div>
+
+  <div
+    *ngFor="let group of resourceGroups"
+    class="resource-group-card"
+    [class.expanded]="expandedGroup === group.name"
+  >
+    <button
+      type="button"
+      class="resource-group-header"
+      (click)="toggleGroup(group.name)"
+      [attr.aria-expanded]="expandedGroup === group.name"
+    >
+      <div class="group-title">
+        <div>
+          <p class="resource-kind">Resource group</p>
+          <h2>{{ group.name }}</h2>
+        </div>
+      </div>
+
+      <div class="group-meta">
+        <dl class="meta-item">
+          <dt>Location</dt>
+          <dd>{{ group.location }}</dd>
+        </dl>
+        <dl class="meta-item" *ngIf="group.properties?.provisioningState">
+          <dt>State</dt>
+          <dd>{{ group.properties?.provisioningState }}</dd>
+        </dl>
+        <span class="chevron" [class.open]="expandedGroup === group.name"></span>
+      </div>
+    </button>
+
+    <div *ngIf="expandedGroup === group.name" class="resources-panel">
+      <div *ngIf="loadingResources[group.name]" class="loading-resources">
+        Loading resources...
+      </div>
+
+      <div
+        *ngIf="!loadingResources[group.name] && (!groupResources[group.name] || (groupResources[group.name]?.length ?? 0) === 0)"
+        class="no-resources"
+      >
+        No individual resources found in this resource group.
+      </div>
+
+      <div
+        *ngIf="!loadingResources[group.name] && (groupResources[group.name]?.length ?? 0) > 0"
+        class="resource-grid"
+      >
+        <div *ngFor="let resource of groupResources[group.name]" class="resource-item">
+          <span class="resource-dot" aria-hidden="true"></span>
+          <div class="resource-info">
+            <p class="resource-kind">{{ getShortType(resource.type) }}</p>
+            <h3>{{ resource.name }}</h3>
+            <span class="resource-type">{{ resource.type }}</span>
+            <span *ngIf="resource.location" class="resource-location">{{ resource.location }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>

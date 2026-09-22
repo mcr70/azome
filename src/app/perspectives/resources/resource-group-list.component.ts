@@ -3,21 +3,30 @@ import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ResourceGroup, ResourceGroupService } from '../../services/azure/resource-group.service';
+import { AzureResource, ResourceGraphService } from '../../services/azure/resource-graph.service';
 
 @Component({
   selector: 'app-resource-group-list',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './resource-group-list.component.html'
+  templateUrl: './resource-group-list.component.html',
+  styleUrl: './resource-group-list.component.scss'
 })
 export class ResourceGroupListComponent implements OnInit, OnDestroy {
   public resourceGroups: ResourceGroup[] = [];
   public loading = false;
   public error: string | null = null;
 
+  public expandedGroup: string | null = null;
+  public groupResources: { [groupName: string]: AzureResource[] } = {};
+  public loadingResources: { [groupName: string]: boolean } = {};
+
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private resourceGroupService: ResourceGroupService) {}
+  constructor(
+    private resourceGroupService: ResourceGroupService,
+    private resourceGraphService: ResourceGraphService
+  ) {}
 
   ngOnInit(): void {
     this.loadResourceGroups();
@@ -40,6 +49,43 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
           this.loading = false;
         }
       });
+  }
+
+  public toggleGroup(groupName: string): void {
+    if (this.expandedGroup === groupName) {
+      this.expandedGroup = null;
+      return;
+    }
+
+    this.expandedGroup = groupName;
+
+    if (!this.groupResources[groupName]) {
+      this.fetchResourcesForGroup(groupName);
+    }
+  }
+
+  private fetchResourcesForGroup(groupName: string): void {
+    this.loadingResources[groupName] = true;
+
+    this.resourceGraphService.getResourcesByResourceGroup(groupName)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resources) => {
+          this.groupResources[groupName] = resources;
+          this.loadingResources[groupName] = false;
+        },
+        error: (err) => {
+          console.error(`Failed to fetch resources for group ${groupName}:`, err);
+          this.groupResources[groupName] = [];
+          this.loadingResources[groupName] = false;
+        }
+      });
+  }
+
+  public getShortType(fullType: string): string {
+    if (!fullType) return 'Resource';
+    const parts = fullType.split('/');
+    return parts[parts.length - 1] || fullType;
   }
 
   ngOnDestroy(): void {
