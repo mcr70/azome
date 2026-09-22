@@ -1,0 +1,17 @@
+<div class="backdrop" (click)="close.emit()"></div>
+
+<div class="panel-container" role="dialog" aria-modal="true">
+  <header class="panel-header">
+    <div>
+      <p class="resource-kind">{{ subtitle || 'Resource Details' }}</p>
+      <h2>{{ title }}</h2>
+    </div>
+    <button type="button" class="close-button" (click)="close.emit()" aria-label="Close panel">
+      &times;
+    </button>
+  </header>
+
+  <div class="panel-content">
+    <ng-content></ng-content>
+  </div>
+</div>

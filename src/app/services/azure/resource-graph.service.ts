@@ -13,6 +13,11 @@ export interface AzureResource {
   resourceGroup?: string;
 }
 
+export interface AzureResourceDetail extends AzureResource {
+  tags?: { [key: string]: string };
+  properties?: any;
+}
+
 interface ResourceGraphResponse {
   data: AzureNetworkResource[];
 }
@@ -147,6 +152,11 @@ export interface SubnetRoutingDetail {
 export class ResourceGraphService {
   constructor(private http: HttpClient) {}
 
+  /**
+   * Get all network topologies in the Azure subscription.
+   * 
+   * @returns An observable that emits an array of network topologies.
+   */
   public getNetworkTopologies(): Observable<NetworkTopology[]> {
     const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
     const query = "Resources | where type =~ 'microsoft.network/virtualnetworks' | project id, name, type, resourceGroup, location, properties";
@@ -162,7 +172,12 @@ export class ResourceGraphService {
     );
   }
 
-
+  /**
+   * Get all Azure resources within a specific resource group.
+   * 
+   * @param resourceGroupName The name of the resource group.
+   * @returns An observable that emits an array of Azure resources within the specified resource group.
+   */
   public getResourcesByResourceGroup(resourceGroupName: string): Observable<AzureResource[]> {
     const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
     const query = `Resources | where resourceGroup =~ '${resourceGroupName}' | project id, name, type, location, resourceGroup | order by name asc`;
@@ -175,6 +190,70 @@ export class ResourceGraphService {
       }
     }).pipe(
       map((response) => response.data ?? [])
+    );
+  }
+
+  /**
+   * Get the details of a specific Azure resource by its ID.
+   * 
+   * @param resourceId The ID of the Azure resource.
+   * @returns An observable that emits the details of the Azure resource, or null if not found.
+   */
+  public getResourceDetails(resourceId: string): Observable<AzureResourceDetail | null> {
+    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
+    const query = `Resources | where id =~ '${resourceId}' | project id, name, type, location, resourceGroup, tags, properties`;
+
+    return this.http.post<{ data: AzureResourceDetail[] }>(url, {
+      subscriptions: [environment.azure.subscriptionId],
+      query,
+      options: {
+        resultFormat: 'objectArray'
+      }
+    }).pipe(
+      map((response) => (response.data && response.data.length > 0) ? response.data[0] : null)
+    );
+  }
+
+
+  /**
+   * Get the routing details of a subnet, including its associated network security group and route table.
+   * 
+   * @param networkSecurityGroupId The ID of the network security group associated with the subnet.
+   * @param routeTableId The ID of the route table associated with the subnet.
+   * @returns An observable that emits the routing details of the subnet, including security rules and routes.
+   */
+  public getSubnetRoutingDetail(
+    networkSecurityGroupId: string | null,
+    routeTableId: string | null
+  ): Observable<SubnetRoutingDetail> {
+    const empty: SubnetRoutingDetail = {
+      networkSecurityGroupName: null,
+      securityRules: [],
+      defaultSecurityRules: [],
+      routeTableName: null,
+      routes: []
+    };
+
+    if (!networkSecurityGroupId && !routeTableId) {
+      return of(empty);
+    }
+
+    const filters = [networkSecurityGroupId, routeTableId]
+      .filter((id): id is string => !!id)
+      .map((id) => `id =~ '${id}'`)
+      .join(' or ');
+
+    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
+    const query = `Resources | where ${filters} | project id, name, type, properties`;
+
+    return this.http.post<{ data: AzureSecurityResource[] }>(url, {
+      subscriptions: [environment.azure.subscriptionId],
+      query,
+      options: {
+        resultFormat: 'objectArray'
+      }
+    }).pipe(
+      map((response) => this.toSubnetRoutingDetail(response.data, empty))
     );
   }
 
@@ -211,40 +290,7 @@ export class ResourceGraphService {
     return resourceId ? resourceId.split('/').pop() ?? null : null;
   }
 
-  public getSubnetRoutingDetail(
-    networkSecurityGroupId: string | null,
-    routeTableId: string | null
-  ): Observable<SubnetRoutingDetail> {
-    const empty: SubnetRoutingDetail = {
-      networkSecurityGroupName: null,
-      securityRules: [],
-      defaultSecurityRules: [],
-      routeTableName: null,
-      routes: []
-    };
 
-    if (!networkSecurityGroupId && !routeTableId) {
-      return of(empty);
-    }
-
-    const filters = [networkSecurityGroupId, routeTableId]
-      .filter((id): id is string => !!id)
-      .map((id) => `id =~ '${id}'`)
-      .join(' or ');
-
-    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
-    const query = `Resources | where ${filters} | project id, name, type, properties`;
-
-    return this.http.post<{ data: AzureSecurityResource[] }>(url, {
-      subscriptions: [environment.azure.subscriptionId],
-      query,
-      options: {
-        resultFormat: 'objectArray'
-      }
-    }).pipe(
-      map((response) => this.toSubnetRoutingDetail(response.data, empty))
-    );
-  }
 
   private toSubnetRoutingDetail(resources: AzureSecurityResource[], empty: SubnetRoutingDetail): SubnetRoutingDetail {
     const nsg = resources.find((resource) => resource.type.toLowerCase() === 'microsoft.network/networksecuritygroups');
