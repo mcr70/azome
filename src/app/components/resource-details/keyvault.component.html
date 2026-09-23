@@ -1,0 +1,74 @@
+<div class="key-vault-container">
+  <h3 class="resource-detail-heading">Key Vault Details</h3>
+
+  <div *ngIf="!properties" class="resource-detail-empty">
+    No Key Vault details available.
+  </div>
+
+  <div *ngIf="properties" class="resource-detail-table-wrapper">
+    <table class="resource-detail-table">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Vault URI</strong></td>
+          <td>
+            <a *ngIf="properties.vaultUri" [href]="properties.vaultUri" target="_blank" rel="noopener noreferrer">
+              {{ properties.vaultUri }}
+            </a>
+            <span *ngIf="!properties.vaultUri">-</span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>SKU</strong></td>
+          <td>{{ properties.sku?.name | titlecase }} (Family: {{ properties.sku?.family }})</td>
+        </tr>
+        <tr>
+          <td><strong>Provisioning State</strong></td>
+          <td>{{ properties.provisioningState || '-' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Public Network Access</strong></td>
+          <td>{{ properties.publicNetworkAccess || '-' }}</td>
+        </tr>
+        <tr>
+          <td><strong>RBAC Authorization</strong></td>
+          <td>{{ properties.enableRbacAuthorization ? 'Enabled' : 'Disabled' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Soft Delete</strong></td>
+          <td>
+            {{ properties.enableSoftDelete ? 'Enabled' : 'Disabled' }}
+            <ng-container *ngIf="properties.softDeleteRetentionInDays">
+              ({{ properties.softDeleteRetentionInDays }} days retention)
+            </ng-container>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Purge Protection / Retention</strong></td>
+          <td>{{ properties.softDeleteRetentionInDays }} days</td>
+        </tr>
+        <tr>
+          <td><strong>Deployment Access</strong></td>
+          <td>{{ properties.enabledForDeployment ? 'Enabled' : 'Disabled' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Template Deployment Access</strong></td>
+          <td>{{ properties.enabledForTemplateDeployment ? 'Enabled' : 'Disabled' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Disk Encryption Access</strong></td>
+          <td>{{ properties.enabledForDiskEncryption ? 'Enabled' : 'Disabled' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Tenant ID</strong></td>
+          <td><code class="resource-detail-code">{{ properties.tenantId || '-' }}</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
