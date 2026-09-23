@@ -7,6 +7,13 @@ terraform {
       version = ">= 4.2.0, < 5.0.0"
     }
   }
+
+  backend "azurerm" {
+    resource_group_name  = "rg-terraform-meta"
+    storage_account_name = "azomelabtfstate"
+    container_name       = "labtfstate"
+    key                  = "networking.tfstate"
+  }  
 }
 
 provider "azurerm" {
