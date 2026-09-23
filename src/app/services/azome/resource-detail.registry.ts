@@ -1,6 +1,8 @@
 import { Injectable, Type } from '@angular/core';
-import { RouteTableDetailComponent } from '../../components/resource-details/route-table-detail.component';
-import { NsgDetailComponent } from '../../components/resource-details/nsg-detail.component';
+import { RouteTableComponent } from '../../components/resource-details/route-table.component';
+import { NsgComponent } from '../../components/resource-details/nsg.component';
+import { VnetComponent } from '../../components/resource-details/vnet.component';
+import { StorageAccountComponent } from '../../components/resource-details/storage-account.component';
 
 
 export type PanelVariant = 'default' | 'wide' | 'content';
@@ -20,9 +22,10 @@ export class ResourceDetailRegistryService {
   private registry = new Map<string, ResourceDetailComponentType>();
 
   constructor() {
-    this.register('microsoft.network/routetables', RouteTableDetailComponent);
-    this.register('microsoft.network/networksecuritygroups', NsgDetailComponent);
-    // this.register('microsoft.network/virtualnetworks', VnetDetailComponent);
+    this.register('microsoft.network/routetables', RouteTableComponent);
+    this.register('microsoft.network/networksecuritygroups', NsgComponent);
+    this.register('microsoft.network/virtualnetworks', VnetComponent);
+    this.register('microsoft.storage/storageaccounts', StorageAccountComponent);
   }
 
   public register(resourceType: string, component: ResourceDetailComponentType): void {

@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { AzureDataResource } from './data.model';
 
 
 export interface AzureResource {
@@ -192,6 +193,32 @@ export class ResourceGraphService {
       map((response) => response.data ?? [])
     );
   }
+
+
+  public getDataResources(): Observable<AzureDataResource[]> {
+    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
+    
+    const query = `
+      Resources 
+      | where type in~ (
+          'microsoft.storage/storageaccounts',
+          'microsoft.sql/servers/databases',
+          'microsoft.dbforpostgresql/flexibleservers',
+          'microsoft.documentdb/databaseaccounts',
+          'microsoft.keyvault/vaults'
+        ) 
+      | project id, name, type, resourceGroup, location, tags, properties
+    `;
+
+    return this.http.post<{ data: AzureDataResource[] }>(url, {
+      subscriptions: [environment.azure.subscriptionId],
+      query,
+      options: { resultFormat: 'objectArray' }
+    }).pipe(
+      map((response) => response.data ?? [])
+    );
+  }
+
 
   /**
    * Get the details of a specific Azure resource by its ID.

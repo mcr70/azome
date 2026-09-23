@@ -46,6 +46,10 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
     this.loadTopologies();
   }
 
+  onGraphResourceSelect(resourceId: string): void {
+    this.openResourceDetails(resourceId);
+  }
+
   /**
    * ARM Top-level resources (NSG, Route Table)
    * Fetches full resource JSON via Azure Resource Graph API.

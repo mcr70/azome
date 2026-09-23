@@ -1,0 +1,121 @@
+<div class="vnet-container">
+
+  <!-- Overview / General Info -->
+  <section class="vnet-section">
+    <h3 class="resource-detail-heading">Address Space & Configuration</h3>
+    <div class="vnet-overview-grid">
+      <div class="info-item">
+        <span class="info-label">Address Prefixes:</span>
+        <div class="info-value">
+          <code *ngFor="let prefix of addressPrefixes" class="resource-detail-code">{{ prefix }}</code>
+          <span *ngIf="addressPrefixes.length === 0">-</span>
+        </div>
+      </div>
+      <div class="info-item">
+        <span class="info-label">DNS Servers:</span>
+        <div class="info-value">
+          <ng-container *ngIf="dnsServers.length > 0; else defaultDns">
+            <code *ngFor="let dns of dnsServers" class="resource-detail-code">{{ dns }}</code>
+          </ng-container>
+          <ng-template #defaultDns>
+            <span class="muted-text">Azure provided (Default)</span>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Subnets -->
+  <section class="vnet-section">
+    <h3 class="resource-detail-heading">Subnets</h3>
+    <div *ngIf="subnets.length === 0" class="resource-detail-empty">
+      No subnets configured.
+    </div>
+    <div *ngIf="subnets.length > 0" class="resource-detail-table-wrapper">
+      <table class="resource-detail-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Address Prefix</th>
+            <th>NSG</th>
+            <th>Route Table</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let subnet of subnets">
+            <td>
+              <strong>{{ subnet.name }}</strong>
+            </td>
+            <td><code class="resource-detail-code">{{ subnet.properties?.addressPrefix || '-' }}</code></td>
+            <td>
+              <span *ngIf="subnet.properties?.networkSecurityGroup?.id; else noNsg">
+                {{ getResourceNameFromId(subnet.properties?.networkSecurityGroup?.id) }}
+              </span>
+              <ng-template #noNsg><span class="muted-text">-</span></ng-template>
+            </td>
+            <td>
+              <span *ngIf="subnet.properties?.routeTable?.id; else noRt">
+                {{ getResourceNameFromId(subnet.properties?.routeTable?.id) }}
+              </span>
+              <ng-template #noRt><span class="muted-text">-</span></ng-template>
+            </td>
+            <td>
+              <span class="badge status-succeeded">
+                {{ subnet.properties?.provisioningState || 'Succeeded' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Peerings -->
+  <section class="vnet-section">
+    <h3 class="resource-detail-heading">Virtual Network Peerings</h3>
+    <div *ngIf="peerings.length === 0" class="resource-detail-empty">
+      No virtual network peerings configured.
+    </div>
+    <div *ngIf="peerings.length > 0" class="resource-detail-table-wrapper">
+      <table class="resource-detail-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Remote VNet</th>
+            <th>Remote Address Space</th>
+            <th>Peering State</th>
+            <th>Access</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let peering of peerings">
+            <td>
+              <strong>{{ peering.name }}</strong>
+            </td>
+            <td>
+              {{ getResourceNameFromId(peering.properties?.remoteVirtualNetwork?.id) }}
+            </td>
+            <td>
+              <code *ngFor="let prefix of peering.properties?.remoteVirtualNetworkAddressSpace?.addressPrefixes" class="resource-detail-code">
+                {{ prefix }}
+              </code>
+              <span *ngIf="!peering.properties?.remoteVirtualNetworkAddressSpace?.addressPrefixes?.length">-</span>
+            </td>
+            <td>
+              <span [class]="'badge ' + (peering.properties?.peeringState?.toLowerCase() || '')">
+                {{ peering.properties?.peeringState }}
+              </span>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="peering.properties?.allowVirtualNetworkAccess ? 'allow' : 'deny'">
+                {{ peering.properties?.allowVirtualNetworkAccess ? 'Enabled' : 'Disabled' }}
+              </span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+</div>
