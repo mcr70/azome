@@ -117,19 +117,16 @@
       </div>
 
       <ng-container *ngIf="!loadingDetails">
-        <section class="details-section">
-          <h3>General</h3>
-          <dl class="detail-list">
-            <div>
-              <dt>Resource Group</dt>
-              <dd>{{ selectedResource.resourceGroup || 'N/A' }}</dd>
-            </div>
-            <div>
-              <dt>Location</dt>
-              <dd>{{ selectedResource.location || 'N/A' }}</dd>
-            </div>
-          </dl>
-        </section>
+        <table class="resource-detail-table">
+          <tr>
+            <td><strong>Resource Group</strong></td>
+            <td>{{ selectedResource.resourceGroup || 'N/A' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Location</strong></td>
+            <td>{{ selectedResource.location || 'N/A' }}</td>
+          </tr>
+        </table>              
 
         <section class="details-section">
           <app-resource-detail-host [resource]="selectedResource"></app-resource-detail-host>
