@@ -58,19 +58,17 @@
         </span>
       </div>
 
-<div class="subnet-grid">
+      <div class="subnet-grid">
         <div *ngFor="let subnet of topology.subnets" class="subnet">
-          <!-- Subnet-tietokortti (ei klikattava) -->
           <div class="subnet-label">
             <span class="connection-dot" aria-hidden="true"></span>
             <div>
               <p class="resource-kind">Subnet</p>
               <h3>{{ subnet.name }}</h3>
-              <p class="address-prefixes">{{ subnet.addressPrefixes?.join(', ') || 'No address prefix' }}</p>
+              <p class="address-prefixes">{{ subnet.addressPrefixes.join(', ') || 'No address prefix' }}</p>
             </div>
           </div>
 
-          <!-- Liitetyt pääresurssit (NSG & Route Table) -->
           <div class="controls">
             <button
               type="button"
@@ -96,6 +94,13 @@
       </div>
 
     </article>
+  </div>
+
+  <div *ngIf="!loading && !error && viewMode === 'graph'">
+    <app-network-graph
+      [topologies]="topologies"
+      (resourceSelected)="openResourceDetails($event)">
+    </app-network-graph>
   </div>
 
   <app-details-panel

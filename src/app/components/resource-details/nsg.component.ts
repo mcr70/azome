@@ -21,10 +21,10 @@ export interface NsgRule {
   selector: 'app-nsg-detail',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './nsg-detail.component.html',
-  styleUrl: './nsg-detail.component.scss'
+  templateUrl: './nsg.component.html',
+  styleUrl: './nsg.component.scss'
 })
-export class NsgDetailComponent implements ResourceDetailItem {
+export class NsgComponent implements ResourceDetailItem {
     @Input() resource: any;
     static readonly preferredVariant: PanelVariant = 'wide';
 

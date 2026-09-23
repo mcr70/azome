@@ -6,10 +6,10 @@ import { PanelVariant, ResourceDetailItem } from '../../services/azome/resource-
   selector: 'app-route-table-detail',
   standalone: true,
   imports: [CommonModule],
-  templateUrl: './route-table-detail.component.html',
-  styleUrl: './route-table-detail.component.scss'
+  templateUrl: './route-table.component.html',
+  styleUrl: './route-table.component.scss'
 })
-export class RouteTableDetailComponent implements ResourceDetailItem {
+export class RouteTableComponent implements ResourceDetailItem {
   @Input() resource: any;
   static readonly preferredVariant: PanelVariant = 'content';
   

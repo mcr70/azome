@@ -26,6 +26,7 @@ cytoscape.use(dagre);
 export class NetworkGraphComponent implements OnChanges, OnDestroy {
   @Input() public topologies: NetworkTopology[] = [];
   @Output() public subnetSelected = new EventEmitter<SubnetNavigation>();
+  @Output() public resourceSelected = new EventEmitter<string>();
 
   @ViewChild('canvas', { static: true }) private canvasRef!: ElementRef<HTMLDivElement>;
 
@@ -155,10 +156,10 @@ export class NetworkGraphComponent implements OnChanges, OnDestroy {
 
     this.layoutByVnetGroup();
 
-    this.cy.on('tap', 'node[kind = "subnet"]', (event) => {
-      const navigation = event.target.data('subnetNavigation') as SubnetNavigation | undefined;
-      if (navigation) {
-        this.subnetSelected.emit(navigation);
+    // Emit the resourceSelected event when a network security group or route table node is tapped.
+    this.cy.on('tap', 'node[kind = "networkSecurityGroup"], node[kind = "routeTable"], node[kind = "vnet"]', (event) => {      const resourceId = event.target.id();
+      if (resourceId) {
+        this.resourceSelected.emit(resourceId);
       }
     });
   }
