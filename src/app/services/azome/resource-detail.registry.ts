@@ -4,6 +4,7 @@ import { NsgComponent } from '../../components/resource-details/nsg.component';
 import { VnetComponent } from '../../components/resource-details/vnet.component';
 import { StorageAccountComponent } from '../../components/resource-details/storage-account.component';
 import { KeyVaultComponent } from '../../components/resource-details/keyvault.component';
+import { CosmosDbComponent } from '../../components/resource-details/cosmosdb.component';
 
 
 export type PanelVariant = 'default' | 'wide' | 'content';
@@ -28,6 +29,7 @@ export class ResourceDetailRegistryService {
     this.register('microsoft.network/virtualnetworks', VnetComponent);
     this.register('microsoft.storage/storageaccounts', StorageAccountComponent);
     this.register('microsoft.keyvault/vaults', KeyVaultComponent);
+    this.register('microsoft.documentdb/databaseaccounts', CosmosDbComponent);
   }
 
   public register(resourceType: string, component: ResourceDetailComponentType): void {

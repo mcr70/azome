@@ -1,0 +1,105 @@
+<div class="cosmos-db-container">
+  <h3 class="resource-detail-heading">Cosmos DB Account Details</h3>
+
+  <div *ngIf="!properties" class="resource-detail-empty">
+    No Cosmos DB details available.
+  </div>
+
+  <div *ngIf="properties" class="resource-detail-table-wrapper">
+    <table class="resource-detail-table">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Document Endpoint</strong></td>
+          <td>
+            <a *ngIf="properties.documentEndpoint" [href]="properties.documentEndpoint" target="_blank" rel="noopener noreferrer">
+              {{ properties.documentEndpoint }}
+            </a>
+            <span *ngIf="!properties.documentEndpoint">-</span>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>API Type</strong></td>
+          <td>{{ properties.EnabledApiTypes || 'Sql' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Provisioning State</strong></td>
+          <td>{{ properties.provisioningState || '-' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Public Network Access</strong></td>
+          <td>{{ properties.publicNetworkAccess || '-' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Consistency Level</strong></td>
+          <td>{{ properties.consistencyPolicy?.defaultConsistencyLevel || '-' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Free Tier</strong></td>
+          <td>{{ properties.enableFreeTier ? 'Enabled' : 'Disabled' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Automatic Failover</strong></td>
+          <td>{{ properties.enableAutomaticFailover ? 'Enabled' : 'Disabled' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Multi-region Writes</strong></td>
+          <td>{{ properties.enableMultipleWriteLocations ? 'Enabled' : 'Disabled' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Disable Key-based Auth</strong></td>
+          <td>{{ properties.disableLocalAuth ? 'Yes' : 'No' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Minimal TLS Version</strong></td>
+          <td>{{ properties.minimalTlsVersion || '-' }}</td>
+        </tr>
+        <tr *ngIf="properties.backupPolicy">
+          <td><strong>Backup Policy</strong></td>
+          <td>
+            {{ properties.backupPolicy.type }}
+            <ng-container *ngIf="properties.backupPolicy.periodicModeProperties">
+              ({{ properties.backupPolicy.periodicModeProperties.backupStorageRedundancy }} Redundant, Interval: {{ properties.backupPolicy.periodicModeProperties.backupIntervalInMinutes }}m, Retention: {{ properties.backupPolicy.periodicModeProperties.backupRetentionIntervalInHours }}h)
+            </ng-container>
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Offer Type</strong></td>
+          <td>{{ properties.databaseAccountOfferType || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+
+  <ng-container *ngIf="properties?.locations as locations">
+    <ng-container *ngIf="locations.length > 0">
+      <h3 class="resource-detail-heading" style="margin-top: 1.5rem;">Replication Locations</h3>
+      <div class="resource-detail-table-wrapper">
+        <table class="resource-detail-table">
+          <thead>
+            <tr>
+              <th>Location</th>
+              <th>Priority</th>
+              <th>Zone Redundant</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let loc of locations">
+              <td><strong>{{ loc.locationName }}</strong></td>
+              <td>{{ loc.failoverPriority }}</td>
+              <td>{{ loc.isZoneRedundant ? 'Yes' : 'No' }}</td>
+              <td>{{ loc.provisioningState }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+  </ng-container>
+</div>
