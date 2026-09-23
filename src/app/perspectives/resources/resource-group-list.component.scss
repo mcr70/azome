@@ -243,3 +243,10 @@
   overflow-x: auto;
   max-height: 300px;
 }
+
+
+.resource-detail-table {
+  min-width: 0;
+  max-width: 100%;
+  white-space: nowrap;
+}
