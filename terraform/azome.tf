@@ -34,11 +34,20 @@ resource "azuread_application" "azome" {
   required_resource_access {
     resource_app_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph API
 
-    resource_access {
+    resource_access { # Allow reading user profile information
       id   = "e1fe6dd8-ba31-4d61-89e7-88639da4683d" # User.Read
       type = "Scope"
     }
   }
+
+  required_resource_access {
+    resource_app_id = "797f3746-1b2b-42e1-a6e6-97b42b5f28d2" # Azure Resource Manager
+
+    resource_access { # Allow user impersonation for Azure Resource Manager
+      id   = "41770d35-0801-4edb-8a1e-828153240280" # user_impersonation (Delegated)
+      type = "Scope"
+    }
+  }  
 }
 
 # 4. Create a Service Principal
