@@ -14,28 +14,18 @@ To run this application and successfully interact with Azure APIs, follow these 
 ## API Permissions
 Ensure the following permissions are granted in the Azure Portal under App registrations > Your Application > API permissions:
 
-Microsoft Graph:
-
-User.Read (Delegated)
-
-Azure Service Management:
-
-user_impersonation (Delegated)
+- **Microsoft Graph**: User.Read (Delegated) - To get user details for the UI
+- **Azure Service Management**: user_impersonation (Delegated) - To act on behalf of the user
 
 Important: After adding these permissions, click the "Grant admin consent for [Your Organization]" button to ensure the permissions are active for all users.
 
-## Local Configuration
-Create a configuration file at src/config/config.ts to manage your environment-specific settings. This ensures the application knows which subscription to target.
+_Note on Access Control:_
 
-TypeScript
-// src/config/config.ts
-export const AppConfig = {
-  azure: {
-    subscriptionId: 'YOUR_SUBSCRIPTION_ID_HERE',
-    resourceManagerUrl: 'https://management.azure.com',
-    apiVersion: '2021-04-01'
-  }
-};
+The application operates using the signed-in user's identity. By default, ensure that users (or Entra ID groups) are granted at least the Reader role for read-only access, or the Contributor role if they need to manage resources. Roles can be assigned at the Resource Group or Subscription level via the Azure Portal or Azure CLI.
+
+## Local Configuration
+Create a configuration file at `src/environments/environment.ts` to manage your environment-specific settings. Terraform will print needed values. This ensures the application knows which subscription to target.
+
 
 
 ## Authentication & Interceptors
