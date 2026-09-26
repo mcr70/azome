@@ -1,12 +1,25 @@
-# 1. Create a Resource Group for the Angular SPA application
+# Fetch well-known application IDs published by Microsoft
+data "azuread_application_published_app_ids" "well_known" {}
+
+# Fetch Microsoft Graph Service Principal
+data "azuread_service_principal" "msgraph" {
+  client_id = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
+}
+
+# Fetch Azure Resource Manager Service Principal
+data "azuread_service_principal" "azure_mgmt" {
+  client_id = data.azuread_application_published_app_ids.well_known.result.AzureResourceManager
+}
+
+# Resource Group for the Angular SPA application
 resource "azurerm_resource_group" "azome_rg" {
   name     = "rg-azome"
   location = "westeurope"
 }
 
-# 2. Create the Storage Account for static website hosting
+# Storage Account for static website hosting
 resource "azurerm_storage_account" "azome_storage" {
-  name                     = "saazome" # Must be globally unique
+  name                     = "saazome"
   resource_group_name      = azurerm_resource_group.azome_rg.name
   location                 = azurerm_resource_group.azome_rg.location
   account_tier             = "Standard"
@@ -14,11 +27,11 @@ resource "azurerm_storage_account" "azome_storage" {
 
   static_website {
     index_document     = "index.html"
-    error_404_document = "index.html" # Fallback for Angular router
+    error_404_document = "index.html"
   }
 }
 
-# 3. Create the Entra ID Application Registration for the Angular SPA
+# Entra ID Application Registration for the Angular SPA
 resource "azuread_application" "azome" {
   display_name     = "Azome UI"
   sign_in_audience = "AzureADMyOrg"
@@ -31,28 +44,45 @@ resource "azuread_application" "azome" {
     ]
   }
 
+  # Microsoft Graph API permissions
   required_resource_access {
-    resource_app_id = "00000003-0000-0000-c000-000000000000" # Microsoft Graph API
+    resource_app_id = data.azuread_application_published_app_ids.well_known.result.MicrosoftGraph
 
-    resource_access { # Allow reading user profile information
-      id   = "e1fe6dd8-ba31-4d61-89e7-88639da4683d" # User.Read
+    resource_access {
+      id   = data.azuread_service_principal.msgraph.oauth2_permission_scope_ids["User.Read"] # User.Read
       type = "Scope"
     }
   }
 
+  # Azure Service Management (ARM) permissions
   required_resource_access {
-    resource_app_id = "797f3746-1b2b-42e1-a6e6-97b42b5f28d2" # Azure Resource Manager
+    resource_app_id = data.azuread_application_published_app_ids.well_known.result.AzureResourceManager
 
-    resource_access { # Allow user impersonation for Azure Resource Manager
-      id   = "41770d35-0801-4edb-8a1e-828153240280" # user_impersonation (Delegated)
+    resource_access {
+      id   = data.azuread_service_principal.azure_mgmt.oauth2_permission_scope_ids["user_impersonation"] # user_impersonation
       type = "Scope"
     }
-  }  
+  }
 }
 
-# 4. Create a Service Principal
+# Service Principal for the application
 resource "azuread_service_principal" "azome_sp" {
   client_id                    = azuread_application.azome.client_id
   app_role_assignment_required = false
 }
 
+# Automatic Admin Consent (Grant OAuth2 delegated permissions)
+
+# Admin consent for Microsoft Graph (User.Read)
+resource "azuread_service_principal_delegated_permission_grant" "msgraph_consent" {
+  service_principal_object_id          = azuread_service_principal.azome_sp.object_id
+  resource_service_principal_object_id = data.azuread_service_principal.msgraph.object_id
+  claim_values                         = ["User.Read"]
+}
+
+# Admin consent for Azure Service Management (user_impersonation)
+resource "azuread_service_principal_delegated_permission_grant" "azure_mgmt_consent" {
+  service_principal_object_id          = azuread_service_principal.azome_sp.object_id
+  resource_service_principal_object_id = data.azuread_service_principal.azure_mgmt.object_id
+  claim_values                         = ["user_impersonation"]
+}
