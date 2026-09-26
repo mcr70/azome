@@ -20,7 +20,7 @@ resource "azurerm_storage_account" "azome_storage" {
 
 # 3. Create the Entra ID Application Registration for the Angular SPA
 resource "azuread_application" "azome" {
-  display_name     = "angular-spa-prod"
+  display_name     = "Azome UI"
   sign_in_audience = "AzureADMyOrg"
 
   single_page_application {
