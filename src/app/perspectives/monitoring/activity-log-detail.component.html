@@ -1,0 +1,25 @@
+<app-details-panel
+  [isOpen]="true"
+  [title]="operation"
+  subtitle="Activity log event"
+  variant="wide"
+  (close)="close.emit()">
+  <div class="detail-tabs" role="tablist" aria-label="Activity event view">
+    <button type="button" role="tab" [attr.aria-selected]="view === 'formatted'" [class.active]="view === 'formatted'" (click)="view = 'formatted'">Formatted</button>
+    <button type="button" role="tab" [attr.aria-selected]="view === 'json'" [class.active]="view === 'json'" (click)="view = 'json'">JSON</button>
+  </div>
+
+  <dl *ngIf="view === 'formatted'" class="event-details">
+    <div><dt>Time</dt><dd>{{ event.eventTimestamp | date:'full' }}</dd></div>
+    <div><dt>Status</dt><dd><span class="status-chip" [class.failed]="status.toLowerCase().includes('fail')">{{ status }}</span></dd></div>
+    <div><dt>Operation</dt><dd>{{ operation }}</dd></div>
+    <div><dt>Level</dt><dd>{{ event.level || '—' }}</dd></div>
+    <div><dt>Caller</dt><dd>{{ event.caller || '—' }}</dd></div>
+    <div><dt>Resource group</dt><dd>{{ event.resourceGroupName || '—' }}</dd></div>
+    <div><dt>Resource ID</dt><dd>{{ event.resourceId || '—' }}</dd></div>
+    <div><dt>Subscription ID</dt><dd>{{ event.subscriptionId || '—' }}</dd></div>
+    <div><dt>Event ID</dt><dd>{{ event.id || '—' }}</dd></div>
+  </dl>
+
+  <pre *ngIf="view === 'json'" class="event-json">{{ event | json }}</pre>
+</app-details-panel>

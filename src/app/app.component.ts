@@ -51,7 +51,12 @@ export class AppComponent implements OnInit, OnDestroy {
   public changePerspective(event: Event): void {
     const perspective = (event.target as HTMLSelectElement).value;
     this.selectedPerspective = perspective;
-    this.router.navigate([perspective === 'networking' ? '/networking' : '/rg']);
+    const routes: Record<string, string> = {
+      resources: '/rg',
+      networking: '/networking',
+      monitoring: '/monitoring'
+    };
+    this.router.navigate([routes[perspective] ?? '/rg']);
   }
 
   // Fetch Azure profile data to display in the header
