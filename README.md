@@ -1,72 +1,61 @@
-# Azome
+# Azome UI
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 19.0.6
-by running
+An Angular single-page application (SPA) for interacting with Azure Resource Manager and Microsoft Graph APIs.
 
-```bash
-ng new azome --routing --style scss --ssr false
+## Prerequisites
+
+- [Node.js](https://nodejs.org/) (v18 or newer)
+- [Angular CLI](https://angular.dev/tools/cli) (`npm install -g @angular/cli`)
+- [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
+- [Terraform](https://developer.hashicorp.com/terraform/downloads) (v1.5 or newer)
+
+---
+
+## Quick Start
+
+### 1. Azure Login
+
+Authenticate with Azure CLI using an account that has privileges to manage Azure subscriptions and Entra ID application registrations:
+
+```
+az login
 ```
 
-## Development server
+### 2. Infrastructure Setup (Terraform)
 
-To start a local development server, run:
+Initialize and apply the Terraform configuration to provision the Azure Resource Group, Static Web Storage, Entra ID App Registration, and API permissions. Check main.tf for backend configuration
 
-```bash
+terraform folder has a [README.md](terraform/README.md), that shows
+how to create a storage account for terraform state. 
+
+```
+terraform init
+terraform apply
+```
+
+> Note on Admin Consent:
+  Terraform automatically grants admin consent for delegated API permissions (User.Read and user_impersonation). For production environments, review whether automated admin consent aligns with your organization's security and approval policies.
+
+### 3. Application Configuration
+
+Copy the JSON output printed by terraform apply into src/environments/environment.ts:
+
+```
+export const environment = {
+  production: false,
+  azure: {
+    clientId: '<clientId-from-terraform-output>',
+    subscriptionId: '<subscriptionId-from-terraform-output>',
+    tenantId: '<tenantId-from-terraform-output>',
+    resourceManagerUrl: '[https://management.azure.com](https://management.azure.com)',
+    apiVersion: '2021-04-01'
+  }
+};
+```
+
+### 4. Install and start the server
+
+```
+npm install
 ng serve
 ```
-
-Once the server is running, open your browser and navigate to `http://localhost:4100/`. The application will automatically reload whenever you modify any of the source files.
-
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
-ng build
-```
-
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-
-## Dependencies
-
-```bash
-npm install @azure/msal-browser
-npm install @azure/msal-angular
-```
-
-## Running unit tests
-
-To execute unit tests with the [Karma](https://karma-runner.github.io) test runner, use the following command:
-
-```bash
-ng test
-```
-
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.

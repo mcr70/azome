@@ -1,12 +1,20 @@
 # Terraform setup
 
+## Terraform state
+Storage account names must be globally unique. Choose a unique name for 
+`<__UNIQUE_SA_NAME__>` and run the following commands to create the remote 
+backend storage for Terraform state. Alternatively, you can use an existing 
+storage account.
+
 ```bash
 az group create --name rg-terraform-meta --location westeurope
 
-az storage account create --name azometfstate --resource-group rg-terraform-meta --sku Standard_LRS --encryption-services blob 
+az storage account create --name <__UNIQUE_SA_NAME__> --resource-group rg-terraform-meta --sku Standard_LRS --encryption-services blob 
 
-az storage container create --name tfstate --account-name azometfstate
+az storage container create --name tfstate --account-name <__UNIQUE_SA_NAME__>
 ```
+
+Check `main.tf` for backend configuration to match your settings.
 
 # Azure Configuration & Setup Guide
 To run this application and successfully interact with Azure APIs, follow these steps to configure your Azure Entra ID (formerly Azure AD) application registration.
