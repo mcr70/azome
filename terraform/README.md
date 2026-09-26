@@ -11,17 +11,23 @@ az storage container create --name tfstate --account-name azometfstate
 # Azure Configuration & Setup Guide
 To run this application and successfully interact with Azure APIs, follow these steps to configure your Azure Entra ID (formerly Azure AD) application registration.
 
-## API Permissions
-Ensure the following permissions are granted in the Azure Portal under App registrations > Your Application > API permissions:
+## API Permissions € Admin consent
+The Terraform setup configures the Entra ID application registration with the following delegated permissions:
 
-- **Microsoft Graph**: User.Read (Delegated) - To get user details for the UI
-- **Azure Service Management**: user_impersonation (Delegated) - To act on behalf of the user
+- Microsoft Graph: `User.Read (Delegated)` - To retrieve user details for the UI
 
-Important: After adding these permissions, click the "Grant admin consent for [Your Organization]" button to ensure the permissions are active for all users.
+- Azure Service Management: `user_impersonation (Delegated)` - To act on behalf of the signed-in user when making Azure Resource Manager calls
 
-_Note on Access Control:_
+### Automated Admin Consent Notice:
 
-The application operates using the signed-in user's identity. By default, ensure that users (or Entra ID groups) are granted at least the Reader role for read-only access, or the Contributor role if they need to manage resources. Roles can be assigned at the Resource Group or Subscription level via the Azure Portal or Azure CLI.
+Admin consent for these delegated permissions is granted automatically during terraform apply using `azuread_service_principal_delegated_permission_grant` resources.
+
+> Important for Production Environments:
+  Automated admin consent requires high-level privileges (e.g., Application Administrator or Global Administrator) for the executing identity. For production deployments, consider whether automatic consent aligns with your organization's security policies, or if admin consent should be reviewed and granted manually/separately via approval workflows.
+
+### Note on Access Control:
+
+The application operates using the signed-in user's identity. By default, ensure that users (or Entra ID groups) are granted at least the `Reader` role for read-only access, or the `Contributor` role if they need to manage resources. Roles can be assigned at the Resource Group or Subscription level via the Azure Portal or Azure CLI.
 
 ## Local Configuration
 Create a configuration file at `src/environments/environment.ts` to manage your environment-specific settings. Terraform will print needed values. This ensures the application knows which subscription to target.
