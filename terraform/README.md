@@ -21,7 +21,9 @@ Important: After adding these permissions, click the "Grant admin consent for [Y
 
 _Note on Access Control:_
 
-The application operates using the signed-in user's identity. By default, ensure that users (or Entra ID groups) are granted at least the Reader role for read-only access, or the Contributor role if they need to manage resources. Roles can be assigned at the Resource Group or Subscription level via the Azure Portal or Azure CLI.
+The application operates using the signed-in user's identity. Terraform creates the Entra security groups `azome-reader` and `azome-contributor` and assigns them the corresponding application roles. App role assignment is currently optional, so users can sign in without either role. Users assigned through these groups receive the corresponding app role in their sign-in token. Manage group membership in Entra ID (the groups are intentionally not populated by Terraform).
+
+These groups grant access to the Azome enterprise application; they do not grant Azure resource permissions by themselves. Also assign the groups the Azure RBAC **Reader** role for read-only access or **Contributor** where resource management is needed, at the appropriate resource group or subscription scope. The app currently uses Azure permissions from the signed-in user, so the effective RBAC scope still controls what the user can read or change.
 
 ## Local Configuration
 Create a configuration file at `src/environments/environment.ts` to manage your environment-specific settings. Terraform will print needed values. This ensures the application knows which subscription to target.

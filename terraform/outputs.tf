@@ -17,3 +17,11 @@ output "angular_website_url" {
   value       = azurerm_storage_account.azome_storage.primary_web_endpoint
   description = "The production URL of your Angular application"
 }
+
+output "entra_groups" {
+  value = {
+    reader      = azuread_group.azome_reader.object_id
+    contributor = azuread_group.azome_contributor.object_id
+  }
+  description = "Object IDs of the Entra groups that grant Azome application access"
+}

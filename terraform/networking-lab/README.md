@@ -11,7 +11,6 @@ It intentionally does not create billable workload or edge resources such as vir
 
 The virtual networks use non-overlapping address spaces (`10.42.0.0/16` and `10.43.0.0/16`) and are connected with bidirectional VNet peering. VNet peering data transfer can incur Azure charges even though the lab does not create workload resources.
 
-This module stores its state in the same Azure Storage Account and container as `terraform/`, but uses its own blob key: `networking-lab.tfstate`. It does not share state with `terraform/azome.tfstate`.
 
 ## Deploy
 
