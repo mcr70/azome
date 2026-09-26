@@ -1,0 +1,76 @@
+<section class="monitoring-perspective" aria-labelledby="monitoring-title">
+  <div class="perspective-heading">
+    <div>
+      <p class="eyebrow">Perspective</p>
+      <h1 id="monitoring-title">Monitoring</h1>
+      <p class="description">Recent subscription activity and Log Analytics workspaces.</p>
+    </div>
+    <button class="refresh-button" type="button" (click)="loadMonitoringData()" [disabled]="loading">Refresh</button>
+  </div>
+
+  <p *ngIf="loading" class="status-message">Loading monitoring data...</p>
+  <div *ngIf="error" class="error-message" role="alert">{{ error }}</div>
+
+  <section class="monitoring-section" aria-labelledby="activity-title">
+    <div class="section-heading">
+      <div>
+        <h2 id="activity-title">Activity log</h2>
+        <p>Subscription events from the last 7 days</p>
+      </div>
+      <span *ngIf="!loading && !error" class="event-count">{{ filteredActivityEvents.length }} of {{ activityEvents.length }} events</span>
+    </div>
+    <label class="activity-filter">
+      <span>Filter activity events</span>
+      <input
+        type="search"
+        [value]="filterQuery"
+        (input)="filterQuery = $any($event.target).value"
+        placeholder="Search terms separated by spaces"
+        aria-label="Filter activity events by words in the event JSON">
+    </label>
+    <div *ngIf="!loading && !error && activityEvents.length === 0" class="empty-state">No activity events were found for the last 7 days.</div>
+    <div *ngIf="!loading && !error && activityEvents.length > 0 && filteredActivityEvents.length === 0" class="empty-state">No activity events match all of those terms.</div>
+    <div *ngIf="!loading && !error && filteredActivityEvents.length > 0" class="table-scroll">
+      <table>
+        <thead><tr><th>Time</th><th>Operation</th><th>Status</th><th>Resource group</th><th>Caller</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let event of filteredActivityEvents" class="activity-row" tabindex="0" role="button" (click)="openActivityDetails(event)" (keydown)="onActivityRowKeydown($event, event)" [attr.aria-label]="'Show details for ' + operationName(event)">
+            <td class="event-time">{{ event.eventTimestamp | date:'medium' }}</td>
+            <td>{{ operationName(event) }}</td>
+            <td><span class="status-chip" [class.failed]="statusName(event).toLowerCase().includes('fail')">{{ statusName(event) }}</span></td>
+            <td>{{ event.resourceGroupName || '—' }}</td>
+            <td>{{ event.caller || '—' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <app-activity-log-detail
+    *ngIf="selectedActivityEvent as event"
+    [event]="event"
+    (close)="selectedActivityEvent = null">
+  </app-activity-log-detail>
+
+  <section class="monitoring-section" aria-labelledby="workspaces-title">
+    <div class="section-heading">
+      <div>
+        <h2 id="workspaces-title">Log Analytics workspaces</h2>
+        <p>Workspaces found in this subscription</p>
+      </div>
+      <span *ngIf="!loading && !error" class="event-count">{{ workspaces.length }} workspaces</span>
+    </div>
+    <div *ngIf="!loading && !error && workspaces.length === 0" class="empty-state">No Log Analytics workspaces were found in this subscription.</div>
+    <div *ngIf="!loading && !error && workspaces.length > 0" class="workspace-grid">
+      <article *ngFor="let workspace of workspaces" class="workspace-card">
+        <p class="resource-kind">Log Analytics workspace</p>
+        <h3>{{ workspace.name }}</h3>
+        <dl>
+          <div><dt>Resource group</dt><dd>{{ workspace.resourceGroup }}</dd></div>
+          <div><dt>Region</dt><dd>{{ workspace.location }}</dd></div>
+          <div *ngIf="workspace.properties.retentionInDays !== undefined"><dt>Retention</dt><dd>{{ workspace.properties.retentionInDays }} days</dd></div>
+        </dl>
+      </article>
+    </div>
+  </section>
+</section>
