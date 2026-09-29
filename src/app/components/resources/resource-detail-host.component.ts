@@ -12,6 +12,7 @@ import { DefaultResourceDetailComponent } from './default-resource-detail.compon
 })
 export class ResourceDetailHostComponent implements OnChanges {
   @Input() resource: any;
+  @Input() showTabs = true;
 
   public activeTab: 'overview' | 'browse' | 'json' = 'overview';
   public currentComponent: Type<ResourceDetailItem> = DefaultResourceDetailComponent;
@@ -31,7 +32,7 @@ export class ResourceDetailHostComponent implements OnChanges {
       this.currentComponent = targetComponent || DefaultResourceDetailComponent;
       this.componentInputs = { resource: this.resource };
 
-      this.activeTab = 'overview';   
+      this.activeTab = 'overview';
     }
   }
 

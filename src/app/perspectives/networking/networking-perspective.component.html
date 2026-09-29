@@ -1,4 +1,6 @@
 <section class="networking-perspective" aria-labelledby="networking-title">
+  <div class="networking-workspace-layout" [class.has-one-pinned-panel]="pinnedPanels.length === 1" [class.has-two-pinned-panels]="pinnedPanels.length === 2">
+    <div class="networking-main-content">
   <div class="perspective-heading">
     <div>
       <p class="eyebrow">Perspective</p>
@@ -16,6 +18,7 @@
   </div>
 
   <p *ngIf="loading" class="status-message">Loading network topology...</p>
+  <p *ngIf="loadingDetails" class="status-message">Loading resource details from Azure...</p>
 
   <div *ngIf="error" class="error-message" role="alert">
     <strong>Network topology could not be loaded.</strong>
@@ -103,35 +106,27 @@
     </app-network-graph>
   </div>
 
-  <app-details-panel
-    *ngIf="selectedResource"
-    [isOpen]="true"
-    [title]="selectedResource.name"
-    [subtitle]="getShortType(selectedResource.type)"
-    [variant]="detailPanelVariant"
-    (close)="selectedResource = null"
-  >
-    <div class="resource-details">
-      <div *ngIf="loadingDetails" class="details-loading">
-        Loading details from Azure...
-      </div>
-
-      <ng-container *ngIf="!loadingDetails">
-        <table class="resource-detail-table">
-          <tr>
-            <td><strong>Resource Group</strong></td>
-            <td>{{ selectedResource.resourceGroup || 'N/A' }}</td>
-          </tr>
-          <tr>
-            <td><strong>Location</strong></td>
-            <td>{{ selectedResource.location || 'N/A' }}</td>
-          </tr>
-        </table>              
-
-        <section class="details-section">
-          <app-resource-detail-host [resource]="selectedResource"></app-resource-detail-host>
-        </section>
-      </ng-container>
     </div>
-  </app-details-panel>
+
+    <div *ngIf="pinnedPanels.length > 0" class="pinned-panel-slots" aria-label="Pinned resource panels">
+      <app-resource-detail-pane
+        *ngFor="let panel of pinnedPanels"
+        [panel]="panel"
+        [pinned]="true"
+        [canDuplicate]="canDuplicatePanel"
+        (close)="closePanel($event)"
+        (togglePin)="togglePanelPin($event)"
+        (duplicate)="duplicatePanel($event)">
+      </app-resource-detail-pane>
+    </div>
+  </div>
+
+  <app-resource-detail-pane
+    *ngIf="floatingPanel as panel"
+    [panel]="panel"
+    [canDuplicate]="canDuplicatePanel"
+    (close)="closePanel($event)"
+    (togglePin)="togglePanelPin($event)"
+    (duplicate)="duplicatePanel($event)">
+  </app-resource-detail-pane>
 </section>

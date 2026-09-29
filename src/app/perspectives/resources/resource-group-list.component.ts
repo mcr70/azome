@@ -1,17 +1,16 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ResourceGroup, ResourceGroupService } from '../../services/azure/resource-group.service';
-import { AzureResource, AzureResourceDetail, ResourceGraphService } from '../../services/azure/resource-graph.service';
-import { DetailsPanelComponent } from '../../components/details-panel/details-panel.component';
-import { ResourceDetailHostComponent } from '../../components/resources/resource-detail-host.component';
-import { ResourceDetailItem, ResourceDetailRegistryService } from '../../services/azome/resource-detail.registry';
+import { AzureResource, ResourceGraphService } from '../../services/azure/resource-graph.service';
+import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
+import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/azome/resource-detail-panel.service';
 
 @Component({
   selector: 'app-resource-group-list',
   standalone: true,
-  imports: [CommonModule, DetailsPanelComponent, ResourceDetailHostComponent],
+  imports: [CommonModule, ResourceDetailPaneComponent],
   templateUrl: './resource-group-list.component.html',
   styleUrl: './resource-group-list.component.scss'
 })
@@ -25,28 +24,32 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
   public groupResources: { [groupName: string]: AzureResource[] } = {};
   public loadingResources: { [groupName: string]: boolean } = {};
 
-  public selectedResource: AzureResourceDetail | null = null;
   public loadingDetails = false;
+  public panels: ResourcePanelConfig[] = [];
 
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private resourceGroupService: ResourceGroupService,
     private resourceGraphService: ResourceGraphService,
-    private registryService: ResourceDetailRegistryService
+    private panelService: ResourceDetailPanelService
   ) {}
 
   ngOnInit(): void {
     this.loadResourceGroups();
+    this.panelService.panels$.pipe(takeUntil(this.destroy$)).subscribe((panels) => this.panels = panels);
   }
 
-  public get detailPanelVariant(): 'default' | 'wide' | 'content' {
-    if (!this.selectedResource?.type) return 'default';
+  public get pinnedPanels(): ResourcePanelConfig[] {
+    return this.panels.filter((panel) => panel.pinned);
+  }
 
-    const componentClass = this.registryService.getComponent(this.selectedResource.type) as any;
-    if (!componentClass) return 'default';
+  public get floatingPanel(): ResourcePanelConfig | null {
+    return this.panels.find((panel) => !panel.pinned) ?? null;
+  }
 
-    return componentClass.preferredVariant || 'default';
+  public get canDuplicatePanel(): boolean {
+    return this.panels.length < 2;
   }
 
   public loadResourceGroups(): void {
@@ -90,7 +93,7 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (details) => {
           if (details) {
-            this.selectedResource = details;
+            this.panelService.openPanel(details);
           }
           this.loadingDetails = false;
         },
@@ -124,6 +127,10 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
     const parts = fullType.split('/');
     return parts[parts.length - 1] || fullType;
   }
+
+  public closePanel(panelId: string): void { this.panelService.closePanel(panelId); }
+  public togglePanelPin(panelId: string): void { this.panelService.togglePin(panelId); }
+  public duplicatePanel(panelId: string): void { this.panelService.duplicatePanel(panelId); }
 
   ngOnDestroy(): void {
     this.destroy$.next();

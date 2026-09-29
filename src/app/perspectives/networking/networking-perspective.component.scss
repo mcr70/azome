@@ -3,9 +3,18 @@
 }
 
 .networking-perspective {
-  max-width: 1180px;
+  width: 100%;
+  min-width: 0;
   color: #172033;
 }
+
+.networking-workspace-layout { display: flex; align-items: stretch; width: 100%; min-width: 0; gap: 12px; }
+.networking-main-content { flex: 1 1 100%; min-width: 0; }
+.pinned-panel-slots { display: flex; flex: 0 0 35%; min-width: 0; max-width: 48%; min-height: 560px; overflow: hidden; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; }
+.pinned-panel-slots app-resource-detail-pane { flex: 1 1 0; min-width: 0; }
+.pinned-panel-slots app-resource-detail-pane + app-resource-detail-pane { border-left: 1px solid #cbd5e1; }
+.has-two-pinned-panels .networking-main-content { flex-basis: 40%; }
+.has-two-pinned-panels .pinned-panel-slots { flex-basis: 60%; max-width: 60%; }
 
 .perspective-heading {
   display: flex;
@@ -297,7 +306,22 @@ h1 {
 }
 
 .resource-detail-table {
-  min-width: 0;
-  max-width: 100%;
-  white-space: nowrap;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+.resource-detail-table td,
+.resource-detail-table th { word-break: break-word; white-space: normal; }
+
+@media (max-width: 1050px) {
+  .networking-workspace-layout { flex-direction: column; }
+  .networking-main-content, .has-two-pinned-panels .networking-main-content { flex: 1 1 auto; }
+  .pinned-panel-slots, .has-two-pinned-panels .pinned-panel-slots { flex: 0 0 auto; width: 100%; max-width: none; min-height: 520px; }
+}
+
+@media (max-width: 720px) {
+  .pinned-panel-slots { flex-direction: column; overflow: visible; }
+  .pinned-panel-slots app-resource-detail-pane { flex: 0 0 520px; min-height: 520px; }
+  .pinned-panel-slots app-resource-detail-pane + app-resource-detail-pane { border-left: 0; border-top: 1px solid #cbd5e1; }
 }

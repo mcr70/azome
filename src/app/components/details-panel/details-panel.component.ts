@@ -13,6 +13,11 @@ export class DetailsPanelComponent {
   @Input() subtitle: string = '';
   @Input() variant: 'default' | 'wide' | 'content' = 'default';
   @Input() @HostBinding('class.open') isOpen: boolean = false;
+  @Input() @HostBinding('class.pinned') pinned = false;
+  @Input() showPanelActions = false;
+  @Input() canDuplicate = true;
 
   @Output() close = new EventEmitter<void>();
+  @Output() togglePin = new EventEmitter<void>();
+  @Output() duplicate = new EventEmitter<void>();
 }

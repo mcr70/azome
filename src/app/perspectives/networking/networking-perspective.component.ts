@@ -5,14 +5,10 @@ import { takeUntil } from 'rxjs/operators';
 import { 
   NetworkTopology, 
   ResourceGraphService, 
-  AzureResourceDetail,
-  NetworkSubnet
 } from '../../services/azure/resource-graph.service';
 import { NetworkGraphComponent } from './network-graph.component';
-import { SubnetNavigation } from './network-graph.model';
-import { DetailsPanelComponent } from '../../components/details-panel/details-panel.component';
-import { ResourceDetailHostComponent } from '../../components/resources/resource-detail-host.component';
-import { ResourceDetailRegistryService, PanelVariant } from '../../services/azome/resource-detail.registry';
+import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
+import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/azome/resource-detail-panel.service';
 
 @Component({
   selector: 'app-networking-perspective',
@@ -20,8 +16,7 @@ import { ResourceDetailRegistryService, PanelVariant } from '../../services/azom
   imports: [
     CommonModule, 
     NetworkGraphComponent, 
-    DetailsPanelComponent, 
-    ResourceDetailHostComponent
+    ResourceDetailPaneComponent
   ],
   templateUrl: './networking-perspective.component.html',
   styleUrl: './networking-perspective.component.scss'
@@ -32,18 +27,19 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
   public error: string | null = null;
   public viewMode: 'list' | 'graph' = 'list';
 
-  public selectedResource: AzureResourceDetail | null = null;
   public loadingDetails = false;
+  public panels: ResourcePanelConfig[] = [];
 
   private readonly destroy$ = new Subject<void>();
 
   constructor(
     private resourceGraph: ResourceGraphService,
-    private registryService: ResourceDetailRegistryService
+    private panelService: ResourceDetailPanelService
   ) {}
 
   ngOnInit(): void {
     this.loadTopologies();
+    this.panelService.panels$.pipe(takeUntil(this.destroy$)).subscribe((panels) => this.panels = panels);
   }
 
   onGraphResourceSelect(resourceId: string): void {
@@ -68,7 +64,7 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (details) => {
           if (details) {
-            this.selectedResource = details;
+            this.panelService.openPanel(details);
           }
           this.loadingDetails = false;
         },
@@ -81,10 +77,16 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
 
 
 
-  public get detailPanelVariant(): PanelVariant {
-    if (!this.selectedResource?.type) return 'default';
-    const componentClass = this.registryService.getComponent(this.selectedResource.type);
-    return componentClass?.preferredVariant || 'default';
+  public get pinnedPanels(): ResourcePanelConfig[] {
+    return this.panels.filter((panel) => panel.pinned);
+  }
+
+  public get floatingPanel(): ResourcePanelConfig | null {
+    return this.panels.find((panel) => !panel.pinned) ?? null;
+  }
+
+  public get canDuplicatePanel(): boolean {
+    return this.panels.length < 2;
   }
 
   public getShortType(fullType: string): string {
@@ -92,6 +94,10 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
     const parts = fullType.split('/');
     return parts[parts.length - 1] || fullType;
   }
+
+  public closePanel(panelId: string): void { this.panelService.closePanel(panelId); }
+  public togglePanelPin(panelId: string): void { this.panelService.togglePin(panelId); }
+  public duplicatePanel(panelId: string): void { this.panelService.duplicatePanel(panelId); }
 
   public loadTopologies(): void {
     this.loading = true;

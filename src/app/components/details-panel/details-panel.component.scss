@@ -9,6 +9,17 @@
   justify-content: flex-end;
 }
 
+:host(.pinned) {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .backdrop {
   position: absolute;
   inset: 0;
@@ -28,6 +39,15 @@
   animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+:host(.pinned) .panel-container {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  border-left: 1px solid #cbd5e1;
+  box-shadow: none;
+  animation: pinnedEnter 0.2s ease-out;
+}
+
 .panel-container.panel-wide {
   width: min(720px, 85vw);
 }
@@ -44,6 +64,11 @@
 @keyframes slideIn {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
+}
+
+@keyframes pinnedEnter {
+  from { opacity: 0.7; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .panel-header {
@@ -84,6 +109,28 @@
       color: #0f172a;
     }
   }
+
+  .panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .panel-action-button {
+    min-width: 34px;
+    min-height: 34px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #475569;
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.1rem;
+  }
+
+  .panel-action-button:hover:not(:disabled) { background: #e2e8f0; color: #0f172a; }
+  .panel-action-button:disabled { cursor: not-allowed; opacity: 0.4; }
 }
 
 .panel-content {
