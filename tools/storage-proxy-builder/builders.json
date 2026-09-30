@@ -1,0 +1,9 @@
+{
+  "builders": {
+    "storage-proxy-serve": {
+      "implementation": "./storage-proxy-serve.builder.mjs",
+      "schema": "./storage-proxy-serve.schema.json",
+      "description": "Starts the Storage data proxy with the Angular development server."
+    }
+  }
+}

@@ -13,10 +13,11 @@ import { DefaultResourceDetailComponent } from './default-resource-detail.compon
 export class ResourceDetailHostComponent implements OnChanges {
   @Input() resource: any;
 
-  public activeTab: 'overview' | 'json' = 'overview';
+  public activeTab: 'overview' | 'browse' | 'json' = 'overview';
   public currentComponent: Type<ResourceDetailItem> = DefaultResourceDetailComponent;
   public componentInputs: { [key: string]: any } = {};
   public hasCustomComponent: boolean = false;
+  public isStorageAccount = false;
 
   constructor(private registryService: ResourceDetailRegistryService) {
   }
@@ -24,6 +25,7 @@ export class ResourceDetailHostComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['resource'] && this.resource) {
       const targetComponent = this.registryService.getComponent(this.resource.type);
+      this.isStorageAccount = this.resource.type?.toLowerCase() === 'microsoft.storage/storageaccounts';
 
       this.hasCustomComponent = !!targetComponent;
       this.currentComponent = targetComponent || DefaultResourceDetailComponent;
@@ -33,7 +35,7 @@ export class ResourceDetailHostComponent implements OnChanges {
     }
   }
 
-  public setTab(tab: 'overview' | 'json'): void {
+  public setTab(tab: 'overview' | 'browse' | 'json'): void {
     this.activeTab = tab;
   }
 }

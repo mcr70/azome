@@ -61,9 +61,28 @@
           "defaultConfiguration": "production"
         },
         "serve": {
+          "builder": "@azome/storage-proxy-builder:storage-proxy-serve",
+          "options": {
+            "proxyScript": "scripts/storage-proxy.mjs",
+            "proxyPort": 4201,
+            "delegateTarget": "azome:serve-angular:development",
+            "port": 4100
+          },
+          "configurations": {
+            "production": {
+              "delegateTarget": "azome:serve-angular:production"
+            },
+            "development": {
+              "delegateTarget": "azome:serve-angular:development"
+            }
+          },
+          "defaultConfiguration": "development"
+        },
+        "serve-angular": {
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
-            "port": 4100
+            "port": 4100,
+            "proxyConfig": "proxy.conf.json"
           },
           "configurations": {
             "production": {

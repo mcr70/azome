@@ -1,0 +1,91 @@
+.storage-browser {
+  position: relative;
+  min-width: 0;
+  color: #334155;
+}
+
+.toolbar,
+.crumbs {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0 14px;
+}
+
+select,
+input {
+  max-width: 100%;
+  padding: 7px;
+}
+
+table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 8px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+th {
+  background: #f8fafc;
+}
+
+button {
+  cursor: pointer;
+}
+
+.link,
+.crumbs button {
+  color: #0f766e;
+  background: none;
+  border: 0;
+  text-decoration: underline;
+}
+
+.state,
+.empty-state {
+  color: #64748b;
+}
+
+.error {
+  color: #b91c1c;
+}
+
+.actions {
+  white-space: nowrap;
+}
+
+.actions button {
+  margin-right: 6px;
+}
+
+.preview {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 10;
+  width: min(520px, 90vw);
+  padding: 20px;
+  overflow: auto;
+  background: white;
+  box-shadow: 0 0 20px #33415544;
+}
+
+.preview img {
+  max-width: 100%;
+  height: auto;
+}
+
+.preview pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.close {
+  float: right;
+}

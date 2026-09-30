@@ -1,0 +1,11 @@
+<section class="browser">
+  <nav class="service-tabs" role="tablist" aria-label="Storage services">
+    <button *ngFor="let tab of ['blobs', 'files', 'queues', 'tables']" type="button" role="tab"
+      [attr.aria-selected]="activeService === tab" [class.active]="activeService === tab"
+      (click)="activeService = $any(tab)">{{ tab | titlecase }}</button>
+  </nav>
+  <app-blob-browser *ngIf="activeService === 'blobs'" [resourceId]="resourceId"></app-blob-browser>
+  <app-file-browser *ngIf="activeService === 'files'" [resourceId]="resourceId"></app-file-browser>
+  <app-queue-browser *ngIf="activeService === 'queues'" [resourceId]="resourceId"></app-queue-browser>
+  <app-table-browser *ngIf="activeService === 'tables'" [resourceId]="resourceId"></app-table-browser>
+</section>
