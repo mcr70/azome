@@ -5,7 +5,7 @@ import { takeUntil } from 'rxjs/operators';
 import { ResourceGroup, ResourceGroupService } from '../../services/azure/resource-group.service';
 import { AzureResource, AzureResourceDetail, ResourceGraphService } from '../../services/azure/resource-graph.service';
 import { DetailsPanelComponent } from '../../components/details-panel/details-panel.component';
-import { ResourceDetailHostComponent } from '../../components/resource-details/resource-detail-host.component';
+import { ResourceDetailHostComponent } from '../../components/resources/resource-detail-host.component';
 import { ResourceDetailItem, ResourceDetailRegistryService } from '../../services/azome/resource-detail.registry';
 
 @Component({
