@@ -30,10 +30,18 @@
   <table *ngIf="share">
     <thead>
       <tr>
-        <th>Name</th>
-        <th>Size</th>
-        <th>Modified</th>
-        <th>Actions</th>
+        <th>
+          Name
+        </th>
+        <th>
+          Size
+        </th>
+        <th>
+          Modified
+        </th>
+        <th>
+          Actions
+        </th>
       </tr>
     </thead>
     <tbody>
@@ -57,8 +65,12 @@
             📄 {{ item.name }}
           </span>
         </td>
-        <td>{{ item.isDirectory ? '—' : (item.size | number) }}</td>
-        <td>{{ item.lastModified || '—' }}</td>
+        <td>
+          {{ item.isDirectory ? '—' : (item.size | number) }}
+        </td>
+        <td>
+          {{ item.lastModified || '—' }}
+        </td>
         <td class="actions">
           <button
             *ngIf="canPreview(item)"
@@ -79,7 +91,9 @@
         </td>
       </tr>
       <tr *ngIf="!loading && !error && items.length === 0">
-        <td colspan="4">No files or directories found.</td>
+        <td colspan="4">
+          No files or directories found.
+        </td>
       </tr>
     </tbody>
   </table>
@@ -88,7 +102,9 @@
     <button class="close" type="button" (click)="closePreview()">
       Close
     </button>
-    <h3>{{ previewName }}</h3>
+    <h3>
+      {{ previewName }}
+    </h3>
     <img *ngIf="previewUrl" [src]="previewUrl" [alt]="previewName">
     <pre *ngIf="previewText">{{ previewText }}</pre>
   </aside>

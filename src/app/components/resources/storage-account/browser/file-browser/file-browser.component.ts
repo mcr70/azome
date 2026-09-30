@@ -46,6 +46,7 @@ export class FileBrowserComponent implements OnInit, OnDestroy {
     this.clearPreview();
   }
 
+  /** Selects a file share and loads its root entries. */
   selectShare(name: string): void {
     this.share = name;
     this.directory = '';
@@ -56,11 +57,13 @@ export class FileBrowserComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Opens a directory inside the selected file share. */
   openFolder(item: FileBrowserItem): void {
     this.directory = item.path;
     this.load();
   }
 
+  /** Navigates to a share or directory breadcrumb. */
   navigate(path: string): void {
     this.directory = path;
     this.load();
@@ -77,10 +80,12 @@ export class FileBrowserComponent implements OnInit, OnDestroy {
     ];
   }
 
+  /** Reports whether the file type can be rendered in the preview panel. */
   canPreview(item: FileBrowserItem): boolean {
     return !item.isDirectory && this.isPreviewable(item.name, item.contentType);
   }
 
+  /** Opens a preview for a supported file. */
   preview(item: FileBrowserItem): void {
     if (!this.canPreview(item)) {
       return;
@@ -94,10 +99,12 @@ export class FileBrowserComponent implements OnInit, OnDestroy {
     }));
   }
 
+  /** Closes the file preview panel. */
   closePreview(): void {
     this.clearPreview();
   }
 
+  /** Downloads the selected file to the local device. */
   download(item: FileBrowserItem): void {
     this.subs.add(this.storage.downloadFile(this.resourceId, this.share, item.path).subscribe({
       next: (blob) => this.save(blob, item.name),

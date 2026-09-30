@@ -44,12 +44,14 @@ export class TableBrowserComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
+  /** Selects a table and clears results from the previously selected table. */
   selectTable(name: string): void {
     this.table = name;
     this.entities = [];
     this.selected = undefined;
   }
 
+  /** Queries entities using the optional PartitionKey and RowKey values. */
   query(): void {
     if (!this.table) {
       return;
@@ -72,6 +74,7 @@ export class TableBrowserComponent implements OnInit, OnDestroy {
     );
   }
 
+  /** Serializes a table entity as formatted JSON for the detail panel. */
   stringify(value: unknown): string {
     return JSON.stringify(value, null, 2);
   }

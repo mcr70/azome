@@ -44,6 +44,7 @@ export class QueueBrowserComponent implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
+  /** Selects a queue and loads its message count and first peek results. */
   selectQueue(name: string): void {
     this.queue = name;
     this.messages = [];
@@ -53,6 +54,7 @@ export class QueueBrowserComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Loads the approximate message count and peeks at the requested number of messages. */
   peek(): void {
     if (!this.queue) {
       return;
@@ -71,6 +73,7 @@ export class QueueBrowserComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Formats a JSON queue message, returning the original text when it is not JSON. */
   formatted(text: string): string {
     try {
       return JSON.stringify(JSON.parse(text), null, 2);

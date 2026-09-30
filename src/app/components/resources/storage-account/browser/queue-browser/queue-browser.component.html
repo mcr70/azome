@@ -26,7 +26,9 @@
   <p class="error" role="alert" *ngIf="error">{{ error }}</p>
 
   <article *ngFor="let message of messages" class="message">
-    <h3>Message {{ message.id }}</h3>
+    <h3>
+      Message {{ message.id }}
+    </h3>
     <p>
       Inserted: {{ message.insertionTime || '—' }}
       · Expires: {{ message.expirationTime || '—' }}
