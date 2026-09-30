@@ -11,7 +11,7 @@ import {
 import { NetworkGraphComponent } from './network-graph.component';
 import { SubnetNavigation } from './network-graph.model';
 import { DetailsPanelComponent } from '../../components/details-panel/details-panel.component';
-import { ResourceDetailHostComponent } from '../../components/resource-details/resource-detail-host.component';
+import { ResourceDetailHostComponent } from '../../components/resources/resource-detail-host.component';
 import { ResourceDetailRegistryService, PanelVariant } from '../../services/azome/resource-detail.registry';
 
 @Component({
