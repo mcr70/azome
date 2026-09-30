@@ -8,6 +8,7 @@
       (click)="setTab('overview')">
       Formatted
     </button>
+    <button *ngIf="isStorageAccount" class="tab-btn" [class.active]="activeTab === 'browse'" (click)="setTab('browse')">Browse</button>
     <button 
       class="tab-btn" 
       [class.active]="activeTab === 'json'" 
@@ -24,9 +25,12 @@
       <ng-container *ngIf="activeTab === 'overview'">
         <ng-container *ngComponentOutlet="currentComponent; inputs: componentInputs"></ng-container>
       </ng-container>
+      <ng-container *ngIf="activeTab === 'browse' && isStorageAccount">
+        <ng-container *ngComponentOutlet="currentComponent; inputs: { resource: resource, view: 'browse' }"></ng-container>
+      </ng-container>
 
       <div *ngIf="activeTab === 'json'" class="json-view">
-        <pre>{{ resource?.properties | json }}</pre>
+        <pre>{{ resource | json }}</pre>
       </div>
     </ng-container>
 

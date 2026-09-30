@@ -1,6 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PanelVariant, ResourceDetailItem } from '../../../../services/azome/resource-detail.registry';
+import { StorageAccountBrowserComponent } from './browser/storage-account-browser.component';
+import { PanelVariant, ResourceDetailItem } from '../../../services/azome/resource-detail.registry';
 
 export interface EndpointItem {
   type: string;
@@ -17,12 +18,15 @@ export interface EncryptionServiceItem {
 @Component({
   selector: 'app-storage-account-detail',
   standalone: true,
-  imports: [CommonModule],
-  templateUrl: './storage-account.component.html',
-  styleUrl: './storage-account.component.scss'
+  imports: [CommonModule, StorageAccountBrowserComponent],
+  templateUrl: './storage-account-details.component.html',
+  styleUrl: './storage-account-details.component.scss'
 })
 export class StorageAccountComponent implements ResourceDetailItem {
   @Input() resource: any;
+  @Input() view: 'overview' | 'browse' = 'overview';
+
+  get resourceId(): string { return this.resource?.id || ''; }
   static readonly preferredVariant: PanelVariant = 'wide';
 
   // Azure JSON voi olla joko suoraan tässä tai .properties-kentässä
@@ -32,6 +36,10 @@ export class StorageAccountComponent implements ResourceDetailItem {
 
   get provisioningState(): string {
     return this.props.provisioningState || 'Succeeded';
+  }
+
+  get tags(): Array<{ name: string; value: string }> {
+    return Object.entries(this.resource?.tags ?? {}).map(([name, value]) => ({ name, value: String(value) }));
   }
 
   get statusOfPrimary(): string {

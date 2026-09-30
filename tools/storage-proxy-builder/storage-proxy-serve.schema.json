@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/schema",
+  "type": "object",
+  "properties": {
+    "proxyScript": { "type": "string" },
+    "proxyPort": { "type": "number" },
+    "delegateTarget": { "type": "string" },
+    "port": { "type": "number" },
+    "host": { "type": "string" },
+    "open": { "type": "boolean" },
+    "poll": { "type": "number" },
+    "watch": { "type": "boolean" },
+    "verbose": { "type": "boolean" },
+    "liveReload": { "type": "boolean" },
+    "hmr": { "type": "boolean" }
+  },
+  "required": ["proxyScript", "proxyPort", "delegateTarget"],
+  "additionalProperties": false
+}

@@ -1,0 +1,64 @@
+<section class="storage-browser">
+  <div class="toolbar" *ngIf="tables.length > 0">
+    <label>
+      Table
+      <select [value]="table" (change)="selectTable($any($event.target).value)">
+        <option *ngFor="let item of tables" [value]="item.name">
+          {{ item.name }}
+        </option>
+      </select>
+    </label>
+    <label>
+      PartitionKey
+      <input [(ngModel)]="partitionKey">
+    </label>
+    <label>
+      RowKey
+      <input [(ngModel)]="rowKey">
+    </label>
+    <button type="button" [disabled]="!table || loading" (click)="query()">
+      Query
+    </button>
+  </div>
+
+  <p class="empty-state" *ngIf="!loading && !error && tables.length === 0">
+    No tables found.
+  </p>
+
+  <p class="state" *ngIf="loading">Loading…</p>
+  <p class="error" role="alert" *ngIf="error">{{ error }}</p>
+
+  <table *ngIf="table">
+    <thead>
+      <tr>
+        <th>PartitionKey</th>
+        <th>RowKey</th>
+        <th>Timestamp</th>
+        <th>Details</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let entity of entities">
+        <td>{{ entity.PartitionKey }}</td>
+        <td>{{ entity.RowKey }}</td>
+        <td>{{ entity.Timestamp }}</td>
+        <td>
+          <button type="button" (click)="selected = entity">
+            View JSON
+          </button>
+        </td>
+      </tr>
+      <tr *ngIf="!loading && !error && entities.length === 0">
+        <td colspan="4">No entities found. Enter optional key filters and query.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <aside class="preview" *ngIf="selected">
+    <button class="close" type="button" (click)="selected = undefined">
+      Close
+    </button>
+    <h3>Table entity</h3>
+    <pre>{{ stringify(selected) }}</pre>
+  </aside>
+</section>

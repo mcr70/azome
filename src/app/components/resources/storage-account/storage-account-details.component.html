@@ -1,4 +1,4 @@
-<div class="storage-container">
+<div class="storage-container" *ngIf="view === 'overview'">
 
   <!-- General Info & Overview -->
   <section class="storage-section">
@@ -162,4 +162,15 @@
     </div>
   </section>
 
+  <section class="storage-section">
+    <h3 class="resource-detail-heading">Tags</h3>
+    <div *ngIf="tags.length === 0" class="resource-detail-empty">No tags configured.</div>
+    <div *ngIf="tags.length > 0" class="resource-detail-table-wrapper">
+      <table class="resource-detail-table"><thead><tr><th>Name</th><th>Value</th></tr></thead>
+        <tbody><tr *ngFor="let tag of tags"><td>{{ tag.name }}</td><td>{{ tag.value }}</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
 </div>
+<app-storage-account-browser *ngIf="view === 'browse'" [resourceId]="resourceId"></app-storage-account-browser>
