@@ -15,13 +15,13 @@ export class ResourceDetailPanelService {
   public readonly panels$ = this.panelsSubject.asObservable();
 
   public get activePanels(): ResourcePanelConfig[] {
-    return this.panelsSubject.value;
+    return this.panelsSubject.value.map((panel) => ({ ...panel }));
   }
 
   public openPanel(resource: AzureResourceDetail, pin = false): string {
     const panels = [...this.activePanels];
     const unpinned = panels.find((panel) => !panel.pinned);
-    if (!pin && unpinned) {
+    if (!pin && !panels.some((panel) => panel.pinned) && unpinned) {
       this.publish(panels.map((panel) => panel.id === unpinned.id ? { ...panel, resource } : panel));
       return unpinned.id;
     }
@@ -66,11 +66,13 @@ export class ResourceDetailPanelService {
     if (!target) return;
 
     if (target.pinned) {
-      const existingUnpinned = panels.find((panel) => !panel.pinned);
-      const next = panels
-        .filter((panel) => panel.id !== target.id && panel.id !== existingUnpinned?.id)
-        .concat({ ...target, pinned: false, createdAt: Date.now() });
-      this.publish(next);
+      const otherPinned = panels.filter((panel) => panel.pinned && panel.id !== target.id);
+      if (otherPinned.length > 0) {
+        this.closePanel(target.id);
+        return;
+      }
+
+      this.publish([{ ...target, pinned: false, createdAt: Date.now() }]);
       return;
     }
 
@@ -106,7 +108,11 @@ export class ResourceDetailPanelService {
   }
 
   private publish(panels: ResourcePanelConfig[]): void {
-    this.panelsSubject.next(panels);
+    const pinned = panels.filter((panel) => panel.pinned);
+    const active = pinned.length > 0
+      ? pinned.sort((a, b) => a.createdAt - b.createdAt).slice(-2)
+      : panels.slice(-1);
+    this.panelsSubject.next(active.map((panel) => ({ ...panel })));
   }
 
   private createId(): string {

@@ -16,7 +16,6 @@
       <button *ngIf="showPanelActions" type="button" class="panel-action-button" [attr.aria-label]="pinned ? 'Unpin panel' : 'Pin panel'" [attr.title]="pinned ? 'Unpin panel' : 'Pin panel'" (click)="togglePin.emit()">
         {{ pinned ? '📌' : '📍' }}
       </button>
-      <button *ngIf="showPanelActions" type="button" class="panel-action-button" aria-label="Duplicate panel for comparison" title="Duplicate for comparison" [disabled]="!canDuplicate" (click)="duplicate.emit()">⇄</button>
       <button type="button" class="close-button" (click)="close.emit()" aria-label="Close panel">&times;</button>
     </div>
   </header>

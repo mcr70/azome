@@ -14,27 +14,30 @@
   display: flex;
   align-items: stretch;
   width: 100%;
+  max-width: none;
+  box-sizing: border-box;
   min-width: 0;
   min-height: 0;
-  gap: 12px;
+  gap: 1rem;
 }
 
 .pinned-panel-slots {
   display: flex;
-  flex: 0 0 35%;
+  gap: 1rem;
+  flex: 0 0 0%;
+  width: 0;
+  max-width: none;
+  box-sizing: border-box;
   min-width: 0;
-  max-width: 48%;
   min-height: 560px;
-  overflow: hidden;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  background: #fff;
+  overflow: visible;
 }
 
-.pinned-panel-slots app-resource-detail-pane { flex: 1 1 0; min-width: 0; }
-.pinned-panel-slots app-resource-detail-pane + app-resource-detail-pane { border-left: 1px solid #cbd5e1; }
-.has-two-pinned-panels .resource-groups-container { flex-basis: 40%; }
-.has-two-pinned-panels .pinned-panel-slots { flex-basis: 60%; max-width: 60%; }
+.pinned-panel-slots app-resource-detail-pane { box-sizing: border-box; flex: 1 1 0%; min-width: 0; overflow: hidden; border: 1px solid #cbd5e1; border-radius: 10px; background: #fff; box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08); }
+.has-one-pinned-panel .resource-groups-container { flex: 0 0 calc(50% - 8px); max-width: calc(50% - 8px); }
+.has-one-pinned-panel .pinned-panel-slots { flex: 0 0 calc(50% - 8px); width: calc(50% - 8px); }
+.has-two-pinned-panels .resource-groups-container { flex: 0 0 calc(34% - 8px); max-width: calc(34% - 8px); }
+.has-two-pinned-panels .pinned-panel-slots { flex: 0 0 calc(66% - 8px); width: calc(66% - 8px); }
 
 .status-message,
 .empty-state,
@@ -286,11 +289,13 @@
 
 @media (max-width: 1050px) {
   .resource-workspace-layout { flex-direction: column; }
-  .resource-groups-container, .has-two-pinned-panels .resource-groups-container { flex: 1 1 auto; }
+  .resource-groups-container, .has-two-pinned-panels .resource-groups-container { flex: 1 1 auto; max-width: none; }
+  .has-one-pinned-panel .resource-groups-container { flex-basis: auto; max-width: none; }
   .pinned-panel-slots, .has-two-pinned-panels .pinned-panel-slots {
     flex: 0 0 auto;
     width: 100%;
     max-width: none;
+    box-sizing: border-box;
     min-height: 520px;
   }
 }
@@ -298,5 +303,4 @@
 @media (max-width: 720px) {
   .pinned-panel-slots { flex-direction: column; overflow: visible; }
   .pinned-panel-slots app-resource-detail-pane { flex: 0 0 520px; min-height: 520px; }
-  .pinned-panel-slots app-resource-detail-pane + app-resource-detail-pane { border-left: 0; border-top: 1px solid #cbd5e1; }
 }

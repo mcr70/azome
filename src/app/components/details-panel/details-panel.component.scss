@@ -1,4 +1,5 @@
 :host {
+  box-sizing: border-box;
   position: fixed;
   top: 0;
   right: 0;
@@ -28,6 +29,7 @@
 }
 
 .panel-container {
+  box-sizing: border-box;
   position: relative;
   z-index: 1001;
   width: min(480px, 85vw);
@@ -43,7 +45,8 @@
   width: 100%;
   min-width: 0;
   height: 100%;
-  border-left: 1px solid #cbd5e1;
+  min-height: 0;
+  border: 0;
   box-shadow: none;
   animation: pinnedEnter 0.2s ease-out;
 }
@@ -129,12 +132,13 @@
     font-size: 1.1rem;
   }
 
-  .panel-action-button:hover:not(:disabled) { background: #e2e8f0; color: #0f172a; }
-  .panel-action-button:disabled { cursor: not-allowed; opacity: 0.4; }
+  .panel-action-button:hover { background: #e2e8f0; color: #0f172a; }
 }
 
 .panel-content {
+  box-sizing: border-box;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 24px;
 }

@@ -84,10 +84,8 @@
       *ngFor="let panel of pinnedPanels"
       [panel]="panel"
       [pinned]="true"
-      [canDuplicate]="canDuplicatePanel"
       (close)="closePanel($event)"
-      (togglePin)="togglePanelPin($event)"
-      (duplicate)="duplicatePanel($event)">
+      (togglePin)="togglePanelPin($event)">
     </app-resource-detail-pane>
   </div>
 </div>
@@ -95,8 +93,6 @@
 <app-resource-detail-pane
   *ngIf="floatingPanel as panel"
   [panel]="panel"
-  [canDuplicate]="canDuplicatePanel"
   (close)="closePanel($event)"
-  (togglePin)="togglePanelPin($event)"
-  (duplicate)="duplicatePanel($event)">
+  (togglePin)="togglePanelPin($event)">
 </app-resource-detail-pane>

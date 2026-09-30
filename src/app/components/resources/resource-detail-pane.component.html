@@ -2,7 +2,6 @@
   [isOpen]="true"
   [pinned]="pinned"
   [showPanelActions]="true"
-  [canDuplicate]="canDuplicate"
   [title]="title"
   [subtitle]="subtitle"
   [variant]="variant"
@@ -16,7 +15,7 @@
   </div>
 
   <div class="resource-overview" [hidden]="view === 'json'">
-    <table class="resource-detail-table">
+    <table class="resource-detail-table resource-summary-table">
       <tbody>
         <tr><th>Resource group</th><td>{{ resource.resourceGroup || 'N/A' }}</td></tr>
         <tr><th>Location</th><td>{{ resource.location || 'N/A' }}</td></tr>

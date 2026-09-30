@@ -85,10 +85,6 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
     return this.panels.find((panel) => !panel.pinned) ?? null;
   }
 
-  public get canDuplicatePanel(): boolean {
-    return this.panels.length < 2;
-  }
-
   public getShortType(fullType: string): string {
     if (!fullType) return 'Resource';
     const parts = fullType.split('/');
@@ -97,7 +93,6 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
 
   public closePanel(panelId: string): void { this.panelService.closePanel(panelId); }
   public togglePanelPin(panelId: string): void { this.panelService.togglePin(panelId); }
-  public duplicatePanel(panelId: string): void { this.panelService.duplicatePanel(panelId); }
 
   public loadTopologies(): void {
     this.loading = true;

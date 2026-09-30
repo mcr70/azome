@@ -48,10 +48,6 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
     return this.panels.find((panel) => !panel.pinned) ?? null;
   }
 
-  public get canDuplicatePanel(): boolean {
-    return this.panels.length < 2;
-  }
-
   public loadResourceGroups(): void {
     this.loading = true;
     this.error = null;
@@ -130,7 +126,6 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
 
   public closePanel(panelId: string): void { this.panelService.closePanel(panelId); }
   public togglePanelPin(panelId: string): void { this.panelService.togglePin(panelId); }
-  public duplicatePanel(panelId: string): void { this.panelService.duplicatePanel(panelId); }
 
   ngOnDestroy(): void {
     this.destroy$.next();

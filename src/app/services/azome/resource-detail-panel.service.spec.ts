@@ -24,6 +24,10 @@ describe('ResourceDetailPanelService', () => {
 
     service.togglePin(panelId);
     expect(service.activePanels[0].pinned).toBeTrue();
+
+    service.togglePin(panelId);
+    expect(service.activePanels.length).toBe(1);
+    expect(service.activePanels[0].pinned).toBeFalse();
   });
 
   it('opens a second resource in a pinned compare slot and replaces the oldest after two slots are full', () => {
@@ -39,6 +43,18 @@ describe('ResourceDetailPanelService', () => {
     expect(service.activePanels.length).toBe(2);
     expect(service.activePanels.find((panel) => panel.id === firstId)?.resource.name).toBe('three');
     expect(service.activePanels.find((panel) => panel.id === secondId)?.resource.name).toBe('two');
+  });
+
+  it('closes a panel when unpinning one of two docked panels', () => {
+    const firstId = service.openPanel(resource('one'));
+    service.togglePin(firstId);
+    const secondId = service.openPanel(resource('two'));
+
+    service.togglePin(secondId);
+
+    expect(service.activePanels.length).toBe(1);
+    expect(service.activePanels[0].id).toBe(firstId);
+    expect(service.activePanels[0].pinned).toBeTrue();
   });
 
   it('duplicates the first floating panel into two pinned comparison slots', () => {
