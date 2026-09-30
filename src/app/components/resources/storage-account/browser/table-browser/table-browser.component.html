@@ -31,17 +31,31 @@
   <table *ngIf="table">
     <thead>
       <tr>
-        <th>PartitionKey</th>
-        <th>RowKey</th>
-        <th>Timestamp</th>
-        <th>Details</th>
+        <th>
+          PartitionKey
+        </th>
+        <th>
+          RowKey
+        </th>
+        <th>
+          Timestamp
+        </th>
+        <th>
+          Details
+        </th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let entity of entities">
-        <td>{{ entity.PartitionKey }}</td>
-        <td>{{ entity.RowKey }}</td>
-        <td>{{ entity.Timestamp }}</td>
+        <td>
+          {{ entity.PartitionKey }}
+        </td>
+        <td>
+          {{ entity.RowKey }}
+        </td>
+        <td>
+          {{ entity.Timestamp }}
+        </td>
         <td>
           <button type="button" (click)="selected = entity">
             View JSON
@@ -49,7 +63,9 @@
         </td>
       </tr>
       <tr *ngIf="!loading && !error && entities.length === 0">
-        <td colspan="4">No entities found. Enter optional key filters and query.</td>
+        <td colspan="4">
+          No entities found. Enter optional key filters and query.
+        </td>
       </tr>
     </tbody>
   </table>
@@ -58,7 +74,9 @@
     <button class="close" type="button" (click)="selected = undefined">
       Close
     </button>
-    <h3>Table entity</h3>
+    <h3>
+      Table entity
+    </h3>
     <pre>{{ stringify(selected) }}</pre>
   </aside>
 </section>

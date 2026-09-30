@@ -1,27 +1,50 @@
 <div class="storage-container" *ngIf="view === 'overview'">
-
-  <!-- General Info & Overview -->
   <section class="storage-section">
-    <h3 class="resource-detail-heading">Overview & Configuration</h3>
+    <h3 class="resource-detail-heading">
+      Overview &amp; Configuration
+    </h3>
     <div class="storage-overview-grid">
       <div class="info-item">
-        <span class="info-label">Primary Location:</span>
-        <span class="info-value"><strong>{{ location }}</strong></span>
+        <span class="info-label">
+          Primary Location:
+        </span>
+        <span class="info-value">
+          <strong>
+            {{ location }}
+          </strong>
+        </span>
       </div>
       <div class="info-item">
-        <span class="info-label">Access Tier:</span>
-        <span class="info-value"><strong>{{ accessTier }}</strong></span>
+        <span class="info-label">
+          Access Tier:
+        </span>
+        <span class="info-value">
+          <strong>
+            {{ accessTier }}
+          </strong>
+        </span>
       </div>
       <div class="info-item">
-        <span class="info-label">Minimum TLS Version:</span>
+        <span class="info-label">
+          Minimum TLS Version:
+        </span>
         <div class="info-value">
-          <code class="resource-detail-code">{{ minimumTlsVersion }}</code>
+          <code class="resource-detail-code">
+            {{ minimumTlsVersion }}
+          </code>
         </div>
       </div>
       <div class="info-item">
-        <span class="info-label">Provisioning State:</span>
+        <span class="info-label">
+          Provisioning State:
+        </span>
         <div class="info-value">
-          <span class="badge status-succeeded" [ngClass]="{'status-succeeded': provisioningState === 'Succeeded', 'deny': provisioningState !== 'Succeeded'}">
+          <span
+            class="badge status-succeeded"
+            [ngClass]="{
+              'status-succeeded': provisioningState === 'Succeeded',
+              'deny': provisioningState !== 'Succeeded'
+            }">
             {{ provisioningState }}
           </span>
         </div>
@@ -29,69 +52,136 @@
     </div>
   </section>
 
-  <!-- Security & Access Settings -->
   <section class="storage-section">
-    <h3 class="resource-detail-heading">Security & Networking</h3>
+    <h3 class="resource-detail-heading">
+      Security &amp; Networking
+    </h3>
     <div class="resource-detail-table-wrapper">
       <table class="resource-detail-table">
         <thead>
           <tr>
-            <th>Setting</th>
-            <th>Value</th>
-            <th>Status</th>
+            <th>
+              Setting
+            </th>
+            <th>
+              Value
+            </th>
+            <th>
+              Status
+            </th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td><strong>HTTPS Only Traffic</strong></td>
-            <td><code class="resource-detail-code">supportsHttpsTrafficOnly</code></td>
             <td>
-              <span class="badge" [ngClass]="supportsHttpsTrafficOnly ? 'allow' : 'deny'">
+              <strong>
+                HTTPS Only Traffic
+              </strong>
+            </td>
+            <td>
+              <code class="resource-detail-code">
+                supportsHttpsTrafficOnly
+              </code>
+            </td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="supportsHttpsTrafficOnly ? 'allow' : 'deny'">
                 {{ supportsHttpsTrafficOnly ? 'Enabled' : 'Disabled' }}
               </span>
             </td>
           </tr>
           <tr>
-            <td><strong>Public Network Access</strong></td>
-            <td><code class="resource-detail-code">publicNetworkAccess</code></td>
             <td>
-              <span class="badge" [ngClass]="publicNetworkAccess === 'Enabled' ? 'initiating' : 'allow'">
+              <strong>
+                Public Network Access
+              </strong>
+            </td>
+            <td>
+              <code class="resource-detail-code">
+                publicNetworkAccess
+              </code>
+            </td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="publicNetworkAccess === 'Enabled' ? 'initiating' : 'allow'">
                 {{ publicNetworkAccess }}
               </span>
             </td>
           </tr>
           <tr>
-            <td><strong>Allow Blob Public Access</strong></td>
-            <td><code class="resource-detail-code">allowBlobPublicAccess</code></td>
             <td>
-              <span class="badge" [ngClass]="allowBlobPublicAccess ? 'deny' : 'allow'">
+              <strong>
+                Allow Blob Public Access
+              </strong>
+            </td>
+            <td>
+              <code class="resource-detail-code">
+                allowBlobPublicAccess
+              </code>
+            </td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="allowBlobPublicAccess ? 'deny' : 'allow'">
                 {{ allowBlobPublicAccess ? 'Allowed' : 'Blocked' }}
               </span>
             </td>
           </tr>
           <tr>
-            <td><strong>Shared Key Access</strong></td>
-            <td><code class="resource-detail-code">allowSharedKeyAccess</code></td>
             <td>
-              <span class="badge" [ngClass]="allowSharedKeyAccess ? 'allow' : 'deny'">
+              <strong>
+                Shared Key Access
+              </strong>
+            </td>
+            <td>
+              <code class="resource-detail-code">
+                allowSharedKeyAccess
+              </code>
+            </td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="allowSharedKeyAccess ? 'allow' : 'deny'">
                 {{ allowSharedKeyAccess ? 'Enabled' : 'Disabled' }}
               </span>
             </td>
           </tr>
           <tr>
-            <td><strong>Hierarchical Namespace (ADLS Gen2)</strong></td>
-            <td><code class="resource-detail-code">isHnsEnabled</code></td>
             <td>
-              <span class="badge" [ngClass]="isHnsEnabled ? 'allow' : 'disconnected'">
+              <strong>
+                Hierarchical Namespace (ADLS Gen2)
+              </strong>
+            </td>
+            <td>
+              <code class="resource-detail-code">
+                isHnsEnabled
+              </code>
+            </td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="isHnsEnabled ? 'allow' : 'disconnected'">
                 {{ isHnsEnabled ? 'Enabled' : 'Disabled' }}
               </span>
             </td>
           </tr>
           <tr>
-            <td><strong>Default Network Rule Action</strong></td>
-            <td><code class="resource-detail-code">networkAcls.defaultAction</code></td>
             <td>
-              <span class="badge" [ngClass]="defaultNetworkAction === 'Deny' ? 'allow' : 'initiating'">
+              <strong>
+                Default Network Rule Action
+              </strong>
+            </td>
+            <td>
+              <code class="resource-detail-code">
+                networkAcls.defaultAction
+              </code>
+            </td>
+            <td>
+              <span
+                class="badge"
+                [ngClass]="defaultNetworkAction === 'Deny' ? 'allow' : 'initiating'">
                 {{ defaultNetworkAction }}
               </span>
             </td>
@@ -101,9 +191,10 @@
     </div>
   </section>
 
-  <!-- Endpoints -->
   <section class="storage-section">
-    <h3 class="resource-detail-heading">Primary Endpoints</h3>
+    <h3 class="resource-detail-heading">
+      Primary Endpoints
+    </h3>
     <div *ngIf="endpoints.length === 0" class="resource-detail-empty">
       No endpoints available.
     </div>
@@ -111,16 +202,30 @@
       <table class="resource-detail-table">
         <thead>
           <tr>
-            <th>Service Type</th>
-            <th>Endpoint URL</th>
+            <th>
+              Service Type
+            </th>
+            <th>
+              Endpoint URL
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let ep of endpoints">
-            <td><strong>{{ ep.type }}</strong></td>
+          <tr *ngFor="let endpoint of endpoints">
             <td>
-              <a [href]="ep.url" target="_blank" rel="noopener" class="endpoint-link">
-                <code class="resource-detail-code">{{ ep.url }}</code>
+              <strong>
+                {{ endpoint.type }}
+              </strong>
+            </td>
+            <td>
+              <a
+                [href]="endpoint.url"
+                target="_blank"
+                rel="noopener"
+                class="endpoint-link">
+              <code class="resource-detail-code">
+                {{ endpoint.url }}
+              </code>
               </a>
             </td>
           </tr>
@@ -129,11 +234,15 @@
     </div>
   </section>
 
-  <!-- Encryption -->
   <section class="storage-section">
-    <h3 class="resource-detail-heading">Encryption Services</h3>
+    <h3 class="resource-detail-heading">
+      Encryption Services
+    </h3>
     <p class="encryption-key-source">
-      Key Source: <code class="resource-detail-code">{{ keySource }}</code>
+      Key Source:
+      <code class="resource-detail-code">
+        {{ keySource }}
+      </code>
     </p>
     <div *ngIf="encryptionServices.length === 0" class="resource-detail-empty">
       No encryption services configured.
@@ -142,18 +251,32 @@
       <table class="resource-detail-table">
         <thead>
           <tr>
-            <th>Service</th>
-            <th>Key Type</th>
-            <th>Status</th>
+            <th>
+              Service
+            </th>
+            <th>
+              Key Type
+            </th>
+            <th>
+              Status
+            </th>
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let enc of encryptionServices">
-            <td><strong>{{ enc.name }}</strong></td>
-            <td><code class="resource-detail-code">{{ enc.keyType || 'Account' }}</code></td>
+          <tr *ngFor="let service of encryptionServices">
             <td>
-              <span class="badge" [ngClass]="enc.enabled ? 'allow' : 'deny'">
-                {{ enc.enabled ? 'Enabled' : 'Disabled' }}
+              <strong>
+                {{ service.name }}
+              </strong>
+            </td>
+            <td>
+              <code class="resource-detail-code">
+                {{ service.keyType || 'Account' }}
+              </code>
+            </td>
+            <td>
+              <span class="badge" [ngClass]="service.enabled ? 'allow' : 'deny'">
+                {{ service.enabled ? 'Enabled' : 'Disabled' }}
               </span>
             </td>
           </tr>
@@ -163,14 +286,40 @@
   </section>
 
   <section class="storage-section">
-    <h3 class="resource-detail-heading">Tags</h3>
-    <div *ngIf="tags.length === 0" class="resource-detail-empty">No tags configured.</div>
+    <h3 class="resource-detail-heading">
+      Tags
+    </h3>
+    <div *ngIf="tags.length === 0" class="resource-detail-empty">
+      No tags configured.
+    </div>
     <div *ngIf="tags.length > 0" class="resource-detail-table-wrapper">
-      <table class="resource-detail-table"><thead><tr><th>Name</th><th>Value</th></tr></thead>
-        <tbody><tr *ngFor="let tag of tags"><td>{{ tag.name }}</td><td>{{ tag.value }}</td></tr></tbody>
+      <table class="resource-detail-table">
+        <thead>
+          <tr>
+            <th>
+              Name
+            </th>
+            <th>
+              Value
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let tag of tags">
+            <td>
+              {{ tag.name }}
+            </td>
+            <td>
+              {{ tag.value }}
+            </td>
+          </tr>
+        </tbody>
       </table>
     </div>
   </section>
-
 </div>
-<app-storage-account-browser *ngIf="view === 'browse'" [resourceId]="resourceId"></app-storage-account-browser>
+
+<app-storage-account-browser
+  *ngIf="view === 'browse'"
+  [resourceId]="resourceId">
+</app-storage-account-browser>

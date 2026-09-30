@@ -46,6 +46,7 @@ export class BlobBrowserComponent implements OnInit, OnDestroy {
     this.clearPreview();
   }
 
+  /** Selects a blob container and loads its root entries. */
   selectContainer(name: string): void {
     this.container = name;
     this.prefix = '';
@@ -56,11 +57,13 @@ export class BlobBrowserComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Opens a virtual folder inside the selected container. */
   openFolder(item: BlobBrowserItem): void {
     this.prefix = item.path;
     this.load();
   }
 
+  /** Navigates to a container or folder breadcrumb. */
   navigate(prefix: string): void {
     this.prefix = prefix;
     this.load();
@@ -77,10 +80,12 @@ export class BlobBrowserComponent implements OnInit, OnDestroy {
     ];
   }
 
+  /** Reports whether the file type can be rendered in the preview panel. */
   canPreview(item: BlobBrowserItem): boolean {
     return !item.isDirectory && this.isPreviewable(item.name, item.contentType);
   }
 
+  /** Opens a preview for a supported blob. */
   preview(item: BlobBrowserItem): void {
     if (!this.canPreview(item)) {
       return;
@@ -94,6 +99,7 @@ export class BlobBrowserComponent implements OnInit, OnDestroy {
     }));
   }
 
+  /** Downloads the selected blob to the local device. */
   download(item: BlobBrowserItem): void {
     this.subs.add(this.storage.downloadBlob(this.resourceId, this.container, item.path).subscribe({
       next: (blob) => this.save(blob, item.name),
@@ -101,6 +107,7 @@ export class BlobBrowserComponent implements OnInit, OnDestroy {
     }));
   }
 
+  /** Closes the blob preview panel. */
   closePreview(): void {
     this.clearPreview();
   }

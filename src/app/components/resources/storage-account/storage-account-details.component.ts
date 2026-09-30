@@ -1,5 +1,5 @@
-import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Component, Input } from '@angular/core';
 import { StorageAccountBrowserComponent } from './browser/storage-account-browser.component';
 import { PanelVariant, ResourceDetailItem } from '../../../services/azome/resource-detail.registry';
 
@@ -26,12 +26,14 @@ export class StorageAccountComponent implements ResourceDetailItem {
   @Input() resource: any;
   @Input() view: 'overview' | 'browse' = 'overview';
 
-  get resourceId(): string { return this.resource?.id || ''; }
   static readonly preferredVariant: PanelVariant = 'wide';
 
-  // Azure JSON voi olla joko suoraan tässä tai .properties-kentässä
   private get props(): any {
     return this.resource?.properties || this.resource || {};
+  }
+
+  get resourceId(): string {
+    return this.resource?.id || '';
   }
 
   get provisioningState(): string {
@@ -39,7 +41,10 @@ export class StorageAccountComponent implements ResourceDetailItem {
   }
 
   get tags(): Array<{ name: string; value: string }> {
-    return Object.entries(this.resource?.tags ?? {}).map(([name, value]) => ({ name, value: String(value) }));
+    return Object.entries(this.resource?.tags ?? {}).map(([name, value]) => ({
+      name,
+      value: String(value)
+    }));
   }
 
   get statusOfPrimary(): string {
@@ -91,9 +96,11 @@ export class StorageAccountComponent implements ResourceDetailItem {
   }
 
   get endpoints(): EndpointItem[] {
-    const ep = this.props.primaryEndpoints;
-    if (!ep) return [];
-    return Object.entries(ep).map(([type, url]) => ({
+    const endpoints = this.props.primaryEndpoints;
+    if (!endpoints) {
+      return [];
+    }
+    return Object.entries(endpoints).map(([type, url]) => ({
       type: type.toUpperCase(),
       url: url as string
     }));
@@ -101,7 +108,9 @@ export class StorageAccountComponent implements ResourceDetailItem {
 
   get encryptionServices(): EncryptionServiceItem[] {
     const services = this.props.encryption?.services;
-    if (!services) return [];
+    if (!services) {
+      return [];
+    }
     return Object.entries(services).map(([name, config]: [string, any]) => ({
       name: name.toUpperCase(),
       enabled: config.enabled ?? false,

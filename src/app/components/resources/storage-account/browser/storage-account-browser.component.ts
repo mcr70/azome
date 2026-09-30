@@ -14,5 +14,11 @@ import { TableBrowserComponent } from './table-browser/table-browser.component';
 })
 export class StorageAccountBrowserComponent {
   @Input({ required: true }) resourceId = '';
+
   activeService: 'blobs' | 'files' | 'queues' | 'tables' = 'blobs';
+
+  /** Selects the Storage service shown in the browser. */
+  selectService(service: 'blobs' | 'files' | 'queues' | 'tables'): void {
+    this.activeService = service;
+  }
 }
