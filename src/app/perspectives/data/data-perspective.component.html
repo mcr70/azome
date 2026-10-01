@@ -1,0 +1,129 @@
+<section class="data-perspective" aria-labelledby="data-title">
+  <div
+    class="data-workspace-layout"
+    [class.has-one-pinned-panel]="pinnedPanels.length === 1"
+    [class.has-two-pinned-panels]="pinnedPanels.length === 2">
+    <div class="data-main-content">
+      <div class="perspective-heading">
+        <div>
+          <p class="eyebrow">Perspective</p>
+          <h1 id="data-title">Data</h1>
+          <p class="description">Data services available in this Azure subscription.</p>
+        </div>
+        <button
+          class="refresh-button"
+          type="button"
+          (click)="loadResources()"
+          [disabled]="loading">
+          Refresh
+        </button>
+      </div>
+
+      <p
+        *ngIf="loading"
+        class="status-message">
+        Loading data resources...
+      </p>
+      <p
+        *ngIf="loadingDetails"
+        class="status-message">
+        Loading resource details from Azure...
+      </p>
+
+      <div
+        *ngIf="error"
+        class="error-message"
+        role="alert">
+        <strong>
+          Data resources could not be loaded.
+        </strong>
+        <span>
+          {{ error }}
+        </span>
+      </div>
+
+      <div
+        *ngIf="!loading && !error && resources.length === 0"
+        class="empty-state">
+        No supported data resources were found in this subscription.
+      </div>
+
+      <section
+        *ngFor="let category of categoryGroups"
+        class="category-section"
+        [attr.aria-label]="category.category + ' resources'">
+        <header class="section-heading">
+          <div>
+            <p class="resource-kind">
+              Data category
+            </p>
+            <h2>
+              {{ category.category }}
+            </h2>
+          </div>
+          <span class="resource-count">
+            {{ category.types.length }} resource types
+          </span>
+        </header>
+
+        <section
+          *ngFor="let typeGroup of category.types"
+          class="resource-type-section"
+          [attr.aria-label]="typeGroup.label">
+          <div class="type-heading">
+            <h3>
+              {{ typeGroup.label }}
+            </h3>
+            <span>
+              {{ typeGroup.resources.length }}
+            </span>
+          </div>
+
+          <div class="resource-grid">
+            <button
+              *ngFor="let resource of typeGroup.resources"
+              class="resource-card"
+              type="button"
+              (click)="openResourceDetails(resource.id, $event)"
+              [attr.aria-label]="'Open details for ' + resource.name">
+              <span class="resource-kind">
+                {{ typeGroup.label }}
+              </span>
+              <strong class="resource-name">
+                {{ resource.name }}
+              </strong>
+              <span class="resource-metadata">
+                <span>
+                  {{ resource.resourceGroup }}
+                </span>
+                <span>
+                  {{ resource.location || 'Global' }}
+                </span>
+              </span>
+            </button>
+          </div>
+        </section>
+      </section>
+    </div>
+
+    <div
+      *ngIf="pinnedPanels.length > 0"
+      class="pinned-panel-slots"
+      aria-label="Pinned resource panels">
+      <app-resource-detail-pane
+        *ngFor="let panel of pinnedPanels"
+        [panel]="panel"
+        [pinned]="true"
+        (close)="closePanel($event)"
+        (togglePin)="togglePanelPin($event)">
+      </app-resource-detail-pane>
+    </div>
+  </div>
+
+  <app-resource-detail-pane
+    *ngIf="floatingPanel as panel"
+    [panel]="panel"
+    (close)="closePanel($event)"
+    (togglePin)="togglePanelPin($event)">
+  </app-resource-detail-pane>
+</section>

@@ -82,8 +82,11 @@ export interface AzureKeyVaultResource extends AzureResource {
 }
 
 // Pääunioni: Tämän avulla Angular-komponentti käsittelee mitä tahansa Data-resurssia
-export type AzureDataResource = 
-  | AzureStorageAccountResource 
-  | AzureSqlDatabaseResource 
-  | AzureCosmosDbResource 
-  | AzureKeyVaultResource;
+export type DataResourceCategory = 'Storage' | 'NoSQL' | 'Relational' | 'Messaging' | 'Cache' | 'Other';
+
+export interface AzureDataResource extends AzureResource {
+  subscriptionId?: string;
+  tags?: Record<string, string>;
+  properties?: Record<string, unknown>;
+  category: DataResourceCategory;
+}

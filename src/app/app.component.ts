@@ -54,7 +54,8 @@ export class AppComponent implements OnInit, OnDestroy {
     const routes: Record<string, string> = {
       resources: '/rg',
       networking: '/networking',
-      monitoring: '/monitoring'
+      monitoring: '/monitoring',
+      data: '/data'
     };
     this.router.navigate([routes[perspective] ?? '/rg']);
   }
