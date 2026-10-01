@@ -59,6 +59,13 @@
   min-width: min(420px, 85vw);
 }
 
+:host(.pinned) .panel-container.panel-wide,
+:host(.pinned) .panel-container.panel-content-sized {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -138,8 +145,11 @@
 .panel-content {
   box-sizing: border-box;
   flex: 1;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   min-height: 0;
-  overflow-y: auto;
+  overflow: auto;
   padding: 24px;
 }
 

@@ -21,7 +21,7 @@ export class ResourceDetailPanelService {
   public openPanel(resource: AzureResourceDetail, pin = false): string {
     const panels = [...this.activePanels];
     const unpinned = panels.find((panel) => !panel.pinned);
-    if (!pin && !panels.some((panel) => panel.pinned) && unpinned) {
+    if (!pin && unpinned) {
       this.publish(panels.map((panel) => panel.id === unpinned.id ? { ...panel, resource } : panel));
       return unpinned.id;
     }

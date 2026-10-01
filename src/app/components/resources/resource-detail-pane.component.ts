@@ -17,8 +17,10 @@ import { ResourceDetailHostComponent } from './resource-detail-host.component';
 export class ResourceDetailPaneComponent implements OnChanges {
   @Input({ required: true }) panel!: ResourcePanelConfig;
   @Input() pinned = false;
+  @Input() canDuplicate = true;
   @Output() close = new EventEmitter<string>();
   @Output() togglePin = new EventEmitter<string>();
+  @Output() duplicate = new EventEmitter<string>();
 
   public view: 'overview' | 'browse' | 'json' = 'overview';
 
