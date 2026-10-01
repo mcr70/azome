@@ -37,6 +37,9 @@
           Size
         </th>
         <th>
+          Content type
+        </th>
+        <th>
           Modified
         </th>
         <th>
@@ -69,6 +72,9 @@
           {{ item.isDirectory ? '—' : (item.size | number) }}
         </td>
         <td>
+          {{ item.isDirectory ? '—' : (item.contentType || '—') }}
+        </td>
+        <td>
           {{ item.lastModified || '—' }}
         </td>
         <td class="actions">
@@ -91,7 +97,7 @@
         </td>
       </tr>
       <tr *ngIf="!loading && !error && items.length === 0">
-        <td colspan="4">
+        <td colspan="5">
           No files or directories found.
         </td>
       </tr>

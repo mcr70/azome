@@ -1,12 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Observable, Subscription } from 'rxjs';
+import { forkJoin } from 'rxjs';
 import {
   QueueItem,
   QueueMessage,
   StorageAccountService
 } from '../../../../../services/azure/storage-account.service';
+import { StorageBrowserBase } from '../storage-browser-base';
 
 @Component({
   selector: 'app-queue-browser',
@@ -15,7 +16,7 @@ import {
   templateUrl: './queue-browser.component.html',
   styleUrl: '../blob-browser/storage-browser.component.scss'
 })
-export class QueueBrowserComponent implements OnInit, OnDestroy {
+export class QueueBrowserComponent extends StorageBrowserBase implements OnInit, OnDestroy {
   @Input({ required: true }) resourceId = '';
 
   queues: QueueItem[] = [];
@@ -23,13 +24,9 @@ export class QueueBrowserComponent implements OnInit, OnDestroy {
   queue = '';
   count = 0;
   limit = 10;
-  loading = false;
-  error = '';
-
-  private readonly subs = new Subscription();
-  private requestId = 0;
-
-  constructor(private readonly storage: StorageAccountService) {}
+  constructor(private readonly storage: StorageAccountService) {
+    super();
+  }
 
   ngOnInit(): void {
     this.run(this.storage.listQueues(this.resourceId), (queues) => {
@@ -41,7 +38,7 @@ export class QueueBrowserComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.subs.unsubscribe();
+    this.dispose();
   }
 
   /** Selects a queue and loads its message count and first peek results. */
@@ -62,15 +59,16 @@ export class QueueBrowserComponent implements OnInit, OnDestroy {
 
     const count = Math.max(1, Math.min(32, Number(this.limit) || 10));
     this.limit = count;
-    this.loading = true;
-    this.error = '';
-    this.subs.add(this.storage.getQueueMessageCount(this.resourceId, this.queue).subscribe({
-      next: (value) => this.count = value,
-      error: (error) => this.error = this.message(error)
-    }));
-    this.run(this.storage.peekMessages(this.resourceId, this.queue, count), (messages) => {
-      this.messages = messages;
-    });
+    this.run(
+      forkJoin({
+        count: this.storage.getQueueMessageCount(this.resourceId, this.queue),
+        messages: this.storage.peekMessages(this.resourceId, this.queue, count)
+      }),
+      (result) => {
+        this.count = result.count;
+        this.messages = result.messages;
+      }
+    );
   }
 
   /** Formats a JSON queue message, returning the original text when it is not JSON. */
@@ -80,30 +78,5 @@ export class QueueBrowserComponent implements OnInit, OnDestroy {
     } catch {
       return text;
     }
-  }
-
-  private run<T>(request: Observable<T>, accept: (value: T) => void): void {
-    const requestId = ++this.requestId;
-    this.loading = true;
-    this.error = '';
-    this.subs.add(request.subscribe({
-      next: (value) => accept(value),
-      error: (error) => {
-        this.error = this.message(error);
-        this.loading = false;
-      },
-      complete: () => {
-        if (requestId === this.requestId) {
-          this.loading = false;
-        }
-      }
-    }));
-  }
-
-  private message(error: any): string {
-    return error?.error?.error?.message
-      || error?.error?.message
-      || error?.message
-      || 'Storage request failed.';
   }
 }

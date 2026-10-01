@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
-import { Observable, Subscription } from 'rxjs';
 import {
   BlobBrowserItem,
   BlobContainerItem,
   StorageAccountService
 } from '../../../../../services/azure/storage-account.service';
+import { StorageBrowserBase } from '../storage-browser-base';
 
 @Component({
   selector: 'app-blob-browser',
@@ -14,23 +14,20 @@ import {
   templateUrl: './blob-browser.component.html',
   styleUrl: './storage-browser.component.scss'
 })
-export class BlobBrowserComponent implements OnInit, OnDestroy {
+export class BlobBrowserComponent extends StorageBrowserBase implements OnInit, OnDestroy {
   @Input({ required: true }) resourceId = '';
 
   containers: BlobContainerItem[] = [];
   items: BlobBrowserItem[] = [];
   container = '';
   prefix = '';
-  loading = false;
-  error = '';
   previewText = '';
   previewUrl = '';
   previewName = '';
 
-  private readonly subs = new Subscription();
-  private requestId = 0;
-
-  constructor(private readonly storage: StorageAccountService) {}
+  constructor(private readonly storage: StorageAccountService) {
+    super();
+  }
 
   ngOnInit(): void {
     this.run(this.storage.listContainers(this.resourceId), (containers) => {
@@ -42,7 +39,7 @@ export class BlobBrowserComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.subs.unsubscribe();
+    this.dispose();
     this.clearPreview();
   }
 
@@ -93,7 +90,7 @@ export class BlobBrowserComponent implements OnInit, OnDestroy {
 
     this.clearPreview();
     this.previewName = item.name;
-    this.subs.add(this.storage.downloadBlob(this.resourceId, this.container, item.path).subscribe({
+    this.track(this.storage.downloadBlob(this.resourceId, this.container, item.path).subscribe({
       next: (blob) => this.showPreview(blob, item.name, item.contentType),
       error: (error) => this.error = this.message(error)
     }));
@@ -101,7 +98,7 @@ export class BlobBrowserComponent implements OnInit, OnDestroy {
 
   /** Downloads the selected blob to the local device. */
   download(item: BlobBrowserItem): void {
-    this.subs.add(this.storage.downloadBlob(this.resourceId, this.container, item.path).subscribe({
+    this.track(this.storage.downloadBlob(this.resourceId, this.container, item.path).subscribe({
       next: (blob) => this.save(blob, item.name),
       error: (error) => this.error = this.message(error)
     }));
@@ -117,24 +114,6 @@ export class BlobBrowserComponent implements OnInit, OnDestroy {
       this.storage.listBlobs(this.resourceId, this.container, this.prefix),
       (items) => this.items = items
     );
-  }
-
-  private run<T>(request: Observable<T>, accept: (value: T) => void): void {
-    const requestId = ++this.requestId;
-    this.loading = true;
-    this.error = '';
-    this.subs.add(request.subscribe({
-      next: (value) => accept(value),
-      error: (error) => {
-        this.error = this.message(error);
-        this.loading = false;
-      },
-      complete: () => {
-        if (requestId === this.requestId) {
-          this.loading = false;
-        }
-      }
-    }));
   }
 
   private isPreviewable(name: string, contentType?: string): boolean {
@@ -184,12 +163,5 @@ export class BlobBrowserComponent implements OnInit, OnDestroy {
     link.download = name;
     link.click();
     URL.revokeObjectURL(url);
-  }
-
-  private message(error: any): string {
-    return error?.error?.error?.message
-      || error?.error?.message
-      || error?.message
-      || 'Storage request failed.';
   }
 }
