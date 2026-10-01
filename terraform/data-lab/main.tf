@@ -1,10 +1,10 @@
 terraform {
-  required_version = ">= 1.6.0"
+  required_version = ">= 1.9"
 
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 4.0"
+      version = "~> 5.0"
     }
   }
 
@@ -26,7 +26,6 @@ data "azurerm_client_config" "current" {}
 
 // ----------------------------------------
 
-
 resource "azurerm_resource_group" "data_lab" {
   name     = var.resource_group_name
   location = var.location
@@ -37,7 +36,6 @@ resource "azurerm_resource_group" "data_lab" {
     managed_by  = "terraform"
   }
 }
-
 
 # Standard Storage Account (0 €)
 resource "azurerm_storage_account" "data_test" {
@@ -59,6 +57,8 @@ resource "azurerm_key_vault" "data_test" {
   tenant_id                   = data.azurerm_client_config.current.tenant_id
   soft_delete_retention_days  = 7
   purge_protection_enabled    = false
+
+  rbac_authorization_enabled  = false
 
   sku_name = "standard"
 }
