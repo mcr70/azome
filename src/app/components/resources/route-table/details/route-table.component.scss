@@ -3,7 +3,11 @@
 }
 
 .route-table-wrapper .resource-detail-table {
+  width: 100%;
+  table-layout: fixed;
   min-width: 0;
   max-width: 100%;
-  white-space: nowrap;
 }
+
+.route-table-wrapper .resource-detail-table th,
+.route-table-wrapper .resource-detail-table td { word-break: break-word; white-space: normal; }

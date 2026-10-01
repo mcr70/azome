@@ -1,0 +1,30 @@
+<app-details-panel
+  [isOpen]="true"
+  [pinned]="pinned"
+  [showPanelActions]="true"
+  [title]="title"
+  [subtitle]="subtitle"
+  [variant]="variant"
+  (close)="close.emit(panel.id)"
+  (togglePin)="togglePin.emit(panel.id)"
+  (duplicate)="duplicate.emit(panel.id)">
+  <div class="pane-tabs" role="tablist" aria-label="Resource detail views">
+    <button type="button" role="tab" [attr.aria-selected]="view === 'overview'" [class.active]="view === 'overview'" (click)="setView('overview', detailHost)">Overview</button>
+    <button *ngIf="isStorageAccount" type="button" role="tab" [attr.aria-selected]="view === 'browse'" [class.active]="view === 'browse'" (click)="setView('browse', detailHost)">Browse</button>
+    <button type="button" role="tab" [attr.aria-selected]="view === 'json'" [class.active]="view === 'json'" (click)="view = 'json'">JSON</button>
+  </div>
+
+  <div class="resource-overview" [hidden]="view === 'json'">
+    <table class="resource-detail-table resource-summary-table">
+      <tbody>
+        <tr><th>Resource group</th><td>{{ resource.resourceGroup || 'N/A' }}</td></tr>
+        <tr><th>Location</th><td>{{ resource.location || 'N/A' }}</td></tr>
+      </tbody>
+    </table>
+    <section class="details-section">
+      <app-resource-detail-host #detailHost [resource]="resource" [showTabs]="false"></app-resource-detail-host>
+    </section>
+  </div>
+
+  <pre *ngIf="view === 'json'" class="resource-json">{{ resource | json }}</pre>
+</app-details-panel>
