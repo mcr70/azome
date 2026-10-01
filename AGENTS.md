@@ -15,7 +15,15 @@ Decorator Formatting: The @Component decorator properties (selector, standalone,
 
 Property Declarations: Declare each property on a separate line. Never stack multiple variable declarations onto a single line.
 
-Method Formatting: Every method body MUST be formatted across multiple lines with proper indentation (2 spaces). Never write inline single-line methods.
+Method Formatting: Every method body MUST be formatted across multiple lines with proper indentation (2 spaces). Never write inline single-line methods. Write comment
+in following format:
+```
+  /** 
+   * Selects a queue and loads its message count and first peek results. 
+   * @param name Name of the queue
+   */
+  selectQueue(name: string): void {
+```
 
 Line Length & Whitespace: Keep maximum line length around 100–120 characters. Leave blank lines between class properties and methods.
 
@@ -34,9 +42,12 @@ No Minified Rules: Never write inline minified CSS rules (e.g., .state { color: 
 
 > **Rule:** Prefer using Microsoft Graph API over other APIs whenever possible.
 
+
 # Components
 
 ## Resource Details
+Main purpose of the resource details is to show metadata of the resource
+
 - Azure resource detail components are located in `src/app/components/resource-details`.
 - Each resource detail component **must** be registered in `ResourceDetailRegistryService`.
 - Resource detail views should focus on displaying essential information. Omit unnecessary details if they don't add value (a full JSON view is available for inspecting complete raw data).
@@ -44,10 +55,13 @@ No Minified Rules: Never write inline minified CSS rules (e.g., .state { color: 
 ## Other Components
 - Keep common/general components separate from resource detail components. Do not mix them in the same directories.
 
+
 # Perspectives
 - Perspectives are located in the `src/app/perspectives` folder.
 - Each perspective provides its own targeted view of Azure resources.
+- If a perspective requires its own sub components, gather them under the same folder
 - Currently, perspective routing and selection are handled in `app.routes.ts` and `app.component.ts`.
+
 
 # Terraform
 Terraform code is in `terraform/` folder. It is intented to provide a simple setup to create necessary Azure resources to be used with azome.

@@ -197,17 +197,37 @@ export class ResourceGraphService {
 
   public getDataResources(): Observable<AzureDataResource[]> {
     const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
-    
+
     const query = `
-      Resources 
+      resources
       | where type in~ (
           'microsoft.storage/storageaccounts',
-          'microsoft.sql/servers/databases',
-          'microsoft.dbforpostgresql/flexibleservers',
           'microsoft.documentdb/databaseaccounts',
-          'microsoft.keyvault/vaults'
-        ) 
-      | project id, name, type, resourceGroup, location, tags, properties
+          'microsoft.dbforpostgresql/flexibleservers',
+          'microsoft.dbformysql/flexibleservers',
+          'microsoft.sql/servers',
+          'microsoft.sql/servers/databases',
+          'microsoft.cache/redis',
+          'microsoft.servicebus/namespaces',
+          'microsoft.eventhub/namespaces'
+      )
+      | project id, name, type, location, resourceGroup, subscriptionId, tags, properties
+      | extend category = case(
+          type startswith 'microsoft.storage', 'Storage',
+          type startswith 'microsoft.documentdb', 'NoSQL',
+          type in~ (
+              'microsoft.dbforpostgresql/flexibleservers',
+              'microsoft.dbformysql/flexibleservers',
+              'microsoft.sql/servers/databases'
+          ), 'Relational',
+          type in~ (
+              'microsoft.servicebus/namespaces',
+              'microsoft.eventhub/namespaces'
+          ), 'Messaging',
+          type startswith 'microsoft.cache', 'Cache',
+          'Other'
+      )
+      | order by category asc, name asc
     `;
 
     return this.http.post<{ data: AzureDataResource[] }>(url, {
