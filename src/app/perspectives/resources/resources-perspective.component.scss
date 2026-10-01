@@ -3,7 +3,9 @@
 }
 
 .resources-perspective {
-  max-width: 1180px;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
   color: #172033;
 }
 

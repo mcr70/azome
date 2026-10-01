@@ -1,7 +1,7 @@
 <div class="resource-detail-host">
 
   <!-- Tab Navigation (Shown only if a custom component exists) -->
-  <div *ngIf="hasCustomComponent" class="detail-tabs">
+  <div *ngIf="hasCustomComponent && showTabs" class="detail-tabs">
     <button 
       class="tab-btn" 
       [class.active]="activeTab === 'overview'" 

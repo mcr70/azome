@@ -3,7 +3,11 @@
 }
 
 .cosmos-db-container .resource-detail-table {
+  width: 100%;
+  table-layout: fixed;
   min-width: 0;
   max-width: 100%;
-  white-space: nowrap;
 }
+
+.cosmos-db-container .resource-detail-table th,
+.cosmos-db-container .resource-detail-table td { word-break: break-word; white-space: normal; }

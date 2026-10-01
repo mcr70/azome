@@ -1,4 +1,5 @@
 :host {
+  box-sizing: border-box;
   position: fixed;
   top: 0;
   right: 0;
@@ -9,6 +10,17 @@
   justify-content: flex-end;
 }
 
+:host(.pinned) {
+  position: relative;
+  inset: auto;
+  z-index: auto;
+  display: flex;
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .backdrop {
   position: absolute;
   inset: 0;
@@ -17,6 +29,7 @@
 }
 
 .panel-container {
+  box-sizing: border-box;
   position: relative;
   z-index: 1001;
   width: min(480px, 85vw);
@@ -28,12 +41,29 @@
   animation: slideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+:host(.pinned) .panel-container {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  border: 0;
+  box-shadow: none;
+  animation: pinnedEnter 0.2s ease-out;
+}
+
 .panel-container.panel-wide {
   width: min(720px, 85vw);
 }
 
 .panel-container.panel-content-sized {
   min-width: min(420px, 85vw);
+}
+
+:host(.pinned) .panel-container.panel-wide,
+:host(.pinned) .panel-container.panel-content-sized {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 @keyframes fadeIn {
@@ -44,6 +74,11 @@
 @keyframes slideIn {
   from { transform: translateX(100%); }
   to { transform: translateX(0); }
+}
+
+@keyframes pinnedEnter {
+  from { opacity: 0.7; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .panel-header {
@@ -84,11 +119,37 @@
       color: #0f172a;
     }
   }
+
+  .panel-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .panel-action-button {
+    min-width: 34px;
+    min-height: 34px;
+    border: 0;
+    border-radius: 4px;
+    background: transparent;
+    color: #475569;
+    cursor: pointer;
+    font: inherit;
+    font-size: 1.1rem;
+  }
+
+  .panel-action-button:hover { background: #e2e8f0; color: #0f172a; }
 }
 
 .panel-content {
+  box-sizing: border-box;
   flex: 1;
-  overflow-y: auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
   padding: 24px;
 }
 

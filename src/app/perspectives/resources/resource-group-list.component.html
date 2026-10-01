@@ -1,4 +1,6 @@
-<div class="resource-groups-container">
+<div class="resource-workspace-layout" [class.has-one-pinned-panel]="pinnedPanels.length === 1" [class.has-two-pinned-panels]="pinnedPanels.length === 2">
+  <div class="resource-groups-container">
+  <p *ngIf="loadingDetails" class="status-message">Loading resource details from Azure...</p>
   <p *ngIf="loading" class="status-message">Loading resource groups...</p>
 
   <div *ngIf="error" class="error-message" role="alert">
@@ -75,38 +77,22 @@
     </div>
   </div>
 
-  <app-details-panel
-    *ngIf="selectedResource"
-    [isOpen]="true"
-    [title]="selectedResource.name"
-    [subtitle]="getShortType(selectedResource.type)"
-    [variant]="detailPanelVariant"
-    (close)="selectedResource = null"
-  >
-    <div class="resource-details">
-      <div *ngIf="loadingDetails" class="details-loading">
-        Loading details from Azure...
-      </div>
+  </div>
 
-      <ng-container *ngIf="!loadingDetails">
-        <!-- General information -->
-        <table class="resource-detail-table">
-          <tr>
-            <td><strong>Resource Group</strong></td>
-            <td>{{ selectedResource.resourceGroup || 'N/A' }}</td>
-          </tr>
-          <tr>
-            <td><strong>Location</strong></td>
-            <td>{{ selectedResource.location || 'N/A' }}</td>
-          </tr>
-        </table>              
-
-        <!-- Dynamic type-specific view -->
-        <section class="details-section">
-          <app-resource-detail-host [resource]="selectedResource"></app-resource-detail-host>
-        </section>
-      </ng-container>
-    </div>
-  </app-details-panel>
-
+  <div *ngIf="pinnedPanels.length > 0" class="pinned-panel-slots" aria-label="Pinned resource panels">
+    <app-resource-detail-pane
+      *ngFor="let panel of pinnedPanels"
+      [panel]="panel"
+      [pinned]="true"
+      (close)="closePanel($event)"
+      (togglePin)="togglePanelPin($event)">
+    </app-resource-detail-pane>
+  </div>
 </div>
+
+<app-resource-detail-pane
+  *ngIf="floatingPanel as panel"
+  [panel]="panel"
+  (close)="closePanel($event)"
+  (togglePin)="togglePanelPin($event)">
+</app-resource-detail-pane>
