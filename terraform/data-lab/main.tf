@@ -13,7 +13,7 @@ terraform {
     storage_account_name = "azomelabtfstate"
     container_name       = "labtfstate"
     key                  = "data.tfstate"
-  }  
+  }
 }
 
 provider "azurerm" {
@@ -58,7 +58,7 @@ resource "azurerm_key_vault" "data_test" {
   soft_delete_retention_days  = 7
   purge_protection_enabled    = false
 
-  rbac_authorization_enabled  = false
+  rbac_authorization_enabled = false
 
   sku_name = "standard"
 }
@@ -81,4 +81,13 @@ resource "azurerm_cosmosdb_account" "data_test" {
     location          = azurerm_resource_group.data_lab.location
     failover_priority = 0
   }
+}
+
+# Give the identity running this lab Terraform read access to Cosmos DB data.
+resource "azurerm_cosmosdb_sql_role_assignment" "data_reader" {
+  resource_group_name = azurerm_resource_group.data_lab.name
+  account_name        = azurerm_cosmosdb_account.data_test.name
+  role_definition_id  = "${azurerm_cosmosdb_account.data_test.id}/sqlRoleDefinitions/00000000-0000-0000-0000-000000000001"
+  principal_id        = data.azurerm_client_config.current.object_id
+  scope               = azurerm_cosmosdb_account.data_test.id
 }

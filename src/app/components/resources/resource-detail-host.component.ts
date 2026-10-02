@@ -19,6 +19,7 @@ export class ResourceDetailHostComponent implements OnChanges {
   public componentInputs: { [key: string]: any } = {};
   public hasCustomComponent: boolean = false;
   public isStorageAccount = false;
+  public isCosmosDb = false;
 
   constructor(private registryService: ResourceDetailRegistryService) {
   }
@@ -27,6 +28,7 @@ export class ResourceDetailHostComponent implements OnChanges {
     if (changes['resource'] && this.resource) {
       const targetComponent = this.registryService.getComponent(this.resource.type);
       this.isStorageAccount = this.resource.type?.toLowerCase() === 'microsoft.storage/storageaccounts';
+      this.isCosmosDb = this.resource.type?.toLowerCase() === 'microsoft.documentdb/databaseaccounts';
 
       this.hasCustomComponent = !!targetComponent;
       this.currentComponent = targetComponent || DefaultResourceDetailComponent;

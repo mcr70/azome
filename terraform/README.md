@@ -26,6 +26,8 @@ The Terraform setup configures the Entra ID application registration with the fo
 
 - Azure Service Management: `user_impersonation (Delegated)` - To act on behalf of the signed-in user when making Azure Resource Manager calls
 
+- Azure Cosmos DB: `user_impersonation (Delegated)` - To access Cosmos DB data-plane APIs
+
 ### Automated Admin Consent Notice:
 
 Admin consent for these delegated permissions is granted automatically during terraform apply using `azuread_service_principal_delegated_permission_grant` resources.

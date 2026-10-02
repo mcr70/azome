@@ -1,4 +1,4 @@
-<div class="cosmos-db-container">
+<div class="cosmos-db-container" *ngIf="view === 'overview'">
   <h3 class="resource-detail-heading">Cosmos DB Account Details</h3>
 
   <div *ngIf="!properties" class="resource-detail-empty">
@@ -102,4 +102,51 @@
       </div>
     </ng-container>
   </ng-container>
-</div>
+ </div>
+<section class="cosmos-browser" *ngIf="view === 'browse'">
+    <h3 class="resource-detail-heading">Browse data</h3>
+    <div class="browser-controls">
+      <label>
+        Database
+        <select [(ngModel)]="database" (ngModelChange)="selectDatabase()">
+          <option *ngFor="let item of databases" [value]="item.id">{{ item.id }}</option>
+        </select>
+      </label>
+      <label>
+        Container
+        <select [(ngModel)]="container">
+          <option *ngFor="let item of containers" [value]="item.id">{{ item.id }}</option>
+        </select>
+      </label>
+      <label>
+        Search
+        <select [(ngModel)]="searchMode">
+          <option value="all">Full scan</option>
+          <option value="partition">Partition key</option>
+          <option value="id">ID</option>
+        </select>
+      </label>
+      <label *ngIf="searchMode !== 'all'">
+        {{ searchMode === 'id' ? 'Document ID' : 'Partition key (' + (partitionPath || 'unknown') + ')' }}
+        <input [(ngModel)]="searchValue" (keyup.enter)="search()" />
+      </label>
+      <label>
+        Max results
+        <input type="number" min="1" max="100" [(ngModel)]="resultLimit" />
+      </label>
+      <button type="button" (click)="search()" [disabled]="loading || !container">
+        Search
+      </button>
+    </div>
+    <p *ngIf="loading" class="browser-status">Loading Cosmos DB data…</p>
+    <p *ngIf="error" class="browser-error">{{ error }}</p>
+    <p *ngIf="!loading && !error && databases.length === 0" class="browser-status">
+      No databases found or access is unavailable.
+    </p>
+    <div *ngIf="documents.length > 0" class="document-results">
+      <pre *ngFor="let document of documents">{{ formatted(document) }}</pre>
+    </div>
+    <p *ngIf="!loading && !error && container && documents.length === 0" class="browser-status">
+      No results loaded. Run a search to browse documents.
+    </p>
+  </section>

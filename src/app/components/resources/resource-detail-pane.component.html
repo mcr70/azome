@@ -10,7 +10,15 @@
   (duplicate)="duplicate.emit(panel.id)">
   <div class="pane-tabs" role="tablist" aria-label="Resource detail views">
     <button type="button" role="tab" [attr.aria-selected]="view === 'overview'" [class.active]="view === 'overview'" (click)="setView('overview', detailHost)">Overview</button>
-    <button *ngIf="isStorageAccount" type="button" role="tab" [attr.aria-selected]="view === 'browse'" [class.active]="view === 'browse'" (click)="setView('browse', detailHost)">Browse</button>
+    <button
+      *ngIf="isStorageAccount || isCosmosDb"
+      type="button"
+      role="tab"
+      [attr.aria-selected]="view === 'browse'"
+      [class.active]="view === 'browse'"
+      (click)="setView('browse', detailHost)">
+      Browse
+    </button>
     <button type="button" role="tab" [attr.aria-selected]="view === 'json'" [class.active]="view === 'json'" (click)="view = 'json'">JSON</button>
   </div>
 
