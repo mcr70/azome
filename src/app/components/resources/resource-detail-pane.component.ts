@@ -52,6 +52,10 @@ export class ResourceDetailPaneComponent implements OnChanges {
     return this.resource.type?.toLowerCase() === 'microsoft.storage/storageaccounts';
   }
 
+  public get isCosmosDb(): boolean {
+    return this.resource.type?.toLowerCase() === 'microsoft.documentdb/databaseaccounts';
+  }
+
   public setView(view: 'overview' | 'browse' | 'json', detailHost: ResourceDetailHostComponent): void {
     this.view = view;
     if (view !== 'json') detailHost.setTab(view);

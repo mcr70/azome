@@ -11,6 +11,11 @@ data "azuread_service_principal" "azure_mgmt" {
   client_id = data.azuread_application_published_app_ids.well_known.result.AzureResourceManager
 }
 
+# Fetch Azure Cosmos DB Service Principal
+data "azuread_service_principal" "cosmos_db" {
+  client_id = "a232010e-820c-4083-83bb-3ace5fc29d0b"
+}
+
 # Resource Group for the Angular SPA application
 resource "azurerm_resource_group" "azome_rg" {
   name     = "rg-azome"
@@ -63,6 +68,16 @@ resource "azuread_application" "azome" {
       type = "Scope"
     }
   }
+
+  # Azure Cosmos DB data-plane permissions
+  required_resource_access {
+    resource_app_id = data.azuread_service_principal.cosmos_db.client_id
+
+    resource_access {
+      id   = data.azuread_service_principal.cosmos_db.oauth2_permission_scope_ids["user_impersonation"]
+      type = "Scope"
+    }
+  }
 }
 
 # Service Principal for the application
@@ -84,5 +99,12 @@ resource "azuread_service_principal_delegated_permission_grant" "msgraph_consent
 resource "azuread_service_principal_delegated_permission_grant" "azure_mgmt_consent" {
   service_principal_object_id          = azuread_service_principal.azome_sp.object_id
   resource_service_principal_object_id = data.azuread_service_principal.azure_mgmt.object_id
+  claim_values                         = ["user_impersonation"]
+}
+
+# Admin consent for Azure Cosmos DB (user_impersonation)
+resource "azuread_service_principal_delegated_permission_grant" "cosmos_db_consent" {
+  service_principal_object_id          = azuread_service_principal.azome_sp.object_id
+  resource_service_principal_object_id = data.azuread_service_principal.cosmos_db.object_id
   claim_values                         = ["user_impersonation"]
 }

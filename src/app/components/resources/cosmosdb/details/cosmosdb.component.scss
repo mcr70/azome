@@ -14,3 +14,52 @@
   word-break: break-word;
   white-space: normal;
 }
+
+.cosmos-browser {
+  margin-top: 1.5rem;
+}
+
+.browser-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.browser-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 10rem;
+}
+
+.browser-controls input,
+.browser-controls select,
+.browser-controls button {
+  min-height: 2.25rem;
+}
+
+.browser-status {
+  color: #64748b;
+}
+
+.browser-error {
+  color: #b91c1c;
+}
+
+.document-results {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.document-results pre {
+  max-height: 24rem;
+  overflow: auto;
+  padding: 1rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

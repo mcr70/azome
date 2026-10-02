@@ -11,13 +11,47 @@ const server = http.createServer((request, response) => {
     return;
   }
 
+  const requestUrl = new URL(request.url || '/', 'http://127.0.0.1');
+  const cosmosMatch = requestUrl.pathname.match(/^\/cosmos-proxy\/([a-z0-9-]{3,44})(\/.*)?$/i);
+  if (cosmosMatch) {
+    if (request.method !== 'GET' && request.method !== 'POST') {
+      response.writeHead(405, { 'content-type': 'text/plain; charset=utf-8' });
+      response.end('Only GET and POST requests are allowed.');
+      return;
+    }
+
+    const account = cosmosMatch[1].toLowerCase();
+    const headers = { ...request.headers };
+    delete headers.host;
+    delete headers.origin;
+    delete headers.connection;
+    delete headers['proxy-authorization'];
+    headers.host = account + '.documents.azure.com';
+    const upstream = https.request({
+      hostname: account + '.documents.azure.com',
+      path: (cosmosMatch[2] || '/') + requestUrl.search,
+      method: request.method,
+      headers
+    }, upstreamResponse => {
+      response.writeHead(upstreamResponse.statusCode || 502, upstreamResponse.headers);
+      upstreamResponse.pipe(response);
+    });
+    upstream.on('error', error => {
+      if (!response.headersSent) {
+        response.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' });
+      }
+      response.end(error.message);
+    });
+    request.pipe(upstream);
+    return;
+  }
+
   if (request.method !== 'GET') {
     response.writeHead(405, { 'content-type': 'text/plain; charset=utf-8' });
     response.end('Only GET requests are allowed.');
     return;
   }
 
-  const requestUrl = new URL(request.url || '/', 'http://127.0.0.1');
   const match = requestUrl.pathname.match(/^\/storage-proxy\/([a-z0-9]{3,24})\/(blob|file|queue|table)(\/.*)?$/i);
   if (!match || !allowedServices.has(match[2].toLowerCase())) {
     response.writeHead(404, { 'content-type': 'text/plain; charset=utf-8' });
