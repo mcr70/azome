@@ -14,9 +14,10 @@ const server = http.createServer((request, response) => {
   const requestUrl = new URL(request.url || '/', 'http://127.0.0.1');
   const cosmosMatch = requestUrl.pathname.match(/^\/cosmos-proxy\/([a-z0-9-]{3,44})(\/.*)?$/i);
   if (cosmosMatch) {
-    if (request.method !== 'GET' && request.method !== 'POST') {
+    const allowedCosmosMethods = new Set(['GET', 'POST', 'PUT', 'DELETE']);
+    if (!allowedCosmosMethods.has(request.method || '')) {
       response.writeHead(405, { 'content-type': 'text/plain; charset=utf-8' });
-      response.end('Only GET and POST requests are allowed.');
+      response.end('Only GET, POST, PUT, and DELETE requests are allowed.');
       return;
     }
 

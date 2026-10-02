@@ -124,11 +124,21 @@
           <option value="all">Full scan</option>
           <option value="partition">Partition key</option>
           <option value="id">ID</option>
+          <option value="sql">SQL query</option>
         </select>
       </label>
-      <label *ngIf="searchMode !== 'all'">
+      <label *ngIf="searchMode !== 'all' && searchMode !== 'sql'">
         {{ searchMode === 'id' ? 'Document ID' : 'Partition key (' + (partitionPath || 'unknown') + ')' }}
         <input [(ngModel)]="searchValue" (keyup.enter)="search()" />
+      </label>
+      <label *ngIf="searchMode === 'sql'" class="sql-query-control">
+        SQL query
+        <textarea
+          [(ngModel)]="sqlQuery"
+          rows="3"
+          spellcheck="false"
+          placeholder="SELECT * FROM c WHERE c.category = 'settings'"
+        ></textarea>
       </label>
       <label>
         Max results
@@ -137,14 +147,78 @@
       <button type="button" (click)="search()" [disabled]="loading || !container">
         Search
       </button>
+      <button type="button" (click)="openCreateDialog()" [disabled]="loading || !container">
+        + New Document
+      </button>
+    </div>
+    <div *ngIf="createDialogOpen" class="document-dialog-backdrop">
+      <section class="document-dialog" role="dialog" aria-modal="true" aria-labelledby="new-document-title">
+        <h4 id="new-document-title">Create document</h4>
+        <p *ngIf="partitionPath" class="browser-status">
+          This container requires the <strong>{{ partitionPath }}</strong> partition key. Its value
+          is read from that property in the document JSON and sent with the request.
+        </p>
+        <p *ngIf="!partitionPath" class="browser-status">
+          The container did not return partition key metadata. If creation fails, check the
+          container's partition key and include that property in the document JSON.
+        </p>
+        <label for="new-document-json">Document JSON</label>
+        <textarea
+          id="new-document-json"
+          [(ngModel)]="newDocumentJson"
+          rows="12"
+          spellcheck="false"
+        ></textarea>
+        <p *ngIf="error" class="browser-error" role="alert">{{ error }}</p>
+        <div class="document-dialog-actions">
+          <button type="button" (click)="createDialogOpen = false" [disabled]="creatingDocument">
+            Cancel
+          </button>
+          <button type="button" (click)="createDocument()" [disabled]="creatingDocument">
+            {{ creatingDocument ? 'Creating…' : 'Create' }}
+          </button>
+        </div>
+      </section>
     </div>
     <p *ngIf="loading" class="browser-status">Loading Cosmos DB data…</p>
-    <p *ngIf="error" class="browser-error">{{ error }}</p>
+    <p *ngIf="error && !createDialogOpen" class="browser-error">{{ error }}</p>
     <p *ngIf="!loading && !error && databases.length === 0" class="browser-status">
       No databases found or access is unavailable.
     </p>
-    <div *ngIf="documents.length > 0" class="document-results">
-      <pre *ngFor="let document of documents">{{ formatted(document) }}</pre>
+    <div *ngIf="documents.length > 0" class="document-table-wrapper">
+      <table class="document-table">
+        <thead>
+          <tr>
+            <th class="document-expand-column"></th>
+            <th>Partition {{ partitionPath ? ' (' + partitionPath + ')' : '' }}</th>
+            <th>ID</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let document of documents; let index = index">
+            <tr>
+              <td class="document-expand-column">
+                <button
+                  type="button"
+                  class="document-expand-button"
+                  [attr.aria-expanded]="expandedDocumentIndexes.has(index)"
+                  [attr.aria-label]="expandedDocumentIndexes.has(index) ? 'Hide document data' : 'Show document data'"
+                  (click)="toggleDocumentDetails(index)"
+                >
+                  {{ expandedDocumentIndexes.has(index) ? '▼' : '▶' }}
+                </button>
+              </td>
+              <td>{{ partitionValue(document) }}</td>
+              <td>{{ document.id || '-' }}</td>
+            </tr>
+            <tr *ngIf="expandedDocumentIndexes.has(index)" class="document-expanded-row">
+              <td colspan="3">
+                <pre>{{ formattedUserData(document) }}</pre>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
     </div>
     <p *ngIf="!loading && !error && container && documents.length === 0" class="browser-status">
       No results loaded. Run a search to browse documents.

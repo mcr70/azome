@@ -35,7 +35,7 @@ export class CosmosDbService {
     account: string,
     database: string,
     container: string,
-    mode: 'all' | 'partition' | 'id',
+    mode: 'all' | 'partition' | 'id' | 'sql',
     value: string,
     partitionPath: string,
     limit: number
@@ -53,13 +53,19 @@ export class CosmosDbService {
     } else if (mode === 'id') {
       query += ' WHERE c.id = @value';
       parameters.push({ name: '@value', value });
+      return this.queryAcrossPartitions(account, database, container, query, parameters, limit);
+    } else if (mode === 'sql') {
+      query = value.trim();
+      if (!/^SELECT\s+TOP\b/i.test(query)) {
+        query = query.replace(/^(\s*SELECT\s+)/i, `$1TOP ${limit} `);
+      }
+      return this.queryAcrossPartitions(account, database, container, query, parameters, limit);
     }
 
     const path = `dbs/${encodeURIComponent(database)}/colls/${encodeURIComponent(container)}/docs`;
     let headers = this.headers()
       .set('Content-Type', 'application/query+json')
-      .set('x-ms-documentdb-isquery', 'true')
-      .set('x-ms-documentdb-query-enablecrosspartition', 'true');
+      .set('x-ms-documentdb-isquery', 'true');
     if (mode === 'partition') {
       headers = headers.set('x-ms-documentdb-partitionkey', JSON.stringify([value]));
     }
@@ -70,6 +76,85 @@ export class CosmosDbService {
     }, {
       headers
     }).pipe(map((feed) => feed.Documents ?? []));
+  }
+
+  private queryAcrossPartitions(
+    account: string,
+    database: string,
+    container: string,
+    query: string,
+    parameters: Array<{ name: string; value: unknown }>,
+    limit: number
+  ): Observable<CosmosResource<unknown>[]> {
+    const collectionPath = `dbs/${encodeURIComponent(database)}/colls/${encodeURIComponent(container)}`;
+    return this.http.get<CosmosFeed<unknown>>(this.url(account, `${collectionPath}/pkranges`), {
+      headers: this.headers()
+    }).pipe(
+      map((feed) => feed.PartitionKeyRanges ?? []),
+      switchMap((ranges) => {
+        if (ranges.length === 0) {
+          return of([]);
+        }
+
+        const requests = ranges.map((range) => this.http.post<CosmosFeed<CosmosResource<unknown>>>(
+          this.url(account, `${collectionPath}/docs`),
+          { query, parameters },
+          {
+            headers: this.headers()
+              .set('Content-Type', 'application/query+json')
+              .set('x-ms-documentdb-isquery', 'true')
+              .set('x-ms-documentdb-partitionkeyrangeid', range.id)
+              .set('x-ms-max-item-count', String(limit))
+          }
+        ).pipe(map((feed) => feed.Documents ?? [])));
+
+        return forkJoin(requests).pipe(
+          map((pages) => pages.flat().slice(0, limit))
+        );
+      })
+    );
+  }
+
+  /**
+   * Creates a new document in the specified container.
+   */
+  createDocument<T extends object>(
+    account: string,
+    database: string,
+    container: string,
+    document: T,
+    partitionKeyValue?: unknown
+  ): Observable<CosmosResource<T>> {
+    const path = `dbs/${encodeURIComponent(database)}/colls/${encodeURIComponent(container)}/docs`;
+    let headers = this.headers().set('Content-Type', 'application/json');
+
+    if (partitionKeyValue !== undefined) {
+      headers = headers.set('x-ms-documentdb-partitionkey', JSON.stringify([partitionKeyValue]));
+    }
+
+    return this.http.post<CosmosResource<T>>(this.url(account, path), document, { headers });
+  }
+
+  /**
+   * Replaces an existing document by ID in the specified container.
+   */
+  updateDocument<T extends object>(
+    account: string,
+    database: string,
+    container: string,
+    documentId: string,
+    document: T,
+    partitionKeyValue?: unknown
+  ): Observable<CosmosResource<T>> {
+    const path = `dbs/${encodeURIComponent(database)}/colls/${encodeURIComponent(container)}`
+      + `/docs/${encodeURIComponent(documentId)}`;
+    let headers = this.headers().set('Content-Type', 'application/json');
+
+    if (partitionKeyValue !== undefined) {
+      headers = headers.set('x-ms-documentdb-partitionkey', JSON.stringify([partitionKeyValue]));
+    }
+
+    return this.http.put<CosmosResource<T>>(this.url(account, path), document, { headers });
   }
 
   private scanDocuments(
