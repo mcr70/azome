@@ -22,8 +22,8 @@
     <button type="button" role="tab" [attr.aria-selected]="view === 'json'" [class.active]="view === 'json'" (click)="view = 'json'">JSON</button>
   </div>
 
-  <div class="resource-overview" [hidden]="view === 'json'">
-    <table class="resource-detail-table resource-summary-table">
+  <div class="resource-overview" [class.browse-mode]="view === 'browse'" [hidden]="view === 'json'">
+    <table *ngIf="view === 'overview'" class="resource-detail-table resource-summary-table">
       <tbody>
         <tr><th>Resource group</th><td>{{ resource.resourceGroup || 'N/A' }}</td></tr>
         <tr><th>Location</th><td>{{ resource.location || 'N/A' }}</td></tr>

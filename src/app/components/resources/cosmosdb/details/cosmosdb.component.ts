@@ -53,6 +53,14 @@ export interface CosmosDbProperties {
   styleUrl: './cosmosdb.component.scss'
 })
 export class CosmosDbComponent implements ResourceDetailItem, OnInit {
+  private readonly systemDocumentFields = new Set([
+    '_rid',
+    '_self',
+    '_etag',
+    '_attachments',
+    '_ts'
+  ]);
+
   @Input() resource: any;
   @Input() view: 'overview' | 'browse' = 'overview';
   static readonly preferredVariant: PanelVariant = 'content';
@@ -60,13 +68,18 @@ export class CosmosDbComponent implements ResourceDetailItem, OnInit {
   databases: CosmosResource<unknown>[] = [];
   containers: CosmosResource<unknown>[] = [];
   documents: CosmosResource<unknown>[] = [];
+  expandedDocumentIndexes = new Set<number>();
   database = '';
   container = '';
-  searchMode: 'all' | 'partition' | 'id' = 'all';
+  searchMode: 'all' | 'partition' | 'id' | 'sql' = 'all';
   searchValue = '';
+  sqlQuery = 'SELECT * FROM c';
   resultLimit = 50;
   loading = false;
   error = '';
+  createDialogOpen = false;
+  newDocumentJson = '{\n  "id": "new-doc-id",\n  "name": "Sample Record"\n}';
+  creatingDocument = false;
 
   constructor(private readonly cosmos: CosmosDbService) {}
 
@@ -106,8 +119,13 @@ export class CosmosDbComponent implements ResourceDetailItem, OnInit {
 
   get partitionPath(): string {
     const selected = this.containers.find((item) => item.id === this.container);
-    const properties = selected?.['properties'] as { partitionKey?: { paths?: string[] } } | undefined;
-    return properties?.partitionKey?.paths?.[0] ?? '';
+    const resource = selected as CosmosResource<unknown> & {
+      properties?: { partitionKey?: { paths?: string[] } };
+      partitionKey?: { paths?: string[] };
+    } | undefined;
+    return resource?.properties?.partitionKey?.paths?.[0]
+      ?? resource?.partitionKey?.paths?.[0]
+      ?? '';
   }
 
   selectDatabase(): void {
@@ -130,8 +148,12 @@ export class CosmosDbComponent implements ResourceDetailItem, OnInit {
     if (!this.database || !this.container) {
       return;
     }
-    if (this.searchMode !== 'all' && !this.searchValue.trim()) {
+    if (this.searchMode !== 'all' && this.searchMode !== 'sql' && !this.searchValue.trim()) {
       this.error = 'Enter a value for the selected search mode.';
+      return;
+    }
+    if (this.searchMode === 'sql' && !this.sqlQuery.trim()) {
+      this.error = 'Enter a SQL query.';
       return;
     }
     if (this.searchMode === 'partition' && !this.partitionPath) {
@@ -148,35 +170,158 @@ export class CosmosDbComponent implements ResourceDetailItem, OnInit {
       this.database,
       this.container,
       this.searchMode,
-      this.searchValue.trim(),
+      this.searchMode === 'sql' ? this.sqlQuery.trim() : this.searchValue.trim(),
       this.partitionPath,
       limit
     ).subscribe({
       next: (documents) => {
         this.documents = documents;
+        this.expandedDocumentIndexes = new Set<number>();
         this.loading = false;
       },
       error: (error: unknown) => this.fail(error)
     });
   }
 
-  formatted(document: CosmosResource<unknown>): string {
-    return JSON.stringify(document, null, 2);
+  openCreateDialog(): void {
+    this.error = '';
+    this.newDocumentJson = JSON.stringify(this.documentTemplate(), null, 2);
+    this.createDialogOpen = true;
+  }
+
+  createDocument(): void {
+    this.error = '';
+    let document: Record<string, unknown>;
+    try {
+      const parsed: unknown = JSON.parse(this.newDocumentJson);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        this.error = 'Document JSON must be an object.';
+        return;
+      }
+      document = parsed as Record<string, unknown>;
+    } catch {
+      this.error = 'Enter valid JSON for the document.';
+      return;
+    }
+
+    const partitionKey = this.partitionPath
+      ? this.partitionKeyFromDocument(document)
+      : { found: true, value: undefined };
+    if (this.partitionPath && !partitionKey.found) {
+      this.error = `Add a value at "${this.partitionPath}" in the document JSON.`;
+      return;
+    }
+
+    this.creatingDocument = true;
+    this.error = '';
+    this.cosmos.createDocument(
+      this.accountName,
+      this.database,
+      this.container,
+      document,
+      partitionKey.value
+    ).subscribe({
+      next: () => {
+        this.creatingDocument = false;
+        this.createDialogOpen = false;
+        this.search();
+      },
+      error: (error: unknown) => {
+        this.creatingDocument = false;
+        this.error = this.formatError(error);
+      }
+    });
+  }
+
+  partitionValue(document: CosmosResource<unknown>): string {
+    if (!this.partitionPath) {
+      return '-';
+    }
+
+    const partitionKey = this.partitionKeyFromDocument(document as Record<string, unknown>);
+    if (!partitionKey.found) {
+      return '-';
+    }
+    return typeof partitionKey.value === 'string'
+      ? partitionKey.value
+      : JSON.stringify(partitionKey.value);
+  }
+
+  formattedUserData(document: CosmosResource<unknown>): string {
+    const userData = Object.fromEntries(
+      Object.entries(document).filter(([key]) => !this.systemDocumentFields.has(key))
+    );
+    return JSON.stringify(userData, null, 2);
+  }
+
+  toggleDocumentDetails(index: number): void {
+    const expanded = new Set(this.expandedDocumentIndexes);
+    if (expanded.has(index)) {
+      expanded.delete(index);
+    } else {
+      expanded.add(index);
+    }
+    this.expandedDocumentIndexes = expanded;
+  }
+
+  private documentTemplate(): Record<string, unknown> {
+    const document: Record<string, unknown> = {
+      id: 'new-doc-id',
+      name: 'Sample Record'
+    };
+    const path = this.partitionPath.split('/').filter(Boolean);
+    if (path.length === 0) {
+      return document;
+    }
+
+    let current = document;
+    for (const segment of path.slice(0, -1)) {
+      const child: Record<string, unknown> = {};
+      current[segment] = child;
+      current = child;
+    }
+    current[path[path.length - 1]] = 'sample';
+    return document;
+  }
+
+  private partitionKeyFromDocument(
+    document: Record<string, unknown>
+  ): { found: boolean; value: unknown } {
+    const path = this.partitionPath.split('/').filter(Boolean);
+    let current: unknown = document;
+    for (const segment of path) {
+      if (!current || typeof current !== 'object' || !(segment in current)) {
+        return { found: false, value: undefined };
+      }
+      current = (current as Record<string, unknown>)[segment];
+    }
+    return { found: true, value: current };
   }
 
   private fail(error: unknown): void {
     this.loading = false;
+    this.error = this.formatError(error);
+  }
+
+  private formatError(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
+      if (error.status === 409) {
+        const documentId = this.documentIdFromJson();
+        return documentId
+          ? `A document with ID "${documentId}" already exists in this container. Change the ID and try again.`
+          : 'A document with this ID already exists in the container. Change the ID and try again.';
+      }
+
       const details = this.errorDetails(error.error);
-      this.error = details
+      const message = details
         ? `Cosmos DB request failed (${error.status}): ${details}`
         : `Cosmos DB request failed (${error.status} ${error.statusText}).`;
       console.error('Cosmos DB request failed.', error);
-      return;
+      return message;
     }
 
-    this.error = error instanceof Error ? error.message : 'Cosmos DB request failed.';
     console.error('Cosmos DB request failed.', error);
+    return error instanceof Error ? error.message : 'Cosmos DB request failed.';
   }
 
   private errorDetails(body: unknown): string {
@@ -184,17 +329,17 @@ export class CosmosDbComponent implements ResourceDetailItem, OnInit {
       try {
         return this.errorDetails(JSON.parse(body));
       } catch {
-        return body;
+        return this.simplifyCosmosMessage(body);
       }
     }
 
     if (body && typeof body === 'object') {
       const response = body as { message?: unknown; Message?: unknown; error?: unknown };
       if (typeof response.message === 'string') {
-        return response.message;
+        return this.simplifyCosmosMessage(response.message);
       }
       if (typeof response.Message === 'string') {
-        return response.Message;
+        return this.simplifyCosmosMessage(response.Message);
       }
       if (typeof response.error === 'string') {
         return response.error;
@@ -202,5 +347,38 @@ export class CosmosDbComponent implements ResourceDetailItem, OnInit {
     }
 
     return '';
+  }
+
+  private documentIdFromJson(): string {
+    try {
+      const document = JSON.parse(this.newDocumentJson) as { id?: unknown };
+      return typeof document.id === 'string' ? document.id : '';
+    } catch {
+      return '';
+    }
+  }
+
+  private stripCosmosDiagnostics(message: string): string {
+    const diagnosticsStart = message.indexOf(', {"Summary"');
+    if (diagnosticsStart >= 0) {
+      return message.slice(0, diagnosticsStart).trim();
+    }
+
+    const sdkDetailsStart = message.indexOf(', Windows/');
+    if (sdkDetailsStart >= 0) {
+      return message.slice(0, sdkDetailsStart).trim();
+    }
+
+    return message;
+  }
+
+  private simplifyCosmosMessage(message: string): string {
+    const cleanMessage = this.stripCosmosDiagnostics(message);
+    if (cleanMessage.toLowerCase().includes('partitionkey extracted from document')
+      && cleanMessage.toLowerCase().includes("doesn't match")) {
+      return `The partition key value in the document does not match the request value. `
+        + `Check the value at "${this.partitionPath}" in the document JSON.`;
+    }
+    return cleanMessage;
   }
 }
