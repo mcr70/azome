@@ -1,6 +1,5 @@
 <div class="resource-workspace-layout" [class.has-one-pinned-panel]="pinnedPanels.length === 1" [class.has-two-pinned-panels]="pinnedPanels.length === 2">
   <div class="resource-groups-container">
-  <p *ngIf="loadingDetails" class="status-message">Loading resource details from Azure...</p>
   <p *ngIf="loading" class="status-message">Loading resource groups...</p>
 
   <div *ngIf="error" class="error-message" role="alert">
@@ -55,22 +54,19 @@
         No individual resources found in this resource group.
       </div>
 
-      <div
-        *ngIf="!loadingResources[group.name] && (groupResources[group.name]?.length ?? 0) > 0"
-        class="resource-grid"
-      >
-        <div
-          *ngFor="let resource of groupResources[group.name]"
-          class="resource-item"
-          (click)="selectResource(resource)"
-          style="cursor: pointer;"
-        >
+      <div *ngIf="!loadingResources[group.name] && (groupResources[group.name]?.length ?? 0) > 0"
+           class="resource-grid" >
+        <div *ngFor="let resource of groupResources[group.name]"
+             class="resource-item"
+             (click)="selectResource(resource)"
+          style="cursor: pointer;" >
           <span class="resource-dot" aria-hidden="true"></span>
           <div class="resource-info">
-            <p class="resource-kind">{{ getShortType(resource.type) }}</p>
-            <h3>{{ resource.name }}</h3>
-            <span class="resource-type">{{ resource.type }}</span>
-            <span *ngIf="resource.location" class="resource-location">{{ resource.location }}</span>
+            <span class="resource-name">{{ resource.name }}</span>
+            <span class="resource-metadata">
+              <span class="resource-kind">{{ getShortType(resource.type) }}</span>
+              <span *ngIf="resource.location" class="resource-location">{{ resource.location }}</span>
+            </span>
           </div>
         </div>
       </div>

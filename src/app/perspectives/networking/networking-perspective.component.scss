@@ -242,7 +242,7 @@ h1 {
 
 .subnet-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 1px;
   background: #e2e8f0;
 }
@@ -263,7 +263,34 @@ h1 {
 
 .subnet-label {
   display: flex;
+  min-width: 0;
   gap: 12px;
+}
+
+.subnet-top-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.subnet-address-space {
+  max-width: 50%;
+  margin: 0;
+  text-align: right;
+}
+
+.subnet-address-space dt {
+  margin-bottom: 4px;
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.subnet-address-space dd {
+  margin: 0;
+  color: #334155;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
 }
 
 .connection-dot {
@@ -282,19 +309,13 @@ h1 {
   font-size: 1rem;
 }
 
-.address-prefixes {
-  margin-bottom: 0;
-  color: #64748b;
-  font-size: 0.875rem;
-}
-
 /* Korvataan/lisätään vanhan .control -tyylin tilalle: */
 
 .controls {
   display: flex;
-  flex-direction: column;
+  //flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 16px;
   margin: 18px 0 0 22px;
 }
 

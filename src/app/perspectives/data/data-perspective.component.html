@@ -24,11 +24,6 @@
         class="status-message">
         Loading data resources...
       </p>
-      <p
-        *ngIf="loadingDetails"
-        class="status-message">
-        Loading resource details from Azure...
-      </p>
 
       <div
         *ngIf="error"
@@ -86,9 +81,6 @@
               type="button"
               (click)="openResourceDetails(resource.id, $event)"
               [attr.aria-label]="'Open details for ' + resource.name">
-              <span class="resource-kind">
-                {{ typeGroup.label }}
-              </span>
               <strong class="resource-name">
                 {{ resource.name }}
               </strong>

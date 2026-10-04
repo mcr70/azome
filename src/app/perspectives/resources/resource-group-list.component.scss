@@ -142,12 +142,10 @@
 }
 
 .resource-kind {
-  margin: 0;
-  color: #0f766e;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0;
-  text-transform: uppercase;
+  color: #64748b;
+  font-size: 0.8125rem;
+  font-weight: 400;
+  text-transform: none;
 }
 
 .group-title {
@@ -244,7 +242,9 @@
 
 .resource-info {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
+  min-width: 0;
 
   h3 {
     margin: 2px 0 4px;
@@ -261,9 +261,10 @@
 }
 
 .resource-location {
-  margin-top: 4px;
-  color: #94a3b8;
-  font-size: 0.75rem;
+  color: #64748b;
+  font-size: inherit;
+  text-align: right;
+  white-space: nowrap;
 }
 
 @media (max-width: 720px) {
@@ -351,6 +352,28 @@
     box-sizing: border-box;
     min-height: 520px;
   }
+}
+
+.resource-metadata {
+  display: flex;
+  width: 100%;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: #64748b;
+  font-size: 0.8125rem;
+}
+
+.resource-metadata span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.resource-name {
+  color: #0f766e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
 }
 
 @media (max-width: 720px) {
