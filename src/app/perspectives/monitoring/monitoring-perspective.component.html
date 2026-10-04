@@ -64,7 +64,10 @@
     <div *ngIf="!loading && !error && workspaces.length > 0" class="workspace-grid">
       <article *ngFor="let workspace of workspaces" class="workspace-card">
         <p class="resource-kind">Log Analytics workspace</p>
-        <h3>{{ workspace.name }}</h3>
+        <h3 class="workspace-title">
+          <app-resource-type-icon type="Microsoft.OperationalInsights/workspaces"></app-resource-type-icon>
+          {{ workspace.name }}
+        </h3>
         <dl>
           <div><dt>Resource group</dt><dd>{{ workspace.resourceGroup }}</dd></div>
           <div><dt>Region</dt><dd>{{ workspace.location }}</dd></div>

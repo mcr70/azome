@@ -25,7 +25,10 @@
       <div class="group-title">
         <div>
           <p class="resource-kind">Resource group</p>
-          <h2>{{ group.name }}</h2>
+          <h2 class="group-name">
+            <app-resource-type-icon type="resourceGroup"></app-resource-type-icon>
+            {{ group.name }}
+          </h2>
         </div>
       </div>
 
@@ -60,7 +63,11 @@
              class="resource-item"
              (click)="selectResource(resource)"
           style="cursor: pointer;" >
-          <span class="resource-dot" aria-hidden="true"></span>
+          <app-resource-type-icon
+            class="resource-icon"
+            [type]="resource.type"
+            [size]="18"
+          ></app-resource-type-icon>
           <div class="resource-info">
             <span class="resource-name">{{ resource.name }}</span>
             <span class="resource-metadata">

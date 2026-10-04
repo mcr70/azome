@@ -9,6 +9,7 @@ import {
 import { NetworkGraphComponent } from './network-graph.component';
 import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
 import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/azome/resource-detail-panel.service';
+import { ResourceTypeIconComponent } from '../../components/resource-type-icon.component';
 
 @Component({
   selector: 'app-networking-perspective',
@@ -16,7 +17,8 @@ import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/
   imports: [
     CommonModule, 
     NetworkGraphComponent, 
-    ResourceDetailPaneComponent
+    ResourceDetailPaneComponent,
+    ResourceTypeIconComponent
   ],
   templateUrl: './networking-perspective.component.html',
   styleUrl: './networking-perspective.component.scss'

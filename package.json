@@ -20,6 +20,7 @@
     "@angular/router": "^19.0.0",
     "@azure/msal-angular": "^5.2.6",
     "@azure/msal-browser": "^5.12.0",
+    "@lucide/angular": "^1.51.0",
     "@types/cytoscape": "^3.21.9",
     "cytoscape": "^3.34.3",
     "cytoscape-dagre": "^4.0.1",

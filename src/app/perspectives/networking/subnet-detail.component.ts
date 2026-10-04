@@ -4,11 +4,12 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subject } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
 import { ResourceGraphService, SubnetRoutingDetail } from '../../services/azure/resource-graph.service';
+import { ResourceTypeIconComponent } from '../../components/resource-type-icon.component';
 
 @Component({
   selector: 'app-subnet-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ResourceTypeIconComponent],
   templateUrl: './subnet-detail.component.html',
   styleUrl: './subnet-detail.component.scss'
 })
