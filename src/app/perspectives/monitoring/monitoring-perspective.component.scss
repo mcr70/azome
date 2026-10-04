@@ -211,6 +211,12 @@ tbody tr:last-child td {
   font-size: 1.05rem;
 }
 
+.workspace-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 dl {
   display: grid;
   gap: 10px;

@@ -4,11 +4,12 @@ import { Subject, forkJoin } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ActivityLogEvent, LogAnalyticsWorkspace, MonitoringService } from '../../services/azure/monitoring.service';
 import { ActivityLogDetailComponent } from './activity-log-detail.component';
+import { ResourceTypeIconComponent } from '../../components/resource-type-icon.component';
 
 @Component({
   selector: 'app-monitoring-perspective',
   standalone: true,
-  imports: [CommonModule, ActivityLogDetailComponent],
+  imports: [CommonModule, ActivityLogDetailComponent, ResourceTypeIconComponent],
   templateUrl: './monitoring-perspective.component.html',
   styleUrl: './monitoring-perspective.component.scss'
 })

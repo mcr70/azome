@@ -5,12 +5,13 @@ import { takeUntil } from 'rxjs/operators';
 import { ResourceGroup, ResourceGroupService } from '../../services/azure/resource-group.service';
 import { AzureResource, ResourceGraphService } from '../../services/azure/resource-graph.service';
 import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
+import { ResourceTypeIconComponent } from '../../components/resource-type-icon.component';
 import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/azome/resource-detail-panel.service';
 
 @Component({
   selector: 'app-resource-group-list',
   standalone: true,
-  imports: [CommonModule, ResourceDetailPaneComponent],
+  imports: [CommonModule, ResourceDetailPaneComponent, ResourceTypeIconComponent],
   templateUrl: './resource-group-list.component.html',
   styleUrl: './resource-group-list.component.scss'
 })

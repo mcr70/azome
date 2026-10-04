@@ -159,6 +159,12 @@
   }
 }
 
+.group-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .group-meta {
   display: flex;
   align-items: center;
@@ -229,15 +235,9 @@
   }
 }
 
-.resource-dot {
-  display: block;
-  width: 8px;
-  height: 8px;
-  flex: 0 0 auto;
-  margin-top: 6px;
-  border-radius: 50%;
-  background: #14b8a6;
-  box-shadow: 0 0 0 3px #ccfbf1;
+.resource-icon {
+  margin-top: 0.125rem;
+  color: #0f766e;
 }
 
 .resource-info {

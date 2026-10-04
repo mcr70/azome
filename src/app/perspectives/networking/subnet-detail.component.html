@@ -18,7 +18,10 @@
     <article class="detail-card">
       <header>
         <p class="resource-kind">Security</p>
-        <h2>{{ d.networkSecurityGroupName || 'No network security group assigned' }}</h2>
+        <h2>
+          <app-resource-type-icon type="Microsoft.Network/networkSecurityGroups"></app-resource-type-icon>
+          {{ d.networkSecurityGroupName || 'No network security group assigned' }}
+        </h2>
       </header>
 
       <ng-container *ngIf="d.networkSecurityGroupName">
@@ -80,7 +83,10 @@
     <article class="detail-card">
       <header>
         <p class="resource-kind">Routing</p>
-        <h2>{{ d.routeTableName || 'No route table assigned' }}</h2>
+        <h2>
+          <app-resource-type-icon type="Microsoft.Network/routeTables"></app-resource-type-icon>
+          {{ d.routeTableName || 'No route table assigned' }}
+        </h2>
       </header>
 
       <ng-container *ngIf="d.routeTableName">

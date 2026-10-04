@@ -81,9 +81,12 @@
               type="button"
               (click)="openResourceDetails(resource.id, $event)"
               [attr.aria-label]="'Open details for ' + resource.name">
-              <strong class="resource-name">
-                {{ resource.name }}
-              </strong>
+              <span class="resource-card-title">
+                <app-resource-type-icon [type]="resource.type"></app-resource-type-icon>
+                <strong class="resource-name">
+                  {{ resource.name }}
+                </strong>
+              </span>
               <span class="resource-metadata">
                 <span>
                   {{ resource.resourceGroup }}

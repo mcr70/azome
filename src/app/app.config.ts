@@ -3,6 +3,21 @@ import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { MSAL_INSTANCE, MSAL_GUARD_CONFIG, MsalService, MsalGuard, MsalBroadcastService } from '@azure/msal-angular';import { PublicClientApplication, InteractionType } from '@azure/msal-browser';
 import { routes } from './app.routes';
+import {
+  LucideActivity,
+  LucideBoxes,
+  LucideDatabase,
+  LucideDatabaseZap,
+  LucideFolder,
+  LucideHardDrive,
+  LucideNetwork,
+  LucideRadioTower,
+  LucideRoute,
+  LucideRouter,
+  LucideServer,
+  LucideShield,
+  provideLucideIcons
+} from '@lucide/angular';
 
 import { environment } from '../environments/environment';
 
@@ -39,6 +54,20 @@ export function MSALInstanceFactory() {
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideLucideIcons(
+      LucideActivity,
+      LucideBoxes,
+      LucideDatabase,
+      LucideDatabaseZap,
+      LucideFolder,
+      LucideHardDrive,
+      LucideNetwork,
+      LucideRadioTower,
+      LucideRoute,
+      LucideRouter,
+      LucideServer,
+      LucideShield
+    ),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideHttpClient(withInterceptorsFromDi()),
