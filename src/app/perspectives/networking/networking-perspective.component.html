@@ -56,7 +56,7 @@
       </header>
 
       <div *ngIf="topology.peerings.length > 0" class="peering-list">
-        <span class="peering-label">Peered with</span>
+        <span class="peering-label">Peerings</span>
         <span *ngFor="let peering of topology.peerings" class="peering-chip" [class.inactive]="peering.peeringState !== 'Connected'">
           {{ peering.remoteVirtualNetworkName || 'Unknown network' }}
           <small>({{ peering.peeringState || 'Unknown state' }})</small>
