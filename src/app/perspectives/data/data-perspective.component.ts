@@ -4,8 +4,12 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
 import { ResourceTypeIconComponent } from '../../components/resource-type-icon.component';
+import { DataBrowsePaneComponent } from './data-browse-pane.component';
 import { AzureDataResource, DataResourceCategory } from '../../services/azure/data.model';
-import { ResourceGraphService } from '../../services/azure/resource-graph.service';
+import {
+  AzureResourceDetail,
+  ResourceGraphService
+} from '../../services/azure/resource-graph.service';
 import {
   ResourceDetailPanelService,
   ResourcePanelConfig
@@ -25,7 +29,7 @@ interface DataResourceCategoryGroup {
 @Component({
   selector: 'app-data-perspective',
   standalone: true,
-  imports: [CommonModule, ResourceDetailPaneComponent, ResourceTypeIconComponent],
+  imports: [CommonModule, ResourceDetailPaneComponent, ResourceTypeIconComponent, DataBrowsePaneComponent],
   templateUrl: './data-perspective.component.html',
   styleUrl: './data-perspective.component.scss'
 })
@@ -35,6 +39,7 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
   public loadingDetails = false;
   public error: string | null = null;
   public panels: ResourcePanelConfig[] = [];
+  public browseResource: AzureResourceDetail | null = null;
 
   private readonly destroy$ = new Subject<void>();
   private detailRequestId = 0;
@@ -137,6 +142,25 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
+  public isBrowsable(resource: AzureDataResource): boolean {
+    const type = resource.type.toLowerCase();
+    return type === 'microsoft.storage/storageaccounts'
+      || type === 'microsoft.documentdb/databaseaccounts';
+  }
+
+  public openBrowse(resource: AzureDataResource, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.resourceGraph.getResourceDetails(resource.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (details) => {
+          if (details) this.browseResource = details;
+        },
+        error: (error: unknown) => console.error('Failed to open data browser:', error)
+      });
+  }
+
   public resourceTypeLabel(type: string): string {
     const labels: Record<string, string> = {
       'microsoft.storage/storageaccounts': 'Storage accounts',
@@ -155,6 +179,10 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
 
   public closePanel(panelId: string): void {
     this.panelService.closePanel(panelId);
+  }
+
+  public closeBrowse(): void {
+    this.browseResource = null;
   }
 
   public togglePanelPin(panelId: string): void {

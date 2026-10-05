@@ -176,7 +176,8 @@ h1 {
 
 .resource-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  align-content: start;
   gap: 12px;
 }
 
@@ -191,18 +192,50 @@ h1 {
   border-radius: 6px;
   background: #f8fafc;
   color: inherit;
-  cursor: pointer;
   font: inherit;
   text-align: left;
+  max-width: 540px;
 }
 
-.resource-card:hover,
-.resource-card:focus-visible {
+.browse-action {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #0f766e;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.details-action {
+  flex: 0 0 32px;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #cbd5e1;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #0f766e;
+  cursor: pointer;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.browse-action:hover,
+.browse-action:focus-visible,
+.details-action:hover,
+.details-action:focus-visible {
   border-color: #0f766e;
-  background: #f0fdfa;
+  background: #ccfbf1;
 }
 
 .resource-name {
+  flex: 1 1 auto;
+  min-width: 0;
   max-width: 100%;
   overflow-wrap: anywhere;
   font-size: 1rem;
@@ -211,6 +244,7 @@ h1 {
 .resource-card-title {
   display: flex;
   align-items: center;
+  width: 100%;
   gap: 0.75rem;
   min-width: 0;
 }

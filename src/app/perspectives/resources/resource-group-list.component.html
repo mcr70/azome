@@ -60,16 +60,24 @@
       <div *ngIf="!loadingResources[group.name] && (groupResources[group.name]?.length ?? 0) > 0"
            class="resource-grid" >
         <div *ngFor="let resource of groupResources[group.name]"
-             class="resource-item"
-             (click)="selectResource(resource)"
-          style="cursor: pointer;" >
+             class="resource-item">
           <app-resource-type-icon
             class="resource-icon"
             [type]="resource.type"
             [size]="18"
           ></app-resource-type-icon>
           <div class="resource-info">
-            <span class="resource-name">{{ resource.name }}</span>
+            <div class="resource-heading">
+              <span class="resource-name">{{ resource.name }}</span>
+              <button
+                type="button"
+                class="resource-details-action"
+                [attr.aria-label]="'Show details for ' + resource.name"
+                title="Resource details"
+                (click)="selectResource(resource)">
+                <span aria-hidden="true">i</span>
+              </button>
+            </div>
             <span class="resource-metadata">
               <span class="resource-kind">{{ getShortType(resource.type) }}</span>
               <span *ngIf="resource.location" class="resource-location">{{ resource.location }}</span>

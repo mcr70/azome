@@ -22,7 +22,7 @@ export class ResourceDetailPaneComponent implements OnChanges {
   @Output() togglePin = new EventEmitter<string>();
   @Output() duplicate = new EventEmitter<string>();
 
-  public view: 'overview' | 'browse' | 'json' = 'overview';
+  public view: 'overview' | 'json' = 'overview';
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['panel']) this.view = 'overview';
@@ -48,16 +48,4 @@ export class ResourceDetailPaneComponent implements OnChanges {
     return component?.preferredVariant || 'default';
   }
 
-  public get isStorageAccount(): boolean {
-    return this.resource.type?.toLowerCase() === 'microsoft.storage/storageaccounts';
-  }
-
-  public get isCosmosDb(): boolean {
-    return this.resource.type?.toLowerCase() === 'microsoft.documentdb/databaseaccounts';
-  }
-
-  public setView(view: 'overview' | 'browse' | 'json', detailHost: ResourceDetailHostComponent): void {
-    this.view = view;
-    if (view !== 'json') detailHost.setTab(view);
-  }
 }
