@@ -79,14 +79,6 @@
         </td>
         <td class="actions">
           <button
-            *ngIf="canPreview(item)"
-            type="button"
-            title="Preview"
-            aria-label="Preview"
-            (click)="preview(item)">
-            👁
-          </button>
-          <button
             *ngIf="!item.isDirectory"
             type="button"
             title="Download"
