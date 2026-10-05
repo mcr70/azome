@@ -75,17 +75,32 @@
           </div>
 
           <div class="resource-grid">
-            <button
+            <div
               *ngFor="let resource of typeGroup.resources"
-              class="resource-card"
-              type="button"
-              (click)="openResourceDetails(resource.id, $event)"
-              [attr.aria-label]="'Open details for ' + resource.name">
+              class="resource-card">
               <span class="resource-card-title">
                 <app-resource-type-icon [type]="resource.type"></app-resource-type-icon>
                 <strong class="resource-name">
                   {{ resource.name }}
                 </strong>
+                <button
+                  class="details-action"
+                  type="button"
+                  [attr.aria-label]="'Show details for ' + resource.name"
+                  (click)="openResourceDetails(resource.id, $event)"
+                  title="Resource details">
+                  <span aria-hidden="true">i</span>
+                </button>
+                <button
+                  *ngIf="isBrowsable(resource)"
+                  class="browse-action"
+                  type="button"
+                  [attr.aria-label]="'Browse ' + resource.name"
+                  (click)="openBrowse(resource, $event)"
+                  (keydown.enter)="$event.stopPropagation()"
+                  title="Browse data">
+                  <span aria-hidden="true">⌕</span>
+                </button>
               </span>
               <span class="resource-metadata">
                 <span>
@@ -95,7 +110,7 @@
                   {{ resource.location || 'Global' }}
                 </span>
               </span>
-            </button>
+            </div>
           </div>
         </section>
       </section>
@@ -121,4 +136,10 @@
     (close)="closePanel($event)"
     (togglePin)="togglePanelPin($event)">
   </app-resource-detail-pane>
+
+  <app-data-browse-pane
+    *ngIf="browseResource as resource"
+    [resource]="resource"
+    (close)="closeBrowse()">
+  </app-data-browse-pane>
 </section>

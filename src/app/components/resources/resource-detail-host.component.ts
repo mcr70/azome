@@ -13,13 +13,10 @@ import { DefaultResourceDetailComponent } from './default-resource-detail.compon
 export class ResourceDetailHostComponent implements OnChanges {
   @Input() resource: any;
   @Input() showTabs = true;
-
-  public activeTab: 'overview' | 'browse' | 'json' = 'overview';
+  public activeTab: 'overview' | 'json' = 'overview';
   public currentComponent: Type<ResourceDetailItem> = DefaultResourceDetailComponent;
   public componentInputs: { [key: string]: any } = {};
   public hasCustomComponent: boolean = false;
-  public isStorageAccount = false;
-  public isCosmosDb = false;
 
   constructor(private registryService: ResourceDetailRegistryService) {
   }
@@ -27,18 +24,15 @@ export class ResourceDetailHostComponent implements OnChanges {
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['resource'] && this.resource) {
       const targetComponent = this.registryService.getComponent(this.resource.type);
-      this.isStorageAccount = this.resource.type?.toLowerCase() === 'microsoft.storage/storageaccounts';
-      this.isCosmosDb = this.resource.type?.toLowerCase() === 'microsoft.documentdb/databaseaccounts';
 
       this.hasCustomComponent = !!targetComponent;
       this.currentComponent = targetComponent || DefaultResourceDetailComponent;
-      this.componentInputs = { resource: this.resource };
-
       this.activeTab = 'overview';
+      this.componentInputs = { resource: this.resource };
     }
   }
 
-  public setTab(tab: 'overview' | 'browse' | 'json'): void {
+  public setTab(tab: 'overview' | 'json'): void {
     this.activeTab = tab;
   }
 }

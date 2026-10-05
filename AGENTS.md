@@ -6,7 +6,7 @@ Agents and code generators working on this repository MUST strictly follow stand
 ## 1. HTML Templates (Angular)
 
 * **Multi-line Formatting:** Every HTML element with child nodes or multiple attributes MUST be formatted on multiple lines with proper indentation (2 spaces).
-* **One Element per Line:** Never collapse siblings or container blocks into a single line (e.g., `<p>...</p><p>...</p>` or `<button>...</button> <h3>...</h3>`).
+* **One Element per Line:** Collapse siblings or container blocks into a single line (e.g., `<p>...</p><p>...</p>` or `<button>...</button> <h3>...</h3>`) only, if the line length does not exceed 80..100.
 * **Control Flow Directives:** Structural directives (`*ngIf`, `*ngFor` or modern `@if`, `@for`) must be clearly indented on their own lines.
 * **Readable Tables & Forms:** Tables, forms, and navigation wrappers must follow standard HTML structural layout.
 
@@ -46,11 +46,13 @@ No Minified Rules: Never write inline minified CSS rules (e.g., .state { color: 
 # Components
 
 ## Resource Details
-Main purpose of the resource details is to show metadata of the resource
+Main purpose of the resource details is to show metadata of the resource and ARM-level control plane management.
 
 - Azure resource detail components are located in `src/app/components/resource-details`.
 - Each resource detail component **must** be registered in `ResourceDetailRegistryService`.
-- Resource detail views should focus on displaying essential information. Omit unnecessary details if they don't add value (a full JSON view is available for inspecting complete raw data).
+- **Scope & Boundaries:** Resource detail views should focus on essential ARM metadata, tags, JSON representation, and control plane IAM (Azure RBAC). 
+- **No Data Plane in Details:** Data-plane operations (such as database *Browse* or document/content exploration) **must not** reside in the general `resource-details` pane. They belong exclusively to perspective-specific views (e.g., the *Data* perspective).
+- Omit unnecessary details if they don't add value (a full JSON view is available for inspecting complete raw data).
 
 ## Other Components
 - Keep common/general components separate from resource detail components. Do not mix them in the same directories.
@@ -58,8 +60,9 @@ Main purpose of the resource details is to show metadata of the resource
 
 # Perspectives
 - Perspectives are located in the `src/app/perspectives` folder.
-- Each perspective provides its own targeted view of Azure resources.
-- If a perspective requires its own sub components, gather them under the same folder
+- Each perspective provides its own targeted view of Azure resources (e.g., Resources, Data, Networking, Monitoring, Applications).
+- **Perspective-Specific Actions:** Heavy functional operations—such as database browsing, multi-source log aggregation, or application-specific topologies—should be handled within their respective perspective contexts rather than polluting the general resource details.
+- If a perspective requires its own sub components, gather them under the same folder.
 - Currently, perspective routing and selection are handled in `app.routes.ts` and `app.component.ts`.
 
 

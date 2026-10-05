@@ -250,8 +250,9 @@ h1 {
 .subnet-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
-  gap: 1px;
-  background: #e2e8f0;
+  gap: 12px;
+  padding: 12px;
+  background: transparent;
 }
 
 .subnet {
@@ -259,6 +260,8 @@ h1 {
   flex-direction: column;
   justify-content: space-between;
   padding: 16px 20px;
+  border: 1px solid #dbe3ee;
+  border-radius: 6px;
   background: #ffffff;
   color: inherit;
   text-decoration: none;
