@@ -1,10 +1,18 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterOutlet, Router } from '@angular/router';
+import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { AuthService } from './services/azome/auth.service';
 import { ProfileService } from './services/azure/profile.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
+
+const ACTIVE_ROUTE_KEY = 'azome.activeRoute';
+const PERSPECTIVE_ROUTES: Record<string, string> = {
+  '/rg': 'resources',
+  '/networking': 'networking',
+  '/monitoring': 'monitoring',
+  '/data': 'data'
+};
 
 @Component({
   selector: 'app-root',
@@ -26,17 +34,32 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.router.events
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((event) => {
+        if (!(event instanceof NavigationEnd)) {
+          return;
+        }
+
+        const route = event.urlAfterRedirects;
+        const routePath = route.split(/[?#]/)[0];
+        const perspectiveRoute = this.perspectiveRoute(routePath);
+        if (perspectiveRoute) {
+          this.selectedPerspective = perspectiveRoute.perspective;
+          window.sessionStorage.setItem(ACTIVE_ROUTE_KEY, route);
+        }
+      });
+
     // Listen for authentication state changes and react accordingly
     this.auth.isAuthenticated$
       .pipe(takeUntil(this.destroy$))
       .subscribe((isAuth) => {
         if (isAuth) {
           this.loadAzureData(); // Haetaan profiili yläpalkkia varten
-          this.router.navigate(['/rg']); // Ohjataan resurssiryhmisivulle
+          this.restorePerspectiveRoute();
         } else {
           this.userName = null;
           this.activeUserEmail = null;
-          this.router.navigate(['/']); // Ohjataan takaisin kirjautumissivulle
         }
       });
 
@@ -58,6 +81,31 @@ export class AppComponent implements OnInit, OnDestroy {
       data: '/data'
     };
     this.router.navigate([routes[perspective] ?? '/rg']);
+  }
+
+  private restorePerspectiveRoute(): void {
+    const currentPath = this.router.url.split(/[?#]/)[0];
+    const browserPath = window.location.pathname;
+
+    if (this.perspectiveRoute(currentPath) || this.perspectiveRoute(browserPath)) {
+      return;
+    }
+
+    const savedRoute = window.sessionStorage.getItem(ACTIVE_ROUTE_KEY);
+    const savedPath = savedRoute?.split(/[?#]/)[0] ?? '';
+    const route = savedRoute && this.perspectiveRoute(savedPath) ? savedRoute : '/rg';
+    const perspective = this.perspectiveRoute(route.split(/[?#]/)[0]);
+    this.selectedPerspective = perspective?.perspective ?? 'resources';
+    this.router.navigateByUrl(route);
+  }
+
+  private perspectiveRoute(route: string): { perspective: string } | null {
+    const matchingRoute = Object.keys(PERSPECTIVE_ROUTES)
+      .find((path) => route === path || route.startsWith(`${path}/`));
+
+    return matchingRoute
+      ? { perspective: PERSPECTIVE_ROUTES[matchingRoute] }
+      : null;
   }
 
   // Fetch Azure profile data to display in the header
