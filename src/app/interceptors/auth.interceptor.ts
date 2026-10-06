@@ -6,6 +6,8 @@ import { catchError, switchMap } from 'rxjs/operators';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
+  private loginRedirectStarted = false;
+
   constructor(private authService: MsalService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
@@ -35,6 +37,27 @@ export class AuthInterceptor implements HttpInterceptor {
       }),
       catchError((error) => {
         const errorCode = error?.errorCode || error?.code;
+        const subError = error?.subError || error?.suberror;
+        const errorMessage = String(error?.message || '');
+        const refreshTokenExpired = [errorCode, subError, errorMessage]
+          .some((value) => String(value || '').toLowerCase().includes('refresh_token_expired'));
+
+        if (refreshTokenExpired) {
+          if (!this.loginRedirectStarted) {
+            this.loginRedirectStarted = true;
+            this.authService.loginRedirect({
+              scopes: scope,
+              prompt: 'login'
+            }).subscribe({
+              error: (redirectError: unknown) => {
+                console.error('Failed to start sign-in after refresh token expiry:', redirectError);
+                this.loginRedirectStarted = false;
+              }
+            });
+          }
+          return EMPTY;
+        }
+
         if (scope[0].startsWith('https://cosmos.azure.com/')
           && (errorCode === 'interaction_required' || errorCode === 'consent_required')) {
           this.authService.acquireTokenRedirect({
