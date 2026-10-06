@@ -3,7 +3,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
-import { ResourceTypeIconComponent } from '../../components/resource-type-icon.component';
+import { ResourceCardComponent } from '../../components/resource-card.component';
 import { DataBrowsePaneComponent } from './data-browse-pane.component';
 import { AzureDataResource, DataResourceCategory } from '../../services/azure/data.model';
 import {
@@ -29,7 +29,12 @@ interface DataResourceCategoryGroup {
 @Component({
   selector: 'app-data-perspective',
   standalone: true,
-  imports: [CommonModule, ResourceDetailPaneComponent, ResourceTypeIconComponent, DataBrowsePaneComponent],
+  imports: [
+    CommonModule,
+    ResourceDetailPaneComponent,
+    ResourceCardComponent,
+    DataBrowsePaneComponent
+  ],
   templateUrl: './data-perspective.component.html',
   styleUrl: './data-perspective.component.scss'
 })

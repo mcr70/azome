@@ -75,16 +75,13 @@
           </div>
 
           <div class="resource-grid">
-            <div
+            <app-resource-card
               *ngFor="let resource of typeGroup.resources"
-              class="resource-card">
-              <span class="resource-card-title">
-                <app-resource-type-icon [type]="resource.type"></app-resource-type-icon>
-                <strong class="resource-name">
-                  {{ resource.name }}
-                </strong>
+              [type]="resource.type"
+              [name]="resource.name">
+              <ng-container card-actions>
                 <button
-                  class="details-action"
+                  class="resource-action details-action"
                   type="button"
                   [attr.aria-label]="'Show details for ' + resource.name"
                   (click)="openResourceDetails(resource.id, $event)"
@@ -93,7 +90,7 @@
                 </button>
                 <button
                   *ngIf="isBrowsable(resource)"
-                  class="browse-action"
+                  class="resource-action browse-action"
                   type="button"
                   [attr.aria-label]="'Browse ' + resource.name"
                   (click)="openBrowse(resource, $event)"
@@ -101,16 +98,16 @@
                   title="Browse data">
                   <span aria-hidden="true">⌕</span>
                 </button>
-              </span>
-              <span class="resource-metadata">
+              </ng-container>
+              <ng-container card-metadata>
                 <span>
                   {{ resource.resourceGroup }}
                 </span>
                 <span>
                   {{ resource.location || 'Global' }}
                 </span>
-              </span>
-            </div>
+              </ng-container>
+            </app-resource-card>
           </div>
         </section>
       </section>

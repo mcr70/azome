@@ -64,39 +64,54 @@
       </div>
 
       <div class="subnet-grid">
-        <div *ngFor="let subnet of topology.subnets" class="subnet">
-          <div class="subnet-top-row">
-            <div class="subnet-label">
-              <app-resource-type-icon type="Microsoft.Network/virtualNetworks/subnets"></app-resource-type-icon>
-              <div>
-                <p class="resource-kind">Subnet</p>
-                <h3 class="subnet-title">{{ subnet.name }}</h3>
-              </div>
-            </div>
+        <app-resource-card
+          *ngFor="let subnet of topology.subnets"
+          class="subnet"
+          type="Microsoft.Network/virtualNetworks/subnets"
+          [name]="subnet.name"
+          [iconSize]="28"
+          [maxWidth]="'none'"
+          [hasFooter]="true">
+          <ng-container card-title-prefix>
+            <p class="resource-kind">Subnet</p>
+          </ng-container>
+          <ng-container card-header-trailing>
             <dl class="subnet-address-space">
               <dt>Address prefix</dt>
               <dd>{{ subnet.addressPrefixes.join(', ') || 'No address prefix' }}</dd>
             </dl>
-          </div>
+          </ng-container>
 
-          <div class="controls">
-            <button *ngIf="subnet.networkSecurityGroupId"
-                type="button" class="control-btn"
+          <ng-container card-footer>
+            <div class="controls">
+              <button
+                *ngIf="subnet.networkSecurityGroupId"
+                type="button"
+                class="control-btn"
                 (click)="openResourceDetails(subnet.networkSecurityGroupId, $event)">
-              <app-resource-type-icon type="Microsoft.Network/networkSecurityGroups" [size]="16"></app-resource-type-icon>              
-              {{ subnet.networkSecurityGroupName }}
-            </button>
+                <app-resource-type-icon
+                  type="Microsoft.Network/networkSecurityGroups"
+                  [size]="16">
+                </app-resource-type-icon>
+                {{ subnet.networkSecurityGroupName }}
+              </button>
 
-            <button *ngIf="subnet.routeTableName"
-                type="button" class="control-btn"
+              <button
+                *ngIf="subnet.routeTableName"
+                type="button"
+                class="control-btn"
                 [class.unassigned]="!subnet.routeTableName"
                 [disabled]="!subnet.routeTableId"
                 (click)="openResourceDetails(subnet.routeTableId, $event)">
-              <app-resource-type-icon type="Microsoft.Network/routeTables" [size]="16"></app-resource-type-icon>
-              {{ subnet.routeTableName }}
-            </button>
-          </div>
-        </div>
+                <app-resource-type-icon
+                  type="Microsoft.Network/routeTables"
+                  [size]="16">
+                </app-resource-type-icon>
+                {{ subnet.routeTableName }}
+              </button>
+            </div>
+          </ng-container>
+        </app-resource-card>
       </div>
 
     </article>

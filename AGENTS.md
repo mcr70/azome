@@ -54,6 +54,16 @@ Main purpose of the resource details is to show metadata of the resource and ARM
 - **No Data Plane in Details:** Data-plane operations (such as database *Browse* or document/content exploration) **must not** reside in the general `resource-details` pane. They belong exclusively to perspective-specific views (e.g., the *Data* perspective).
 - Omit unnecessary details if they don't add value (a full JSON view is available for inspecting complete raw data).
 
+## Resource card (ResourceCardComponent)
+This component provides a shared resource that is used in different 
+places where a resource is repesented. It has predefined slots, that 
+a calling template can utilize to fill in data to be shown.
+- card-title-prefix
+- card-header-trailing
+- card-actions
+- card-metadata
+- card-footer
+
 ## Other Components
 - Keep common/general components separate from resource detail components. Do not mix them in the same directories.
 

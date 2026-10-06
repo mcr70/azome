@@ -6,12 +6,18 @@ import { ResourceGroup, ResourceGroupService } from '../../services/azure/resour
 import { AzureResource, ResourceGraphService } from '../../services/azure/resource-graph.service';
 import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
 import { ResourceTypeIconComponent } from '../../components/resource-type-icon.component';
+import { ResourceCardComponent } from '../../components/resource-card.component';
 import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/azome/resource-detail-panel.service';
 
 @Component({
   selector: 'app-resource-group-list',
   standalone: true,
-  imports: [CommonModule, ResourceDetailPaneComponent, ResourceTypeIconComponent],
+  imports: [
+    CommonModule,
+    ResourceDetailPaneComponent,
+    ResourceTypeIconComponent,
+    ResourceCardComponent
+  ],
   templateUrl: './resource-group-list.component.html',
   styleUrl: './resource-group-list.component.scss'
 })
