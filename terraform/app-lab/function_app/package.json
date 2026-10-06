@@ -1,0 +1,10 @@
+{
+  "name": "azome-test-func",
+  "version": "1.0.0",
+  "description": "Test function for Azome UI",
+  "main": "index.js",
+  "scripts": {},
+  "dependencies": {
+    "@azure/functions": "^4.0.0"
+  }
+}
