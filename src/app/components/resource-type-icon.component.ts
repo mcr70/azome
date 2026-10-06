@@ -1,7 +1,6 @@
 import { Component, Input } from '@angular/core';
 import {
   LucideActivity,
-  LucideBoxes,
   LucideDatabase,
   LucideDatabaseZap,
   LucideFolder,
@@ -13,7 +12,8 @@ import {
   LucideRouter,
   LucideServer,
   LucideShield,
-  LucideDynamicIcon
+  LucideDynamicIcon,
+  LucideCircleQuestionMark
 } from '@lucide/angular';
 
 @Component({
@@ -67,6 +67,6 @@ export class ResourceTypeIconComponent {
       return LucideDatabase.icon;
     }
 
-    return LucideBoxes.icon;
+    return LucideCircleQuestionMark.icon;
   }
 }

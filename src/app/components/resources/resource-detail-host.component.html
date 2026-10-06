@@ -30,8 +30,9 @@
     </ng-container>
 
     <!-- no custom component -->
-    <div *ngIf="!hasCustomComponent" class="json-view">
-      <pre>{{ resource?.properties | json }}</pre>
+    <div *ngIf="!hasCustomComponent">
+      Customized component not found for <strong>{{ resource?.type }}</strong>.
+      Check the JSON view for details of this resource.
     </div>
 
   </div>
