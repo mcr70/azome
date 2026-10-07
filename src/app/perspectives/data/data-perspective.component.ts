@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -30,7 +29,6 @@ interface DataResourceCategoryGroup {
   selector: 'app-data-perspective',
   standalone: true,
   imports: [
-    CommonModule,
     ResourceDetailPaneComponent,
     ResourceCardComponent,
     DataBrowsePaneComponent

@@ -1,106 +1,125 @@
 <div class="resource-workspace-layout" [class.has-one-pinned-panel]="pinnedPanels.length === 1" [class.has-two-pinned-panels]="pinnedPanels.length === 2">
   <div class="resource-groups-container">
-  <p *ngIf="loading" class="status-message">Loading resource groups...</p>
+    @if (loading) {
+      <p class="status-message">Loading resource groups...</p>
+    }
 
-  <div *ngIf="error" class="error-message" role="alert">
-    <strong>Failed to load resource groups.</strong>
-    <span>{{ error }}</span>
-  </div>
-
-  <div *ngIf="!loading && !error && resourceGroups.length === 0" class="empty-state">
-    No resource groups found or subscription empty.
-  </div>
-
-  <div
-    *ngFor="let group of resourceGroups"
-    class="resource-group-card"
-    [class.expanded]="expandedGroup === group.name"
-  >
-    <button
-      type="button"
-      class="resource-group-header"
-      (click)="toggleGroup(group.name)"
-      [attr.aria-expanded]="expandedGroup === group.name"
-    >
-      <div class="group-title">
-        <div>
-          <p class="resource-kind">Resource group</p>
-          <h2 class="group-name">
-            <app-resource-type-icon type="resourceGroup"></app-resource-type-icon>
-            {{ group.name }}
-          </h2>
-        </div>
+    @if (error) {
+      <div class="error-message" role="alert">
+        <strong>Failed to load resource groups.</strong>
+        <span>{{ error }}</span>
       </div>
+    }
 
-      <div class="group-meta">
-        <dl class="meta-item">
-          <dt>Location</dt>
-          <dd>{{ group.location }}</dd>
-        </dl>
-        <dl class="meta-item" *ngIf="group.properties?.provisioningState">
-          <dt>State</dt>
-          <dd>{{ group.properties?.provisioningState }}</dd>
-        </dl>
-        <span class="chevron" [class.open]="expandedGroup === group.name"></span>
+    @if (!loading && !error && resourceGroups.length === 0) {
+      <div class="empty-state">
+        No resource groups found or subscription empty.
       </div>
-    </button>
+    }
 
-    <div *ngIf="expandedGroup === group.name" class="resources-panel">
-      <div *ngIf="loadingResources[group.name]" class="loading-resources">
-        Loading resources...
-      </div>
-
+    @for (group of resourceGroups; track group) {
       <div
-        *ngIf="!loadingResources[group.name] && (!groupResources[group.name] || (groupResources[group.name]?.length ?? 0) === 0)"
-        class="no-resources"
-      >
-        No individual resources found in this resource group.
+        class="resource-group-card"
+        [class.expanded]="expandedGroup === group.name"
+        >
+        <button
+          type="button"
+          class="resource-group-header"
+          (click)="toggleGroup(group.name)"
+          [attr.aria-expanded]="expandedGroup === group.name"
+          >
+          <div class="group-title">
+            <div>
+              <p class="resource-kind">Resource group</p>
+              <h2 class="group-name">
+                <app-resource-type-icon type="resourceGroup"></app-resource-type-icon>
+                {{ group.name }}
+              </h2>
+            </div>
+          </div>
+          <div class="group-meta">
+            <dl class="meta-item">
+              <dt>Location</dt>
+              <dd>{{ group.location }}</dd>
+            </dl>
+            @if (group.properties?.provisioningState) {
+              <dl class="meta-item">
+                <dt>State</dt>
+                <dd>{{ group.properties?.provisioningState }}</dd>
+              </dl>
+            }
+            <span class="chevron" [class.open]="expandedGroup === group.name"></span>
+          </div>
+        </button>
+        @if (expandedGroup === group.name) {
+          <div class="resources-panel">
+            @if (loadingResources[group.name]) {
+              <div class="loading-resources">
+                Loading resources...
+              </div>
+            }
+            @if (!loadingResources[group.name] && (!groupResources[group.name] || (groupResources[group.name]?.length ?? 0) === 0)) {
+              <div
+                class="no-resources"
+                >
+                No individual resources found in this resource group.
+              </div>
+            }
+            @if (!loadingResources[group.name] && (groupResources[group.name]?.length ?? 0) > 0) {
+              <div
+                class="resource-grid" >
+                @for (resource of groupResources[group.name]; track resource) {
+                  <app-resource-card
+                    [type]="resource.type"
+                    [name]="resource.name"
+                    [iconSize]="18">
+                    <ng-container card-actions>
+                      <button
+                        type="button"
+                        class="resource-action"
+                        [attr.aria-label]="'Show details for ' + resource.name"
+                        title="Resource details"
+                        (click)="selectResource(resource)">
+                        <span aria-hidden="true">i</span>
+                      </button>
+                    </ng-container>
+                    <ng-container card-metadata>
+                      <span class="resource-type">{{ getShortType(resource.type) }}</span>
+                      @if (resource.location) {
+                        <span class="resource-location">
+                          {{ resource.location }}
+                        </span>
+                      }
+                    </ng-container>
+                  </app-resource-card>
+                }
+              </div>
+            }
+          </div>
+        }
       </div>
+    }
 
-      <div *ngIf="!loadingResources[group.name] && (groupResources[group.name]?.length ?? 0) > 0"
-           class="resource-grid" >
-        <app-resource-card
-          *ngFor="let resource of groupResources[group.name]"
-          [type]="resource.type"
-          [name]="resource.name"
-          [iconSize]="18">
-          <ng-container card-actions>
-            <button
-              type="button"
-              class="resource-action"
-              [attr.aria-label]="'Show details for ' + resource.name"
-              title="Resource details"
-              (click)="selectResource(resource)">
-              <span aria-hidden="true">i</span>
-            </button>
-          </ng-container>
-          <ng-container card-metadata>
-            <span class="resource-type">{{ getShortType(resource.type) }}</span>
-            <span *ngIf="resource.location" class="resource-location">
-              {{ resource.location }}
-            </span>
-          </ng-container>
-        </app-resource-card>
-      </div>
+  </div>
+
+  @if (pinnedPanels.length > 0) {
+    <div class="pinned-panel-slots" aria-label="Pinned resource panels">
+      @for (panel of pinnedPanels; track panel) {
+        <app-resource-detail-pane
+          [panel]="panel"
+          [pinned]="true"
+          (close)="closePanel($event)"
+          (togglePin)="togglePanelPin($event)">
+        </app-resource-detail-pane>
+      }
     </div>
-  </div>
-
-  </div>
-
-  <div *ngIf="pinnedPanels.length > 0" class="pinned-panel-slots" aria-label="Pinned resource panels">
-    <app-resource-detail-pane
-      *ngFor="let panel of pinnedPanels"
-      [panel]="panel"
-      [pinned]="true"
-      (close)="closePanel($event)"
-      (togglePin)="togglePanelPin($event)">
-    </app-resource-detail-pane>
-  </div>
+  }
 </div>
 
-<app-resource-detail-pane
-  *ngIf="floatingPanel as panel"
-  [panel]="panel"
-  (close)="closePanel($event)"
-  (togglePin)="togglePanelPin($event)">
-</app-resource-detail-pane>
+@if (floatingPanel; as panel) {
+  <app-resource-detail-pane
+    [panel]="panel"
+    (close)="closePanel($event)"
+    (togglePin)="togglePanelPin($event)">
+  </app-resource-detail-pane>
+}

@@ -1,42 +1,62 @@
 <section class="storage-browser">
-  <div class="toolbar" *ngIf="queues.length > 0">
-    <label>
-      Queue
-      <select [value]="queue" (change)="selectQueue($any($event.target).value)">
-        <option *ngFor="let item of queues" [value]="item.name">
-          {{ item.name }}
-        </option>
-      </select>
-    </label>
-    <label *ngIf="queue">
-      Peek count
-      <input type="number" min="1" max="32" [(ngModel)]="limit">
-    </label>
-    <button *ngIf="queue" type="button" (click)="peek()">
-      Peek messages
-    </button>
-  </div>
+  @if (queues.length > 0) {
+    <div class="toolbar">
+      <label>
+        Queue
+        <select [value]="queue" (change)="selectQueue($any($event.target).value)">
+          @for (item of queues; track item) {
+            <option [value]="item.name">
+              {{ item.name }}
+            </option>
+          }
+        </select>
+      </label>
+      @if (queue) {
+        <label>
+          Peek count
+          <input type="number" min="1" max="32" [(ngModel)]="limit">
+        </label>
+      }
+      @if (queue) {
+        <button type="button" (click)="peek()">
+          Peek messages
+        </button>
+      }
+    </div>
+  }
 
-  <p class="empty-state" *ngIf="!loading && !error && queues.length === 0">
-    No queues found.
-  </p>
-
-  <p *ngIf="queue">Approximate message count: {{ count }}</p>
-  <p class="state" *ngIf="loading">Loading…</p>
-  <p class="error" role="alert" *ngIf="error">{{ error }}</p>
-
-  <article *ngFor="let message of messages" class="message">
-    <h3>
-      Message {{ message.id }}
-    </h3>
-    <p>
-      Inserted: {{ message.insertionTime || '—' }}
-      · Expires: {{ message.expirationTime || '—' }}
+  @if (!loading && !error && queues.length === 0) {
+    <p class="empty-state">
+      No queues found.
     </p>
-    <pre>{{ formatted(message.text) }}</pre>
-  </article>
+  }
 
-  <p *ngIf="queue && !loading && !error && messages.length === 0">
-    No messages returned by peek.
-  </p>
+  @if (queue) {
+    <p>Approximate message count: {{ count }}</p>
+  }
+  @if (loading) {
+    <p class="state">Loading…</p>
+  }
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
+
+  @for (message of messages; track message) {
+    <article class="message">
+      <h3>
+        Message {{ message.id }}
+      </h3>
+      <p>
+        Inserted: {{ message.insertionTime || '—' }}
+        · Expires: {{ message.expirationTime || '—' }}
+      </p>
+      <pre>{{ formatted(message.text) }}</pre>
+    </article>
+  }
+
+  @if (queue && !loading && !error && messages.length === 0) {
+    <p>
+      No messages returned by peek.
+    </p>
+  }
 </section>

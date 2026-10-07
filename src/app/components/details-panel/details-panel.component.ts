@@ -1,10 +1,10 @@
 import { Component, EventEmitter, HostBinding, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-details-panel',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './details-panel.component.html',
   styleUrl: './details-panel.component.scss'
 })

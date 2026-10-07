@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input } from '@angular/core';
 import { ResourceTypeIconComponent } from './resource-type-icon.component';
 
@@ -13,7 +13,7 @@ import { ResourceTypeIconComponent } from './resource-type-icon.component';
 @Component({
   selector: 'app-resource-card',
   standalone: true,
-  imports: [CommonModule, ResourceTypeIconComponent],
+  imports: [ResourceTypeIconComponent],
   templateUrl: './resource-card.component.html',
   styleUrl: './resource-card.component.scss'
 })

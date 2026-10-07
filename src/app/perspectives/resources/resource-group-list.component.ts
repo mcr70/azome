@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ResourceGroup, ResourceGroupService } from '../../services/azure/resource-group.service';
@@ -13,11 +13,10 @@ import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/
   selector: 'app-resource-group-list',
   standalone: true,
   imports: [
-    CommonModule,
     ResourceDetailPaneComponent,
     ResourceTypeIconComponent,
     ResourceCardComponent
-  ],
+],
   templateUrl: './resource-group-list.component.html',
   styleUrl: './resource-group-list.component.scss'
 })

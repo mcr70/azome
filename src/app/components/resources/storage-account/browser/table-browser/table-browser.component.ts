@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
@@ -11,7 +11,7 @@ import { StorageBrowserBase } from '../storage-browser-base';
 @Component({
   selector: 'app-table-browser',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './table-browser.component.html',
   styleUrl: '../blob-browser/storage-browser.component.scss'
 })

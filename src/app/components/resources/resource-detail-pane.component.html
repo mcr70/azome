@@ -21,12 +21,14 @@
   </div>
 
   <div class="resource-overview" [hidden]="view === 'json'">
-    <table *ngIf="view === 'overview'" class="resource-detail-table resource-summary-table">
-      <tbody>
-        <tr><th>Resource group</th><td>{{ resource.resourceGroup || 'N/A' }}</td></tr>
-        <tr><th>Location</th><td>{{ resource.location || 'N/A' }}</td></tr>
-      </tbody>
-    </table>
+    @if (view === 'overview') {
+      <table class="resource-detail-table resource-summary-table">
+        <tbody>
+          <tr><th>Resource group</th><td>{{ resource.resourceGroup || 'N/A' }}</td></tr>
+          <tr><th>Location</th><td>{{ resource.location || 'N/A' }}</td></tr>
+        </tbody>
+      </table>
+    }
     <section class="details-section">
       <app-resource-detail-host
         [resource]="resource"
@@ -35,5 +37,7 @@
     </section>
   </div>
 
-  <pre *ngIf="view === 'json'" class="resource-json">{{ resource | json }}</pre>
+  @if (view === 'json') {
+    <pre class="resource-json">{{ resource | json }}</pre>
+  }
 </app-details-panel>

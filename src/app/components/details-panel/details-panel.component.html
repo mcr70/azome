@@ -1,4 +1,6 @@
-<div *ngIf="!pinned" class="backdrop" (click)="close.emit()"></div>
+@if (!pinned) {
+  <div class="backdrop" (click)="close.emit()"></div>
+}
 
 <div
   class="panel-container"
@@ -6,16 +8,18 @@
   [class.panel-content-sized]="variant === 'content'"
   role="dialog"
   aria-modal="true"
->
+  >
   <header class="panel-header">
     <div>
       <p class="resource-kind">{{ subtitle || 'Resource Details' }}</p>
       <h2>{{ title }}</h2>
     </div>
     <div class="panel-actions">
-      <button *ngIf="showPanelActions" type="button" class="panel-action-button" [attr.aria-label]="pinned ? 'Unpin panel' : 'Pin panel'" [attr.title]="pinned ? 'Unpin panel' : 'Pin panel'" (click)="togglePin.emit()">
-        {{ pinned ? '📌' : '📍' }}
-      </button>
+      @if (showPanelActions) {
+        <button type="button" class="panel-action-button" [attr.aria-label]="pinned ? 'Unpin panel' : 'Pin panel'" [attr.title]="pinned ? 'Unpin panel' : 'Pin panel'" (click)="togglePin.emit()">
+          {{ pinned ? '📌' : '📍' }}
+        </button>
+      }
       <button type="button" class="close-button" (click)="close.emit()" aria-label="Close panel">&times;</button>
     </div>
   </header>

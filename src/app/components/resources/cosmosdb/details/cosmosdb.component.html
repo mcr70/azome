@@ -1,121 +1,136 @@
-<div class="cosmos-db-container" *ngIf="view === 'overview'">
-  <h3 class="resource-detail-heading">Cosmos DB Account Details</h3>
-
-  <div *ngIf="!properties" class="resource-detail-empty">
-    No Cosmos DB details available.
-  </div>
-
-  <div *ngIf="properties" class="resource-detail-table-wrapper">
-    <table class="resource-detail-table">
-      <thead>
-        <tr>
-          <th>Property</th>
-          <th>Value</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Document Endpoint</strong></td>
-          <td>
-            <a *ngIf="properties.documentEndpoint" [href]="properties.documentEndpoint" target="_blank" rel="noopener noreferrer">
-              {{ properties.documentEndpoint }}
-            </a>
-            <span *ngIf="!properties.documentEndpoint">-</span>
-          </td>
-        </tr>
-        <tr>
-          <td><strong>API Type</strong></td>
-          <td>{{ properties.EnabledApiTypes || 'Sql' }}</td>
-        </tr>
-        <tr>
-          <td><strong>Provisioning State</strong></td>
-          <td>{{ properties.provisioningState || '-' }}</td>
-        </tr>
-        <tr>
-          <td><strong>Public Network Access</strong></td>
-          <td>{{ properties.publicNetworkAccess || '-' }}</td>
-        </tr>
-        <tr>
-          <td><strong>Consistency Level</strong></td>
-          <td>{{ properties.consistencyPolicy?.defaultConsistencyLevel || '-' }}</td>
-        </tr>
-        <tr>
-          <td><strong>Free Tier</strong></td>
-          <td>{{ properties.enableFreeTier ? 'Enabled' : 'Disabled' }}</td>
-        </tr>
-        <tr>
-          <td><strong>Automatic Failover</strong></td>
-          <td>{{ properties.enableAutomaticFailover ? 'Enabled' : 'Disabled' }}</td>
-        </tr>
-        <tr>
-          <td><strong>Multi-region Writes</strong></td>
-          <td>{{ properties.enableMultipleWriteLocations ? 'Enabled' : 'Disabled' }}</td>
-        </tr>
-        <tr>
-          <td><strong>Disable Key-based Auth</strong></td>
-          <td>{{ properties.disableLocalAuth ? 'Yes' : 'No' }}</td>
-        </tr>
-        <tr>
-          <td><strong>Minimal TLS Version</strong></td>
-          <td>{{ properties.minimalTlsVersion || '-' }}</td>
-        </tr>
-        <tr *ngIf="properties.backupPolicy">
-          <td><strong>Backup Policy</strong></td>
-          <td>
-            {{ properties.backupPolicy.type }}
-            <ng-container *ngIf="properties.backupPolicy.periodicModeProperties">
-              ({{ properties.backupPolicy.periodicModeProperties.backupStorageRedundancy }} Redundant, Interval: {{ properties.backupPolicy.periodicModeProperties.backupIntervalInMinutes }}m, Retention: {{ properties.backupPolicy.periodicModeProperties.backupRetentionIntervalInHours }}h)
-            </ng-container>
-          </td>
-        </tr>
-        <tr>
-          <td><strong>Offer Type</strong></td>
-          <td>{{ properties.databaseAccountOfferType || '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-
-  <ng-container *ngIf="properties?.locations as locations">
-    <ng-container *ngIf="locations.length > 0">
-      <h3 class="resource-detail-heading" style="margin-top: 1.5rem;">Replication Locations</h3>
+@if (view === 'overview') {
+  <div class="cosmos-db-container">
+    <h3 class="resource-detail-heading">Cosmos DB Account Details</h3>
+    @if (!properties) {
+      <div class="resource-detail-empty">
+        No Cosmos DB details available.
+      </div>
+    }
+    @if (properties) {
       <div class="resource-detail-table-wrapper">
         <table class="resource-detail-table">
           <thead>
             <tr>
-              <th>Location</th>
-              <th>Priority</th>
-              <th>Zone Redundant</th>
-              <th>Status</th>
+              <th>Property</th>
+              <th>Value</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let loc of locations">
-              <td><strong>{{ loc.locationName }}</strong></td>
-              <td>{{ loc.failoverPriority }}</td>
-              <td>{{ loc.isZoneRedundant ? 'Yes' : 'No' }}</td>
-              <td>{{ loc.provisioningState }}</td>
+            <tr>
+              <td><strong>Document Endpoint</strong></td>
+              <td>
+                @if (properties.documentEndpoint) {
+                  <a [href]="properties.documentEndpoint" target="_blank" rel="noopener noreferrer">
+                    {{ properties.documentEndpoint }}
+                  </a>
+                }
+                @if (!properties.documentEndpoint) {
+                  <span>-</span>
+                }
+              </td>
+            </tr>
+            <tr>
+              <td><strong>API Type</strong></td>
+              <td>{{ properties.EnabledApiTypes || 'Sql' }}</td>
+            </tr>
+            <tr>
+              <td><strong>Provisioning State</strong></td>
+              <td>{{ properties.provisioningState || '-' }}</td>
+            </tr>
+            <tr>
+              <td><strong>Public Network Access</strong></td>
+              <td>{{ properties.publicNetworkAccess || '-' }}</td>
+            </tr>
+            <tr>
+              <td><strong>Consistency Level</strong></td>
+              <td>{{ properties.consistencyPolicy?.defaultConsistencyLevel || '-' }}</td>
+            </tr>
+            <tr>
+              <td><strong>Free Tier</strong></td>
+              <td>{{ properties.enableFreeTier ? 'Enabled' : 'Disabled' }}</td>
+            </tr>
+            <tr>
+              <td><strong>Automatic Failover</strong></td>
+              <td>{{ properties.enableAutomaticFailover ? 'Enabled' : 'Disabled' }}</td>
+            </tr>
+            <tr>
+              <td><strong>Multi-region Writes</strong></td>
+              <td>{{ properties.enableMultipleWriteLocations ? 'Enabled' : 'Disabled' }}</td>
+            </tr>
+            <tr>
+              <td><strong>Disable Key-based Auth</strong></td>
+              <td>{{ properties.disableLocalAuth ? 'Yes' : 'No' }}</td>
+            </tr>
+            <tr>
+              <td><strong>Minimal TLS Version</strong></td>
+              <td>{{ properties.minimalTlsVersion || '-' }}</td>
+            </tr>
+            @if (properties.backupPolicy) {
+              <tr>
+                <td><strong>Backup Policy</strong></td>
+                <td>
+                  {{ properties.backupPolicy.type }}
+                  @if (properties.backupPolicy.periodicModeProperties) {
+                    ({{ properties.backupPolicy.periodicModeProperties.backupStorageRedundancy }} Redundant, Interval: {{ properties.backupPolicy.periodicModeProperties.backupIntervalInMinutes }}m, Retention: {{ properties.backupPolicy.periodicModeProperties.backupRetentionIntervalInHours }}h)
+                  }
+                </td>
+              </tr>
+            }
+            <tr>
+              <td><strong>Offer Type</strong></td>
+              <td>{{ properties.databaseAccountOfferType || '-' }}</td>
             </tr>
           </tbody>
         </table>
       </div>
-    </ng-container>
-  </ng-container>
- </div>
-<section class="cosmos-browser" *ngIf="view === 'browse'">
+    }
+    @if (properties?.locations; as locations) {
+      @if (locations.length > 0) {
+        <h3 class="resource-detail-heading" style="margin-top: 1.5rem;">Replication Locations</h3>
+        <div class="resource-detail-table-wrapper">
+          <table class="resource-detail-table">
+            <thead>
+              <tr>
+                <th>Location</th>
+                <th>Priority</th>
+                <th>Zone Redundant</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (loc of locations; track loc) {
+                <tr>
+                  <td><strong>{{ loc.locationName }}</strong></td>
+                  <td>{{ loc.failoverPriority }}</td>
+                  <td>{{ loc.isZoneRedundant ? 'Yes' : 'No' }}</td>
+                  <td>{{ loc.provisioningState }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    }
+  </div>
+}
+@if (view === 'browse') {
+  <section class="cosmos-browser">
     <h3 class="resource-detail-heading">Browse data</h3>
     <div class="browser-controls">
       <label>
         Database
         <select [(ngModel)]="database" (ngModelChange)="selectDatabase()">
-          <option *ngFor="let item of databases" [value]="item.id">{{ item.id }}</option>
+          @for (item of databases; track item) {
+            <option [value]="item.id">{{ item.id }}</option>
+          }
         </select>
       </label>
       <label>
         Container
         <select [(ngModel)]="container">
-          <option *ngFor="let item of containers" [value]="item.id">{{ item.id }}</option>
+          @for (item of containers; track item) {
+            <option [value]="item.id">{{ item.id }}</option>
+          }
         </select>
       </label>
       <label>
@@ -127,19 +142,23 @@
           <option value="sql">SQL query</option>
         </select>
       </label>
-      <label *ngIf="searchMode !== 'all' && searchMode !== 'sql'">
-        {{ searchMode === 'id' ? 'Document ID' : 'Partition key (' + (partitionPath || 'unknown') + ')' }}
-        <input [(ngModel)]="searchValue" (keyup.enter)="search()" />
-      </label>
-      <label *ngIf="searchMode === 'sql'" class="sql-query-control">
-        SQL query
-        <textarea
-          [(ngModel)]="sqlQuery"
-          rows="3"
-          spellcheck="false"
-          placeholder="SELECT * FROM c WHERE c.category = 'settings'"
-        ></textarea>
-      </label>
+      @if (searchMode !== 'all' && searchMode !== 'sql') {
+        <label>
+          {{ searchMode === 'id' ? 'Document ID' : 'Partition key (' + (partitionPath || 'unknown') + ')' }}
+          <input [(ngModel)]="searchValue" (keyup.enter)="search()" />
+        </label>
+      }
+      @if (searchMode === 'sql') {
+        <label class="sql-query-control">
+          SQL query
+          <textarea
+            [(ngModel)]="sqlQuery"
+            rows="3"
+            spellcheck="false"
+            placeholder="SELECT * FROM c WHERE c.category = 'settings'"
+          ></textarea>
+        </label>
+      }
       <label>
         Max results
         <input type="number" min="1" max="100" [(ngModel)]="resultLimit" />
@@ -151,76 +170,97 @@
         + New Document
       </button>
     </div>
-    <div *ngIf="createDialogOpen" class="document-dialog-backdrop">
-      <section class="document-dialog" role="dialog" aria-modal="true" aria-labelledby="new-document-title">
-        <h4 id="new-document-title">Create document</h4>
-        <p *ngIf="partitionPath" class="browser-status">
-          This container requires the <strong>{{ partitionPath }}</strong> partition key. Its value
-          is read from that property in the document JSON and sent with the request.
-        </p>
-        <p *ngIf="!partitionPath" class="browser-status">
-          The container did not return partition key metadata. If creation fails, check the
-          container's partition key and include that property in the document JSON.
-        </p>
-        <label for="new-document-json">Document JSON</label>
-        <textarea
-          id="new-document-json"
-          [(ngModel)]="newDocumentJson"
-          rows="12"
-          spellcheck="false"
-        ></textarea>
-        <p *ngIf="error" class="browser-error" role="alert">{{ error }}</p>
-        <div class="document-dialog-actions">
-          <button type="button" (click)="createDialogOpen = false" [disabled]="creatingDocument">
-            Cancel
-          </button>
-          <button type="button" (click)="createDocument()" [disabled]="creatingDocument">
-            {{ creatingDocument ? 'Creating…' : 'Create' }}
-          </button>
-        </div>
-      </section>
-    </div>
-    <p *ngIf="loading" class="browser-status">Loading Cosmos DB data…</p>
-    <p *ngIf="error && !createDialogOpen" class="browser-error">{{ error }}</p>
-    <p *ngIf="!loading && !error && databases.length === 0" class="browser-status">
-      No databases found or access is unavailable.
-    </p>
-    <div *ngIf="documents.length > 0" class="document-table-wrapper">
-      <table class="document-table">
-        <thead>
-          <tr>
-            <th class="document-expand-column"></th>
-            <th>Partition {{ partitionPath ? ' (' + partitionPath + ')' : '' }}</th>
-            <th>ID</th>
-          </tr>
-        </thead>
-        <tbody>
-          <ng-container *ngFor="let document of documents; let index = index">
+    @if (createDialogOpen) {
+      <div class="document-dialog-backdrop">
+        <section class="document-dialog" role="dialog" aria-modal="true" aria-labelledby="new-document-title">
+          <h4 id="new-document-title">Create document</h4>
+          @if (partitionPath) {
+            <p class="browser-status">
+              This container requires the <strong>{{ partitionPath }}</strong> partition key. Its value
+              is read from that property in the document JSON and sent with the request.
+            </p>
+          }
+          @if (!partitionPath) {
+            <p class="browser-status">
+              The container did not return partition key metadata. If creation fails, check the
+              container's partition key and include that property in the document JSON.
+            </p>
+          }
+          <label for="new-document-json">Document JSON</label>
+          <textarea
+            id="new-document-json"
+            [(ngModel)]="newDocumentJson"
+            rows="12"
+            spellcheck="false"
+          ></textarea>
+          @if (error) {
+            <p class="browser-error" role="alert">{{ error }}</p>
+          }
+          <div class="document-dialog-actions">
+            <button type="button" (click)="createDialogOpen = false" [disabled]="creatingDocument">
+              Cancel
+            </button>
+            <button type="button" (click)="createDocument()" [disabled]="creatingDocument">
+              {{ creatingDocument ? 'Creating…' : 'Create' }}
+            </button>
+          </div>
+        </section>
+      </div>
+    }
+    @if (loading) {
+      <p class="browser-status">Loading Cosmos DB data…</p>
+    }
+    @if (error && !createDialogOpen) {
+      <p class="browser-error">{{ error }}</p>
+    }
+    @if (!loading && !error && databases.length === 0) {
+      <p class="browser-status">
+        No databases found or access is unavailable.
+      </p>
+    }
+    @if (documents.length > 0) {
+      <div class="document-table-wrapper">
+        <table class="document-table">
+          <thead>
             <tr>
-              <td class="document-expand-column">
-                <button
-                  type="button"
-                  class="document-expand-button"
-                  [attr.aria-expanded]="expandedDocumentIndexes.has(index)"
-                  [attr.aria-label]="expandedDocumentIndexes.has(index) ? 'Hide document data' : 'Show document data'"
-                  (click)="toggleDocumentDetails(index)"
-                >
-                  {{ expandedDocumentIndexes.has(index) ? '▼' : '▶' }}
-                </button>
-              </td>
-              <td>{{ partitionValue(document) }}</td>
-              <td>{{ document.id || '-' }}</td>
+              <th class="document-expand-column"></th>
+              <th>Partition {{ partitionPath ? ' (' + partitionPath + ')' : '' }}</th>
+              <th>ID</th>
             </tr>
-            <tr *ngIf="expandedDocumentIndexes.has(index)" class="document-expanded-row">
-              <td colspan="3">
-                <pre>{{ formattedUserData(document) }}</pre>
-              </td>
-            </tr>
-          </ng-container>
-        </tbody>
-      </table>
-    </div>
-    <p *ngIf="!loading && !error && container && documents.length === 0" class="browser-status">
-      No results loaded. Run a search to browse documents.
-    </p>
+          </thead>
+          <tbody>
+            @for (document of documents; track document; let index = $index) {
+              <tr>
+                <td class="document-expand-column">
+                  <button
+                    type="button"
+                    class="document-expand-button"
+                    [attr.aria-expanded]="expandedDocumentIndexes.has(index)"
+                    [attr.aria-label]="expandedDocumentIndexes.has(index) ? 'Hide document data' : 'Show document data'"
+                    (click)="toggleDocumentDetails(index)"
+                    >
+                    {{ expandedDocumentIndexes.has(index) ? '▼' : '▶' }}
+                  </button>
+                </td>
+                <td>{{ partitionValue(document) }}</td>
+                <td>{{ document.id || '-' }}</td>
+              </tr>
+              @if (expandedDocumentIndexes.has(index)) {
+                <tr class="document-expanded-row">
+                  <td colspan="3">
+                    <pre>{{ formattedUserData(document) }}</pre>
+                  </td>
+                </tr>
+              }
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+    @if (!loading && !error && container && documents.length === 0) {
+      <p class="browser-status">
+        No results loaded. Run a search to browse documents.
+      </p>
+    }
   </section>
+}

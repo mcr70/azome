@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { 
@@ -16,12 +16,11 @@ import { ResourceCardComponent } from '../../components/resource-card.component'
   selector: 'app-networking-perspective',
   standalone: true,
   imports: [
-    CommonModule, 
-    NetworkGraphComponent, 
+    NetworkGraphComponent,
     ResourceDetailPaneComponent,
     ResourceTypeIconComponent,
     ResourceCardComponent
-  ],
+],
   templateUrl: './networking-perspective.component.html',
   styleUrl: './networking-perspective.component.scss'
 })

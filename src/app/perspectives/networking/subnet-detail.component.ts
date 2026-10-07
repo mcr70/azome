@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subject } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
@@ -9,7 +9,7 @@ import { ResourceTypeIconComponent } from '../../components/resource-type-icon.c
 @Component({
   selector: 'app-subnet-detail',
   standalone: true,
-  imports: [CommonModule, RouterLink, ResourceTypeIconComponent],
+  imports: [RouterLink, ResourceTypeIconComponent],
   templateUrl: './subnet-detail.component.html',
   styleUrl: './subnet-detail.component.scss'
 })

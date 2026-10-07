@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { PanelVariant, ResourceDetailItem } from '../../../../services/azome/resource-detail.registry';
 
 export interface NsgRule {
@@ -20,7 +20,7 @@ export interface NsgRule {
 @Component({
   selector: 'app-nsg-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './nsg.component.html',
   styleUrl: './nsg.component.scss'
 })
