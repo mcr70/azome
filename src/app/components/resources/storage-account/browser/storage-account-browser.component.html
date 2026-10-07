@@ -1,30 +1,35 @@
 <section class="browser">
   <nav class="service-tabs" role="tablist" aria-label="Storage services">
-    <button
-      *ngFor="let tab of ['blobs', 'files', 'queues', 'tables']"
-      type="button"
-      role="tab"
-      [attr.aria-selected]="activeService === tab"
-      [class.active]="activeService === tab"
-      (click)="selectService($any(tab))">
-      {{ tab | titlecase }}
-    </button>
+    @for (tab of ['blobs', 'files', 'queues', 'tables']; track tab) {
+      <button
+        type="button"
+        role="tab"
+        [attr.aria-selected]="activeService === tab"
+        [class.active]="activeService === tab"
+        (click)="selectService($any(tab))">
+        {{ tab | titlecase }}
+      </button>
+    }
   </nav>
 
-  <app-blob-browser
-    *ngIf="activeService === 'blobs'"
-    [resourceId]="resourceId">
-  </app-blob-browser>
-  <app-file-browser
-    *ngIf="activeService === 'files'"
-    [resourceId]="resourceId">
-  </app-file-browser>
-  <app-queue-browser
-    *ngIf="activeService === 'queues'"
-    [resourceId]="resourceId">
-  </app-queue-browser>
-  <app-table-browser
-    *ngIf="activeService === 'tables'"
-    [resourceId]="resourceId">
-  </app-table-browser>
+  @if (activeService === 'blobs') {
+    <app-blob-browser
+      [resourceId]="resourceId">
+    </app-blob-browser>
+  }
+  @if (activeService === 'files') {
+    <app-file-browser
+      [resourceId]="resourceId">
+    </app-file-browser>
+  }
+  @if (activeService === 'queues') {
+    <app-queue-browser
+      [resourceId]="resourceId">
+    </app-queue-browser>
+  }
+  @if (activeService === 'tables') {
+    <app-table-browser
+      [resourceId]="resourceId">
+    </app-table-browser>
+  }
 </section>

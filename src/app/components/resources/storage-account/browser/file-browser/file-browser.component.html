@@ -1,117 +1,148 @@
 <section class="storage-browser">
-  <div class="toolbar" *ngIf="shares.length > 0">
-    <label>
-      File share
-      <select [value]="share" (change)="selectShare($any($event.target).value)">
-        <option *ngFor="let item of shares" [value]="item.name">
-          {{ item.name }}
-        </option>
-      </select>
-    </label>
-  </div>
+  @if (shares.length > 0) {
+    <div class="toolbar">
+      <label>
+        File share
+        <select [value]="share" (change)="selectShare($any($event.target).value)">
+          @for (item of shares; track item) {
+            <option [value]="item.name">
+              {{ item.name }}
+            </option>
+          }
+        </select>
+      </label>
+    </div>
+  }
 
-  <p class="empty-state" *ngIf="!loading && !error && shares.length === 0">
-    No file shares found.
-  </p>
+  @if (!loading && !error && shares.length === 0) {
+    <p class="empty-state">
+      No file shares found.
+    </p>
+  }
 
-  <nav class="crumbs" *ngIf="share">
-    <button
-      *ngFor="let crumb of crumbs; let last = last"
-      type="button"
-      [disabled]="last"
-      (click)="navigate(crumb.path)">
-      {{ crumb.label }}
-    </button>
-  </nav>
+  @if (share) {
+    <nav class="crumbs">
+      @for (crumb of crumbs; track crumb; let last = $last) {
+        <button
+          type="button"
+          [disabled]="last"
+          (click)="navigate(crumb.path)">
+          {{ crumb.label }}
+        </button>
+      }
+    </nav>
+  }
 
-  <p class="state" *ngIf="loading">Loading…</p>
-  <p class="error" role="alert" *ngIf="error">{{ error }}</p>
+  @if (loading) {
+    <p class="state">Loading…</p>
+  }
+  @if (error) {
+    <p class="error" role="alert">{{ error }}</p>
+  }
 
-  <table *ngIf="share">
-    <thead>
-      <tr>
-        <th>
-          Name
-        </th>
-        <th>
-          Size
-        </th>
-        <th>
-          Content type
-        </th>
-        <th>
-          Modified
-        </th>
-        <th>
-          Actions
-        </th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let item of items">
-        <td>
-          <button
-            *ngIf="item.isDirectory"
-            class="link"
-            type="button"
-            (click)="openFolder(item)">
-            📁 {{ item.name }}
-          </button>
-          <button
-            *ngIf="canPreview(item)"
-            class="link"
-            type="button"
-            (click)="preview(item)">
-            📄 {{ item.name }}
-          </button>
-          <span *ngIf="!item.isDirectory && !canPreview(item)">
-            📄 {{ item.name }}
-          </span>
-        </td>
-        <td>
-          {{ item.isDirectory ? '—' : (item.size | number) }}
-        </td>
-        <td>
-          {{ item.isDirectory ? '—' : (item.contentType || '—') }}
-        </td>
-        <td>
-          {{ item.lastModified || '—' }}
-        </td>
-        <td class="actions">
-          <button
-            *ngIf="canPreview(item)"
-            type="button"
-            title="Preview"
-            aria-label="Preview"
-            (click)="preview(item)">
-            👁
-          </button>
-          <button
-            *ngIf="!item.isDirectory"
-            type="button"
-            title="Download"
-            aria-label="Download"
-            (click)="download(item)">
-            ⬇
-          </button>
-        </td>
-      </tr>
-      <tr *ngIf="!loading && !error && items.length === 0">
-        <td colspan="5">
-          No files or directories found.
-        </td>
-      </tr>
-    </tbody>
-  </table>
+  @if (share) {
+    <table>
+      <thead>
+        <tr>
+          <th>
+            Name
+          </th>
+          <th>
+            Size
+          </th>
+          <th>
+            Content type
+          </th>
+          <th>
+            Modified
+          </th>
+          <th>
+            Actions
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of items; track item) {
+          <tr>
+            <td>
+              @if (item.isDirectory) {
+                <button
+                  class="link"
+                  type="button"
+                  (click)="openFolder(item)">
+                  📁 {{ item.name }}
+                </button>
+              }
+              @if (canPreview(item)) {
+                <button
+                  class="link"
+                  type="button"
+                  (click)="preview(item)">
+                  📄 {{ item.name }}
+                </button>
+              }
+              @if (!item.isDirectory && !canPreview(item)) {
+                <span>
+                  📄 {{ item.name }}
+                </span>
+              }
+            </td>
+            <td>
+              {{ item.isDirectory ? '—' : (item.size | number) }}
+            </td>
+            <td>
+              {{ item.isDirectory ? '—' : (item.contentType || '—') }}
+            </td>
+            <td>
+              {{ item.lastModified || '—' }}
+            </td>
+            <td class="actions">
+              @if (canPreview(item)) {
+                <button
+                  type="button"
+                  title="Preview"
+                  aria-label="Preview"
+                  (click)="preview(item)">
+                  👁
+                </button>
+              }
+              @if (!item.isDirectory) {
+                <button
+                  type="button"
+                  title="Download"
+                  aria-label="Download"
+                  (click)="download(item)">
+                  ⬇
+                </button>
+              }
+            </td>
+          </tr>
+        }
+        @if (!loading && !error && items.length === 0) {
+          <tr>
+            <td colspan="5">
+              No files or directories found.
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  }
 
-  <aside class="preview" *ngIf="previewName">
-    <button class="close" type="button" (click)="closePreview()">
-      Close
-    </button>
-    <h3>
-      {{ previewName }}
-    </h3>
-    <img *ngIf="previewUrl" [src]="previewUrl" [alt]="previewName">
-    <pre *ngIf="previewText">{{ previewText }}</pre>
-  </aside>
+  @if (previewName) {
+    <aside class="preview">
+      <button class="close" type="button" (click)="closePreview()">
+        Close
+      </button>
+      <h3>
+        {{ previewName }}
+      </h3>
+      @if (previewUrl) {
+        <img [src]="previewUrl" [alt]="previewName">
+      }
+      @if (previewText) {
+        <pre>{{ previewText }}</pre>
+      }
+    </aside>
+  }
 </section>

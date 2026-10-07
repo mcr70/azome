@@ -1,6 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
-import { CommonModule } from '@angular/common';
+
 import { FormsModule } from '@angular/forms';
 import { PanelVariant, ResourceDetailItem } from '../../../../services/azome/resource-detail.registry';
 import { CosmosDbService, CosmosResource } from '../../../../services/azure/cosmosdb.service';
@@ -48,7 +48,7 @@ export interface CosmosDbProperties {
 @Component({
   selector: 'app-cosmos-db-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './cosmosdb.component.html',
   styleUrl: './cosmosdb.component.scss'
 })

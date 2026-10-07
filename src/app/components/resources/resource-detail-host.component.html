@@ -1,39 +1,45 @@
 <div class="resource-detail-host">
 
   <!-- Tab Navigation (Shown only if a custom component exists) -->
-  <div *ngIf="hasCustomComponent && showTabs" class="detail-tabs">
-    <button 
-      class="tab-btn" 
-      [class.active]="activeTab === 'overview'" 
-      (click)="setTab('overview')">
-      Formatted
-    </button>
-    <button 
-      class="tab-btn" 
-      [class.active]="activeTab === 'json'" 
-      (click)="setTab('json')">
-      JSON
-    </button>
-  </div>
+  @if (hasCustomComponent && showTabs) {
+    <div class="detail-tabs">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'overview'"
+        (click)="setTab('overview')">
+        Formatted
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'json'"
+        (click)="setTab('json')">
+        JSON
+      </button>
+    </div>
+  }
 
   <!-- Tab Content -->
   <div class="tab-content">
-    
+
     <!-- has custom component -->
-    <ng-container *ngIf="hasCustomComponent">
-      <ng-container *ngIf="activeTab === 'overview'">
+    @if (hasCustomComponent) {
+      @if (activeTab === 'overview') {
         <ng-container *ngComponentOutlet="currentComponent; inputs: componentInputs"></ng-container>
-      </ng-container>
-      <div *ngIf="activeTab === 'json'" class="json-view">
-        <pre>{{ resource | json }}</pre>
-      </div>
-    </ng-container>
+      }
+      @if (activeTab === 'json') {
+        <div class="json-view">
+          <pre>{{ resource | json }}</pre>
+        </div>
+      }
+    }
 
     <!-- no custom component -->
-    <div *ngIf="!hasCustomComponent">
-      Customized component not found for <strong>{{ resource?.type }}</strong>.
-      Check the JSON view for details of this resource.
-    </div>
+    @if (!hasCustomComponent) {
+      <div>
+        Customized component not found for <strong>{{ resource?.type }}</strong>.
+        Check the JSON view for details of this resource.
+      </div>
+    }
 
   </div>
 </div>

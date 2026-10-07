@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
@@ -12,7 +12,7 @@ import { StorageBrowserBase } from '../storage-browser-base';
 @Component({
   selector: 'app-queue-browser',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './queue-browser.component.html',
   styleUrl: '../blob-browser/storage-browser.component.scss'
 })

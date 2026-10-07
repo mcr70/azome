@@ -1,146 +1,164 @@
 <section class="networking-perspective" aria-labelledby="networking-title">
   <div class="networking-workspace-layout" [class.has-one-pinned-panel]="pinnedPanels.length === 1" [class.has-two-pinned-panels]="pinnedPanels.length === 2">
     <div class="networking-main-content">
-  <div class="perspective-heading">
-    <div>
-      <p class="eyebrow">Perspective</p>
-      <h1 id="networking-title">Networking</h1>
-      <p class="description">Relationships between virtual networks, subnets, and their security controls.</p>
-    </div>
-    <button class="refresh-button" type="button" (click)="loadTopologies()" [disabled]="loading">
-      Refresh
-    </button>
-  </div>
-
-  <div class="view-toggle" role="group" aria-label="View mode">
-    <button type="button" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">List</button>
-    <button type="button" [class.active]="viewMode === 'graph'" (click)="viewMode = 'graph'">Graph</button>
-  </div>
-
-  <p *ngIf="loading" class="status-message">Loading network topology...</p>
-
-  <div *ngIf="error" class="error-message" role="alert">
-    <strong>Network topology could not be loaded.</strong>
-    <span>{{ error }}</span>
-  </div>
-
-  <div *ngIf="!loading && !error && topologies.length === 0" class="empty-state">
-    No virtual networks were found in this subscription.
-  </div>
-
-
-  <div *ngIf="!loading && !error && viewMode === 'list'" class="topology-list">
-    <article *ngFor="let topology of topologies" class="virtual-network">
-      <header class="network-header">
+      <div class="perspective-heading">
         <div>
-          <p class="resource-kind">Virtual network</p>
-          <h2 class="network-title">
-            <app-resource-type-icon type="Microsoft.Network/virtualNetworks"></app-resource-type-icon>
-            {{ topology.name }}
-          </h2>
+          <p class="eyebrow">Perspective</p>
+          <h1 id="networking-title">Networking</h1>
+          <p class="description">Relationships between virtual networks, subnets, and their security controls.</p>
         </div>
-        <dl>
-          <div>
-            <dt>Resource group</dt>
-            <dd>{{ topology.resourceGroup }}</dd>
-          </div>
-          <div>
-            <dt>Address space</dt>
-            <dd>{{ topology.addressPrefixes.join(', ') || 'Not configured' }}</dd>
-          </div>
-          <div>
-            <dt>Region</dt>
-            <dd>{{ topology.location }}</dd>
-          </div>
-        </dl>
-      </header>
-
-      <div *ngIf="topology.peerings.length > 0" class="peering-list">
-        <span class="peering-label">Peerings</span>
-        <span *ngFor="let peering of topology.peerings" class="peering-chip" [class.inactive]="peering.peeringState !== 'Connected'">
-          {{ peering.remoteVirtualNetworkName || 'Unknown network' }}
-          <small>({{ peering.peeringState || 'Unknown state' }})</small>
-        </span>
+        <button class="refresh-button" type="button" (click)="loadTopologies()" [disabled]="loading">
+          Refresh
+        </button>
       </div>
 
-      <div class="subnet-grid">
-        <app-resource-card
-          *ngFor="let subnet of topology.subnets"
-          class="subnet"
-          type="Microsoft.Network/virtualNetworks/subnets"
-          [name]="subnet.name"
-          [iconSize]="28"
-          [maxWidth]="'none'"
-          [hasFooter]="true">
-          <ng-container card-title-prefix>
-            <p class="resource-kind">Subnet</p>
-          </ng-container>
-          <ng-container card-header-trailing>
-            <dl class="subnet-address-space">
-              <dt>Address prefix</dt>
-              <dd>{{ subnet.addressPrefixes.join(', ') || 'No address prefix' }}</dd>
-            </dl>
-          </ng-container>
-
-          <ng-container card-footer>
-            <div class="controls">
-              <button
-                *ngIf="subnet.networkSecurityGroupId"
-                type="button"
-                class="control-btn"
-                (click)="openResourceDetails(subnet.networkSecurityGroupId, $event)">
-                <app-resource-type-icon
-                  type="Microsoft.Network/networkSecurityGroups"
-                  [size]="16">
-                </app-resource-type-icon>
-                {{ subnet.networkSecurityGroupName }}
-              </button>
-
-              <button
-                *ngIf="subnet.routeTableName"
-                type="button"
-                class="control-btn"
-                [class.unassigned]="!subnet.routeTableName"
-                [disabled]="!subnet.routeTableId"
-                (click)="openResourceDetails(subnet.routeTableId, $event)">
-                <app-resource-type-icon
-                  type="Microsoft.Network/routeTables"
-                  [size]="16">
-                </app-resource-type-icon>
-                {{ subnet.routeTableName }}
-              </button>
-            </div>
-          </ng-container>
-        </app-resource-card>
+      <div class="view-toggle" role="group" aria-label="View mode">
+        <button type="button" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">List</button>
+        <button type="button" [class.active]="viewMode === 'graph'" (click)="viewMode = 'graph'">Graph</button>
       </div>
 
-    </article>
-  </div>
+      @if (loading) {
+        <p class="status-message">Loading network topology...</p>
+      }
 
-  <div *ngIf="!loading && !error && viewMode === 'graph'">
-    <app-network-graph
-      [topologies]="topologies"
-      (resourceSelected)="openResourceDetails($event)">
-    </app-network-graph>
-  </div>
+      @if (error) {
+        <div class="error-message" role="alert">
+          <strong>Network topology could not be loaded.</strong>
+          <span>{{ error }}</span>
+        </div>
+      }
+
+      @if (!loading && !error && topologies.length === 0) {
+        <div class="empty-state">
+          No virtual networks were found in this subscription.
+        </div>
+      }
+
+
+      @if (!loading && !error && viewMode === 'list') {
+        <div class="topology-list">
+          @for (topology of topologies; track topology) {
+            <article class="virtual-network">
+              <header class="network-header">
+                <div>
+                  <p class="resource-kind">Virtual network</p>
+                  <h2 class="network-title">
+                    <app-resource-type-icon type="Microsoft.Network/virtualNetworks"></app-resource-type-icon>
+                    {{ topology.name }}
+                  </h2>
+                </div>
+                <dl>
+                  <div>
+                    <dt>Resource group</dt>
+                    <dd>{{ topology.resourceGroup }}</dd>
+                  </div>
+                  <div>
+                    <dt>Address space</dt>
+                    <dd>{{ topology.addressPrefixes.join(', ') || 'Not configured' }}</dd>
+                  </div>
+                  <div>
+                    <dt>Region</dt>
+                    <dd>{{ topology.location }}</dd>
+                  </div>
+                </dl>
+              </header>
+              @if (topology.peerings.length > 0) {
+                <div class="peering-list">
+                  <span class="peering-label">Peerings</span>
+                  @for (peering of topology.peerings; track peering) {
+                    <span class="peering-chip" [class.inactive]="peering.peeringState !== 'Connected'">
+                      {{ peering.remoteVirtualNetworkName || 'Unknown network' }}
+                      <small>({{ peering.peeringState || 'Unknown state' }})</small>
+                    </span>
+                  }
+                </div>
+              }
+              <div class="subnet-grid">
+                @for (subnet of topology.subnets; track subnet) {
+                  <app-resource-card
+                    class="subnet"
+                    type="Microsoft.Network/virtualNetworks/subnets"
+                    [name]="subnet.name"
+                    [iconSize]="28"
+                    [maxWidth]="'none'"
+                    [hasFooter]="true">
+                    <ng-container card-title-prefix>
+                      <p class="resource-kind">Subnet</p>
+                    </ng-container>
+                    <ng-container card-header-trailing>
+                      <dl class="subnet-address-space">
+                        <dt>Address prefix</dt>
+                        <dd>{{ subnet.addressPrefixes.join(', ') || 'No address prefix' }}</dd>
+                      </dl>
+                    </ng-container>
+                    <ng-container card-footer>
+                      <div class="controls">
+                        @if (subnet.networkSecurityGroupId) {
+                          <button
+                            type="button"
+                            class="control-btn"
+                            (click)="openResourceDetails(subnet.networkSecurityGroupId, $event)">
+                            <app-resource-type-icon
+                              type="Microsoft.Network/networkSecurityGroups"
+                              [size]="16">
+                            </app-resource-type-icon>
+                            {{ subnet.networkSecurityGroupName }}
+                          </button>
+                        }
+                        @if (subnet.routeTableName) {
+                          <button
+                            type="button"
+                            class="control-btn"
+                            [class.unassigned]="!subnet.routeTableName"
+                            [disabled]="!subnet.routeTableId"
+                            (click)="openResourceDetails(subnet.routeTableId, $event)">
+                            <app-resource-type-icon
+                              type="Microsoft.Network/routeTables"
+                              [size]="16">
+                            </app-resource-type-icon>
+                            {{ subnet.routeTableName }}
+                          </button>
+                        }
+                      </div>
+                    </ng-container>
+                  </app-resource-card>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+
+      @if (!loading && !error && viewMode === 'graph') {
+        <div>
+          <app-network-graph
+            [topologies]="topologies"
+            (resourceSelected)="openResourceDetails($event)">
+          </app-network-graph>
+        </div>
+      }
 
     </div>
 
-    <div *ngIf="pinnedPanels.length > 0" class="pinned-panel-slots" aria-label="Pinned resource panels">
-      <app-resource-detail-pane
-        *ngFor="let panel of pinnedPanels"
-        [panel]="panel"
-        [pinned]="true"
-        (close)="closePanel($event)"
-        (togglePin)="togglePanelPin($event)">
-      </app-resource-detail-pane>
-    </div>
+    @if (pinnedPanels.length > 0) {
+      <div class="pinned-panel-slots" aria-label="Pinned resource panels">
+        @for (panel of pinnedPanels; track panel) {
+          <app-resource-detail-pane
+            [panel]="panel"
+            [pinned]="true"
+            (close)="closePanel($event)"
+            (togglePin)="togglePanelPin($event)">
+          </app-resource-detail-pane>
+        }
+      </div>
+    }
   </div>
 
-  <app-resource-detail-pane
-    *ngIf="floatingPanel as panel"
-    [panel]="panel"
-    (close)="closePanel($event)"
-    (togglePin)="togglePanelPin($event)">
-  </app-resource-detail-pane>
+  @if (floatingPanel; as panel) {
+    <app-resource-detail-pane
+      [panel]="panel"
+      (close)="closePanel($event)"
+      (togglePin)="togglePanelPin($event)">
+    </app-resource-detail-pane>
+  }
 </section>

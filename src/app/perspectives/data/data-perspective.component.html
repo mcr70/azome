@@ -19,124 +19,133 @@
         </button>
       </div>
 
-      <p
-        *ngIf="loading"
-        class="status-message">
-        Loading data resources...
-      </p>
+      @if (loading) {
+        <p
+          class="status-message">
+          Loading data resources...
+        </p>
+      }
 
-      <div
-        *ngIf="error"
-        class="error-message"
-        role="alert">
-        <strong>
-          Data resources could not be loaded.
-        </strong>
-        <span>
-          {{ error }}
-        </span>
-      </div>
-
-      <div
-        *ngIf="!loading && !error && resources.length === 0"
-        class="empty-state">
-        No supported data resources were found in this subscription.
-      </div>
-
-      <section
-        *ngFor="let category of categoryGroups"
-        class="category-section"
-        [attr.aria-label]="category.category + ' resources'">
-        <header class="section-heading">
-          <div>
-            <p class="resource-kind">
-              Data category
-            </p>
-            <h2>
-              {{ category.category }}
-            </h2>
-          </div>
-          <span class="resource-count">
-            {{ category.types.length }} resource types
+      @if (error) {
+        <div
+          class="error-message"
+          role="alert">
+          <strong>
+            Data resources could not be loaded.
+          </strong>
+          <span>
+            {{ error }}
           </span>
-        </header>
+        </div>
+      }
 
+      @if (!loading && !error && resources.length === 0) {
+        <div
+          class="empty-state">
+          No supported data resources were found in this subscription.
+        </div>
+      }
+
+      @for (category of categoryGroups; track category.category) {
         <section
-          *ngFor="let typeGroup of category.types"
-          class="resource-type-section"
-          [attr.aria-label]="typeGroup.label">
-          <div class="type-heading">
-            <h3>
-              {{ typeGroup.label }}
-            </h3>
-            <span>
-              {{ typeGroup.resources.length }}
+          class="category-section"
+          [attr.aria-label]="category.category + ' resources'">
+          <header class="section-heading">
+            <div>
+              <p class="resource-kind">
+                Data category
+              </p>
+              <h2>
+                {{ category.category }}
+              </h2>
+            </div>
+            <span class="resource-count">
+              {{ category.types.length }} resource types
             </span>
-          </div>
-
-          <div class="resource-grid">
-            <app-resource-card
-              *ngFor="let resource of typeGroup.resources"
-              [type]="resource.type"
-              [name]="resource.name">
-              <ng-container card-actions>
-                <button
-                  class="resource-action details-action"
-                  type="button"
-                  [attr.aria-label]="'Show details for ' + resource.name"
-                  (click)="openResourceDetails(resource.id, $event)"
-                  title="Resource details">
-                  <span aria-hidden="true">i</span>
-                </button>
-                <button
-                  *ngIf="isBrowsable(resource)"
-                  class="resource-action browse-action"
-                  type="button"
-                  [attr.aria-label]="'Browse ' + resource.name"
-                  (click)="openBrowse(resource, $event)"
-                  (keydown.enter)="$event.stopPropagation()"
-                  title="Browse data">
-                  <span aria-hidden="true">⌕</span>
-                </button>
-              </ng-container>
-              <ng-container card-metadata>
+          </header>
+          @for (typeGroup of category.types; track typeGroup.type) {
+            <section
+              class="resource-type-section"
+              [attr.aria-label]="typeGroup.label">
+              <div class="type-heading">
+                <h3>
+                  {{ typeGroup.label }}
+                </h3>
                 <span>
-                  {{ resource.resourceGroup }}
+                  {{ typeGroup.resources.length }}
                 </span>
-                <span>
-                  {{ resource.location || 'Global' }}
-                </span>
-              </ng-container>
-            </app-resource-card>
-          </div>
+              </div>
+              <div class="resource-grid">
+                @for (resource of typeGroup.resources; track resource.id) {
+                  <app-resource-card
+                    [type]="resource.type"
+                    [name]="resource.name">
+                    <ng-container card-actions>
+                      <button
+                        class="resource-action details-action"
+                        type="button"
+                        [attr.aria-label]="'Show details for ' + resource.name"
+                        (click)="openResourceDetails(resource.id, $event)"
+                        title="Resource details">
+                        <span aria-hidden="true">i</span>
+                      </button>
+                      @if (isBrowsable(resource)) {
+                        <button
+                          class="resource-action browse-action"
+                          type="button"
+                          [attr.aria-label]="'Browse ' + resource.name"
+                          (click)="openBrowse(resource, $event)"
+                          (keydown.enter)="$event.stopPropagation()"
+                          title="Browse data">
+                          <span aria-hidden="true">⌕</span>
+                        </button>
+                      }
+                    </ng-container>
+                    <ng-container card-metadata>
+                      <span>
+                        {{ resource.resourceGroup }}
+                      </span>
+                      <span>
+                        {{ resource.location || 'Global' }}
+                      </span>
+                    </ng-container>
+                  </app-resource-card>
+                }
+              </div>
+            </section>
+          }
         </section>
-      </section>
+      }
     </div>
 
-    <div
-      *ngIf="pinnedPanels.length > 0"
-      class="pinned-panel-slots"
-      aria-label="Pinned resource panels">
-      <app-resource-detail-pane
-        *ngFor="let panel of pinnedPanels"
-        [panel]="panel"
-        [pinned]="true"
-        (close)="closePanel($event)"
-        (togglePin)="togglePanelPin($event)">
-      </app-resource-detail-pane>
-    </div>
+    @if (pinnedPanels.length > 0) {
+      <div
+        class="pinned-panel-slots"
+        aria-label="Pinned resource panels">
+        @for (panel of pinnedPanels; track panel) {
+          <app-resource-detail-pane
+            [panel]="panel"
+            [pinned]="true"
+            (close)="closePanel($event)"
+            (togglePin)="togglePanelPin($event)">
+          </app-resource-detail-pane>
+        }
+      </div>
+    }
   </div>
 
-  <app-resource-detail-pane
-    *ngIf="floatingPanel as panel"
-    [panel]="panel"
-    (close)="closePanel($event)"
-    (togglePin)="togglePanelPin($event)">
-  </app-resource-detail-pane>
+  @if (floatingPanel; as panel) {
+    <app-resource-detail-pane
+      [panel]="panel"
+      (close)="closePanel($event)"
+      (togglePin)="togglePanelPin($event)">
+    </app-resource-detail-pane>
+  }
 
-  <app-data-browse-pane
-    *ngIf="browseResource as resource"
-    [resource]="resource"
-    (close)="closeBrowse()">
-  </app-data-browse-pane>
+  @if (browseResource; as resource) {
+    <app-data-browse-pane
+      [resource]="resource"
+      (close)="closeBrowse()">
+    </app-data-browse-pane>
+  }
 </section>

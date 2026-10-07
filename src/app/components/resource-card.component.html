@@ -23,7 +23,9 @@
     <ng-content select="[card-metadata]"></ng-content>
   </div>
 
-  <footer *ngIf="hasFooter" class="resource-footer">
-    <ng-content select="[card-footer]"></ng-content>
-  </footer>
+  @if (hasFooter) {
+    <footer class="resource-footer">
+      <ng-content select="[card-footer]"></ng-content>
+    </footer>
+  }
 </article>
