@@ -112,7 +112,11 @@
                   title="Download"
                   aria-label="Download"
                   (click)="download(item)">
-                  ⬇
+                  <svg
+                    [lucideIcon]="downloadIcon"
+                    aria-hidden="true"
+                    focusable="false"
+                  ></svg>
                 </button>
               }
             </td>
@@ -131,8 +135,9 @@
 
   @if (previewName) {
     <aside class="preview">
-      <button class="close" type="button" (click)="closePreview()">
-        Close
+      <button class="close" type="button" aria-label="Close preview" title="Close preview"
+        (click)="closePreview()">
+        &times;
       </button>
       <h3>
         {{ previewName }}

@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { LucideDownload, LucideDynamicIcon } from '@lucide/angular';
 import {
   BlobBrowserItem,
   BlobContainerItem,
@@ -10,11 +11,13 @@ import { StorageBrowserBase } from '../storage-browser-base';
 @Component({
   selector: 'app-blob-browser',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideDynamicIcon],
   templateUrl: './blob-browser.component.html',
   styleUrl: './storage-browser.component.scss'
 })
 export class BlobBrowserComponent extends StorageBrowserBase implements OnInit, OnDestroy {
+  readonly downloadIcon = LucideDownload.icon;
+
   @Input({ required: true }) resourceId = '';
 
   containers: BlobContainerItem[] = [];
