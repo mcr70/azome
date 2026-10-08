@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import { LucideDownload, LucideDynamicIcon } from '@lucide/angular';
 import {
   FileBrowserItem,
   FileShareItem,
@@ -10,11 +11,13 @@ import { StorageBrowserBase } from '../storage-browser-base';
 @Component({
   selector: 'app-file-browser',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideDynamicIcon],
   templateUrl: './file-browser.component.html',
   styleUrl: '../blob-browser/storage-browser.component.scss'
 })
 export class FileBrowserComponent extends StorageBrowserBase implements OnInit, OnDestroy {
+  readonly downloadIcon = LucideDownload.icon;
+
   @Input({ required: true }) resourceId = '';
 
   shares: FileShareItem[] = [];

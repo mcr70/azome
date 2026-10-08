@@ -9,12 +9,10 @@
   (togglePin)="togglePin.emit(panel.id)"
   (duplicate)="duplicate.emit(panel.id)">
   <div class="pane-tabs" role="tablist" aria-label="Resource detail views">
-    <button
-      type="button"
-      role="tab"
-      [attr.aria-selected]="view === 'overview'"
-      [class.active]="view === 'overview'"
-      (click)="view = 'overview'">
+    <button type="button" role="tab"
+        [attr.aria-selected]="view === 'overview'"
+        [class.active]="view === 'overview'"
+        (click)="view = 'overview'">
       Overview
     </button>
     <button type="button" role="tab" [attr.aria-selected]="view === 'json'" [class.active]="view === 'json'" (click)="view = 'json'">JSON</button>
