@@ -1,11 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { AzureResourceDetail } from '../../services/azure/resource-graph.service';
+import { AzureResourceDetail } from '@services/azure/resource-graph.service';
 import {
   ResourceDetailComponentType,
   ResourceDetailRegistryService
-} from '../../services/azome/resource-detail.registry';
-import { DetailsPanelComponent } from '../../components/details-panel/details-panel.component';
+} from '@services/azome/resource-detail.registry';
+import { DetailsPanelComponent } from '@components/details-panel/details-panel.component';
 
 @Component({
   selector: 'app-data-browse-pane',

@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import cytoscape, { Core, ElementDefinition } from 'cytoscape';
 import dagre from 'cytoscape-dagre';
-import { NetworkTopology } from '../../services/azure/resource-graph.service';
+import { NetworkTopology } from '@services/azure/resource-graph.service';
 import { buildNetworkGraph, SubnetNavigation } from './network-graph.model';
 import { iconDataUri } from './network-graph-icons';
 

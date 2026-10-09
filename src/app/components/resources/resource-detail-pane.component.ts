@@ -1,8 +1,8 @@
 import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AzureResourceDetail } from '../../services/azure/resource-graph.service';
-import { ResourcePanelConfig } from '../../services/azome/resource-detail-panel.service';
-import { ResourceDetailRegistryService } from '../../services/azome/resource-detail.registry';
+import { AzureResourceDetail } from '@services/azure/resource-graph.service';
+import { ResourcePanelConfig } from '@services/azome/resource-detail-panel.service';
+import { ResourceDetailRegistryService } from '@services/azome/resource-detail.registry';
 import { DetailsPanelComponent } from '../details-panel/details-panel.component';
 import { ResourceDetailHostComponent } from './resource-detail-host.component';
 

@@ -2,14 +2,14 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 
 import { EMPTY, from, Subject } from 'rxjs';
 import { catchError, finalize, mergeMap, takeUntil, tap } from 'rxjs/operators';
-import { ResourceGroup, ResourceGroupService } from '../../services/azure/resource-group.service';
-import { AzureResource, ResourceGraphService } from '../../services/azure/resource-graph.service';
-import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
-import { ResourceTypeIconComponent } from '../../components/resource-type-icon.component';
-import { ResourceCardComponent } from '../../components/resource-card.component';
-import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/azome/resource-detail-panel.service';
-import { TextFilterComponent } from '../../components/text-filter.component';
-import { matchesTextFilter } from '../../utils/text-filter';
+import { ResourceGroup, ResourceGroupService } from '@services/azure/resource-group.service';
+import { AzureResource, ResourceGraphService } from '@services/azure/resource-graph.service';
+import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
+import { ResourceTypeIconComponent } from '@components/resource-type-icon.component';
+import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
+import { ResourceDetailPanelService, ResourcePanelConfig } from '@services/azome/resource-detail-panel.service';
+import { TextFilterComponent } from '@components/text-filter/text-filter.component';
+import { matchesTextFilter } from '@app/utils/text-filter';
 
 @Component({
   selector: 'app-resource-group-list',

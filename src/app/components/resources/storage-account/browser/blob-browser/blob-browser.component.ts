@@ -5,7 +5,7 @@ import {
   BlobBrowserItem,
   BlobContainerItem,
   StorageAccountService
-} from '../../../../../services/azure/storage-account.service';
+} from '@services/azure/storage-account.service';
 import { StorageBrowserBase } from '../storage-browser-base';
 
 @Component({

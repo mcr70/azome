@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { AzureResourceDetail } from '../azure/resource-graph.service';
+import { AzureResourceDetail } from '@services/azure/resource-graph.service';
 
 export interface ResourcePanelConfig {
   id: string;

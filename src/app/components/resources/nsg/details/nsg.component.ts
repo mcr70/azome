@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 
-import { PanelVariant, ResourceDetailItem } from '../../../../services/azome/resource-detail.registry';
+import { PanelVariant, ResourceDetailItem } from '@services/azome/resource-detail.registry';
 
 export interface NsgRule {
   name: string;

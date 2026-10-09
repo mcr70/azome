@@ -5,14 +5,14 @@ import { takeUntil } from 'rxjs/operators';
 import { 
   NetworkTopology, 
   ResourceGraphService, 
-} from '../../services/azure/resource-graph.service';
+} from '@services/azure/resource-graph.service';
 import { NetworkGraphComponent } from './network-graph.component';
-import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
-import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/azome/resource-detail-panel.service';
-import { ResourceTypeIconComponent } from '../../components/resource-type-icon.component';
-import { ResourceCardComponent } from '../../components/resource-card.component';
-import { TextFilterComponent } from '../../components/text-filter.component';
-import { matchesTextFilter } from '../../utils/text-filter';
+import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
+import { ResourceDetailPanelService, ResourcePanelConfig } from '@services/azome/resource-detail-panel.service';
+import { ResourceTypeIconComponent } from '@components/resource-type-icon.component';
+import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
+import { TextFilterComponent } from '@components/text-filter/text-filter.component';
+import { matchesTextFilter } from '@app/utils/text-filter';
 
 @Component({
   selector: 'app-networking-perspective',

@@ -5,7 +5,7 @@ import {
   StorageAccountService,
   TableEntity,
   TableItem
-} from '../../../../../services/azure/storage-account.service';
+} from '@services/azure/storage-account.service';
 import { StorageBrowserBase } from '../storage-browser-base';
 
 @Component({

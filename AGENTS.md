@@ -7,6 +7,7 @@ Agents and code generators working on this repository MUST strictly follow stand
 
 * **Multi-line Formatting:** Every HTML element with child nodes or multiple attributes MUST be formatted on multiple lines with proper indentation (2 spaces).
 * **One Element per Line:** Collapse siblings or container blocks into a single line (e.g., `<p>...</p><p>...</p>` or `<button>...</button> <h3>...</h3>`) only, if the line length does not exceed 80..100.
+* Try to add element attributes into same line, if it does fit into 100. 
 * **Control Flow Directives:** Structural directives (`*ngIf`, `*ngFor` or modern `@if`, `@for`) must be clearly indented on their own lines.
 * **Readable Tables & Forms:** Tables, forms, and navigation wrappers must follow standard HTML structural layout.
 

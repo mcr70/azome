@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LogAnalyticsWorkspace } from '../../../services/azure/monitoring.service';
-import { ResourceTypeIconComponent } from '../../../components/resource-type-icon.component';
+import { LogAnalyticsWorkspace } from '@services/azure/monitoring.service';
+import { ResourceTypeIconComponent } from '@components/resource-type-icon.component';
 
 @Component({
   selector: 'app-log-analytics',
