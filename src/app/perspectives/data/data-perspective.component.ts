@@ -1,20 +1,20 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { TextFilterComponent } from '../../components/text-filter.component';
+import { TextFilterComponent } from '@components/text-filter/text-filter.component';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
-import { ResourceCardComponent } from '../../components/resource-card.component';
+import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
+import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
 import { DataBrowsePaneComponent } from './data-browse-pane.component';
-import { AzureDataResource, DataResourceCategory } from '../../services/azure/data.model';
+import { AzureDataResource, DataResourceCategory } from '@services/azure/data.model';
 import {
   AzureResourceDetail,
   ResourceGraphService
-} from '../../services/azure/resource-graph.service';
+} from '@services/azure/resource-graph.service';
 import {
   ResourceDetailPanelService,
   ResourcePanelConfig
-} from '../../services/azome/resource-detail-panel.service';
-import { matchesTextFilter } from '../../utils/text-filter';
+} from '@services/azome/resource-detail-panel.service';
+import { matchesTextFilter } from '@app/utils/text-filter';
 
 interface DataResourceTypeGroup {
   type: string;

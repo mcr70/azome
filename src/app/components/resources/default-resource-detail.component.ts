@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ResourceDetailItem } from '../../services/azome/resource-detail.registry';
+import { ResourceDetailItem } from '@services/azome/resource-detail.registry';
 
 @Component({
   selector: 'app-default-resource-detail',

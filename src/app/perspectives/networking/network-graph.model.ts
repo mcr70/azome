@@ -1,4 +1,4 @@
-import { NetworkTopology } from '../../services/azure/resource-graph.service';
+import { NetworkTopology } from '@services/azure/resource-graph.service';
 
 export type NetworkGraphNodeKind = 'vnet' | 'subnet' | 'networkSecurityGroup' | 'routeTable';
 export type NetworkGraphEdgeKind = 'contains' | 'secured-by' | 'routed-by' | 'peered-with';

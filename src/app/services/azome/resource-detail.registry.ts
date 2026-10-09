@@ -1,10 +1,10 @@
 import { Injectable, Type } from '@angular/core';
-import { RouteTableComponent } from '../../components/resources/route-table/details/route-table.component';
-import { NsgComponent } from '../../components/resources/nsg/details/nsg.component';
-import { VnetComponent } from '../../components/resources/vnet/details/vnet.component';
-import { StorageAccountComponent } from '../../components/resources/storage-account/storage-account-details.component';
-import { KeyVaultComponent } from '../../components/resources/keyvault/details/keyvault.component';
-import { CosmosDbComponent } from '../../components/resources/cosmosdb/details/cosmosdb.component';
+import { RouteTableComponent } from '@components/resources/route-table/details/route-table.component';
+import { NsgComponent } from '@components/resources/nsg/details/nsg.component';
+import { VnetComponent } from '@components/resources/vnet/details/vnet.component';
+import { StorageAccountComponent } from '@components/resources/storage-account/storage-account-details.component';
+import { KeyVaultComponent } from '@components/resources/keyvault/details/keyvault.component';
+import { CosmosDbComponent } from '@components/resources/cosmosdb/details/cosmosdb.component';
 
 
 export type PanelVariant = 'default' | 'wide' | 'content';

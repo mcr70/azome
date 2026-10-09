@@ -1,5 +1,5 @@
 import { ResourceDetailPanelService } from './resource-detail-panel.service';
-import { AzureResourceDetail } from '../azure/resource-graph.service';
+import { AzureResourceDetail } from '@services/azure/resource-graph.service';
 
 describe('ResourceDetailPanelService', () => {
   let service: ResourceDetailPanelService;

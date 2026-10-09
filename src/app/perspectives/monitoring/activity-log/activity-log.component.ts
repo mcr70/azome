@@ -2,10 +2,10 @@ import { AfterViewInit, Component, Input, OnChanges, SimpleChanges, ViewChild } 
 import { CommonModule } from '@angular/common';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
-import { TextFilterComponent } from '../../../components/text-filter.component';
-import { ActivityLogEvent } from '../../../services/azure/monitoring.service';
+import { TextFilterComponent } from '@components/text-filter/text-filter.component';
+import { ActivityLogEvent } from '@services/azure/monitoring.service';
 import { ActivityLogDetailComponent } from './activity-log-detail.component';
-import { matchesTextFilter } from '../../../utils/text-filter';
+import { matchesTextFilter } from '@app/utils/text-filter';
 
 @Component({
   selector: 'app-activity-log',

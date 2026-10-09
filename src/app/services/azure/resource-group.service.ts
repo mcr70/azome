@@ -7,7 +7,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, from } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-import { environment } from '../../../environments/environment';
+import { environment } from '@environments/environment';
 
 export interface ResourceGroup {
   id: string;

@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject, forkJoin } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
-import { ActivityLogEvent, LogAnalyticsWorkspace, MonitoringService } from '../../services/azure/monitoring.service';
+import { ActivityLogEvent, LogAnalyticsWorkspace, MonitoringService } from '@services/azure/monitoring.service';
 import { ActivityLogComponent } from './activity-log/activity-log.component';
 import { LogAnalyticsComponent } from './log-analytics/log-analytics.component';
 

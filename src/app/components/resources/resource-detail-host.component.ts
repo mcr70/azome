@@ -1,6 +1,6 @@
 import { Component, Input, OnChanges, SimpleChanges, Type } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { PanelVariant, ResourceDetailItem, ResourceDetailRegistryService } from '../../services/azome/resource-detail.registry';
+import { PanelVariant, ResourceDetailItem, ResourceDetailRegistryService } from '@services/azome/resource-detail.registry';
 import { DefaultResourceDetailComponent } from './default-resource-detail.component';
 
 @Component({

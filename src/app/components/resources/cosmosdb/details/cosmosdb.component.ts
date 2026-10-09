@@ -2,8 +2,8 @@ import { Component, Input, OnInit } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { FormsModule } from '@angular/forms';
-import { PanelVariant, ResourceDetailItem } from '../../../../services/azome/resource-detail.registry';
-import { CosmosDbService, CosmosResource } from '../../../../services/azure/cosmosdb.service';
+import { PanelVariant, ResourceDetailItem } from '@services/azome/resource-detail.registry';
+import { CosmosDbService, CosmosResource } from '@services/azure/cosmosdb.service';
 
 export interface CosmosDbLocation {
   id?: string;

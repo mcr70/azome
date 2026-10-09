@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { StorageAccountBrowserComponent } from './browser/storage-account-browser.component';
-import { PanelVariant, ResourceDetailItem } from '../../../services/azome/resource-detail.registry';
+import { PanelVariant, ResourceDetailItem } from '@services/azome/resource-detail.registry';
 
 export interface EndpointItem {
   type: string;
