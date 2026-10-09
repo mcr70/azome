@@ -1,0 +1,39 @@
+<div class="section-heading">
+  <div>
+    <h2 id="workspaces-title">Log Analytics workspaces</h2>
+    <p>Workspaces found in this subscription</p>
+  </div>
+  <span class="event-count">{{ workspaces.length }} workspaces</span>
+</div>
+
+@if (workspaces.length === 0) {
+  <div class="empty-state">No Log Analytics workspaces were found in this subscription.</div>
+} @else {
+  <div class="workspace-grid">
+    @for (workspace of workspaces; track workspace.id) {
+      <article class="workspace-card">
+        <p class="resource-kind">Log Analytics workspace</p>
+        <h3 class="workspace-title">
+          <app-resource-type-icon type="Microsoft.OperationalInsights/workspaces"></app-resource-type-icon>
+          {{ workspace.name }}
+        </h3>
+        <dl>
+          <div>
+            <dt>Resource group</dt>
+            <dd>{{ workspace.resourceGroup }}</dd>
+          </div>
+          <div>
+            <dt>Region</dt>
+            <dd>{{ workspace.location }}</dd>
+          </div>
+          @if (workspace.properties.retentionInDays !== undefined) {
+            <div>
+              <dt>Retention</dt>
+              <dd>{{ workspace.properties.retentionInDays }} days</dd>
+            </div>
+          }
+        </dl>
+      </article>
+    }
+  </div>
+}
