@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivityLogEvent } from '../../services/azure/monitoring.service';
-import { DetailsPanelComponent } from '../../components/details-panel/details-panel.component';
+import { ActivityLogEvent } from '../../../services/azure/monitoring.service';
+import { DetailsPanelComponent } from '../../../components/details-panel/details-panel.component';
 
 @Component({
   selector: 'app-activity-log-detail',

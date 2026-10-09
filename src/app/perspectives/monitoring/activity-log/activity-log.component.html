@@ -1,0 +1,91 @@
+<div class="section-heading">
+  <div>
+    <h2 id="activity-title">Activity log</h2>
+    <p>Subscription events from the last 7 days</p>
+  </div>
+  <span class="event-count">
+    {{ dataSource.filteredData.length }} of {{ events.length }} events
+  </span>
+</div>
+
+<label class="activity-filter">
+  <span>Filter activity events</span>
+  <input
+    type="search"
+    [value]="filterQuery"
+    (input)="applyFilter($any($event.target).value)"
+    placeholder="Search terms separated by spaces"
+    aria-label="Filter activity events by words in the event JSON">
+</label>
+
+@if (events.length === 0) {
+  <div class="empty-state">No activity events were found for the last 7 days.</div>
+} @else {
+  @if (dataSource.filteredData.length === 0) {
+    <div class="empty-state">No activity events match all of those terms.</div>
+  } @else {
+    <div class="table-scroll">
+      <table mat-table [dataSource]="dataSource" aria-label="Activity log events">
+        <ng-container matColumnDef="time">
+          <th mat-header-cell *matHeaderCellDef>Time</th>
+          <td mat-cell *matCellDef="let event" class="event-time">
+            {{ event.eventTimestamp | date:'medium' }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="operation">
+          <th mat-header-cell *matHeaderCellDef>Operation</th>
+          <td mat-cell *matCellDef="let event">{{ operationName(event) }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let event">
+            <span
+              class="status-chip"
+              [class.failed]="statusName(event).toLowerCase().includes('fail')">
+              {{ statusName(event) }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="resourceGroup">
+          <th mat-header-cell *matHeaderCellDef>Resource group</th>
+          <td mat-cell *matCellDef="let event">{{ event.resourceGroupName || '—' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="caller">
+          <th mat-header-cell *matHeaderCellDef>Caller</th>
+          <td mat-cell *matCellDef="let event">{{ event.caller || '—' }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let event; columns: displayedColumns"
+          class="activity-row"
+          tabindex="0"
+          role="button"
+          (click)="openDetails(event)"
+          (keydown)="onRowKeydown($event, event)"
+          [attr.aria-label]="'Show details for ' + operationName(event)">
+        </tr>
+      </table>
+    </div>
+  }
+
+  <mat-paginator
+    class="activity-log-paginator"
+    aria-label="Activity log pages"
+    [pageSize]="25"
+    [pageSizeOptions]="[25, 50, 100]"
+    showFirstLastButtons>
+  </mat-paginator>
+}
+
+@if (selectedEvent; as event) {
+  <app-activity-log-detail
+    [event]="event"
+    (close)="selectedEvent = null">
+  </app-activity-log-detail>
+}

@@ -1,2 +1,10 @@
 /* You can add global styles to this file, and also import other style files */
 @use './app/components/resources/resource-details-shared';
+
+.activity-log-paginator .mat-mdc-select-value {
+  text-align: center;
+}
+
+.cdk-overlay-pane div.mat-mdc-select-panel {
+  background-color: #fff !important;
+}
