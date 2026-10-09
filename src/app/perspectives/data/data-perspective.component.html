@@ -39,10 +39,25 @@
         </div>
       }
 
+      @if (!loading && !error && resources.length > 0) {
+        <app-text-filter
+          label="Filter data resources by resource group or name"
+          placeholder="Search terms; prefix a term with ! to exclude it"
+          [query]="filterQuery"
+          (queryChange)="filterQuery = $event">
+        </app-text-filter>
+      }
+
       @if (!loading && !error && resources.length === 0) {
         <div
           class="empty-state">
           No supported data resources were found in this subscription.
+        </div>
+      }
+
+      @if (!loading && !error && resources.length > 0 && filteredResources.length === 0) {
+        <div class="empty-state">
+          No data resources match this filter.
         </div>
       }
 

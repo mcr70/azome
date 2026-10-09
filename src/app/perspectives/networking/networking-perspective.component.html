@@ -12,6 +12,15 @@
         </button>
       </div>
 
+      @if (!loading && !error && topologies.length > 0) {
+        <app-text-filter
+          label="Filter networking resources by resource group or name"
+          placeholder="Search terms; prefix a term with ! to exclude it"
+          [query]="filterQuery"
+          (queryChange)="onFilterChange($event)">
+        </app-text-filter>
+      }
+
       <div class="view-toggle" role="group" aria-label="View mode">
         <button type="button" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'">List</button>
         <button type="button" [class.active]="viewMode === 'graph'" (click)="viewMode = 'graph'">Graph</button>
@@ -34,10 +43,16 @@
         </div>
       }
 
+      @if (!loading && !error && topologies.length > 0 && filteredTopologies.length === 0) {
+        <div class="empty-state">
+          No networking resources match this filter.
+        </div>
+      }
+
 
       @if (!loading && !error && viewMode === 'list') {
         <div class="topology-list">
-          @for (topology of topologies; track topology) {
+          @for (topology of filteredTopologies; track topology.id) {
             <article class="virtual-network">
               <header class="network-header">
                 <div>
@@ -132,7 +147,7 @@
       @if (!loading && !error && viewMode === 'graph') {
         <div>
           <app-network-graph
-            [topologies]="topologies"
+            [topologies]="filteredTopologies"
             (resourceSelected)="openResourceDetails($event)">
           </app-network-graph>
         </div>

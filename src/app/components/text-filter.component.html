@@ -1,0 +1,9 @@
+<label class="text-filter">
+  <span>{{ label }}</span>
+  <input
+    type="search"
+    [value]="query"
+    (input)="onInput($any($event.target).value)"
+    [placeholder]="placeholder"
+    [attr.aria-label]="label">
+</label>

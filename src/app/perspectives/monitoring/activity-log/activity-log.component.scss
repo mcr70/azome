@@ -27,31 +27,6 @@
   font-size: .875rem;
 }
 
-.activity-filter {
-  display: grid;
-  gap: 6px;
-  margin-bottom: 12px;
-  color: #475569;
-  font-size: .875rem;
-  font-weight: 600;
-}
-
-.activity-filter input {
-  box-sizing: border-box;
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  color: #172033;
-  font: inherit;
-  font-weight: 400;
-}
-
-.activity-filter input:focus {
-  outline: 2px solid #0f766e;
-  outline-offset: 1px;
-}
-
 .empty-state {
   padding: 16px;
   border: 1px solid #cbd5e1;

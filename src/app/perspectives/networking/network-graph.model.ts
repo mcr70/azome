@@ -34,6 +34,7 @@ export interface NetworkGraph {
 export function buildNetworkGraph(topologies: NetworkTopology[]): NetworkGraph {
   const nodes = new Map<string, NetworkGraphNode>();
   const edges = new Map<string, NetworkGraphEdge>();
+  const topologyIds = new Set(topologies.map((topology) => topology.id));
 
   for (const topology of topologies) {
     nodes.set(topology.id, { id: topology.id, label: topology.name, kind: 'vnet', groupId: topology.id });
@@ -76,7 +77,7 @@ export function buildNetworkGraph(topologies: NetworkTopology[]): NetworkGraph {
     }
 
     for (const peering of topology.peerings) {
-      if (!peering.remoteVirtualNetworkId) {
+      if (!peering.remoteVirtualNetworkId || !topologyIds.has(peering.remoteVirtualNetworkId)) {
         continue;
       }
 
