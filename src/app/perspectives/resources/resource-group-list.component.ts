@@ -1,13 +1,15 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 
-import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { EMPTY, from, Subject } from 'rxjs';
+import { catchError, finalize, mergeMap, takeUntil, tap } from 'rxjs/operators';
 import { ResourceGroup, ResourceGroupService } from '../../services/azure/resource-group.service';
 import { AzureResource, ResourceGraphService } from '../../services/azure/resource-graph.service';
 import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
 import { ResourceTypeIconComponent } from '../../components/resource-type-icon.component';
 import { ResourceCardComponent } from '../../components/resource-card.component';
 import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/azome/resource-detail-panel.service';
+import { TextFilterComponent } from '../../components/text-filter.component';
+import { matchesTextFilter } from '../../utils/text-filter';
 
 @Component({
   selector: 'app-resource-group-list',
@@ -15,8 +17,9 @@ import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/
   imports: [
     ResourceDetailPaneComponent,
     ResourceTypeIconComponent,
-    ResourceCardComponent
-],
+    ResourceCardComponent,
+    TextFilterComponent
+  ],
   templateUrl: './resource-group-list.component.html',
   styleUrl: './resource-group-list.component.scss'
 })
@@ -32,6 +35,7 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
 
   public loadingDetails = false;
   public panels: ResourcePanelConfig[] = [];
+  public filterQuery = '';
 
   private readonly destroy$ = new Subject<void>();
 
@@ -52,6 +56,20 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
 
   public get floatingPanel(): ResourcePanelConfig | null {
     return this.panels.find((panel) => !panel.pinned) ?? null;
+  }
+
+  public get filteredResourceGroups(): ResourceGroup[] {
+    return this.resourceGroups.filter((group) =>
+      matchesTextFilter(this.filterQuery, group.name)
+      || (this.groupResources[group.name] ?? []).some((resource) =>
+        matchesTextFilter(this.filterQuery, group.name, resource.name)
+      )
+    );
+  }
+
+  public get loadingFilteredResources(): boolean {
+    return this.filterQuery.trim().length > 0
+      && this.resourceGroups.some((group) => this.loadingResources[group.name]);
   }
 
   public loadResourceGroups(): void {
@@ -84,6 +102,42 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
     if (!this.groupResources[groupName]) {
       this.fetchResourcesForGroup(groupName);
     }
+  }
+
+  public onFilterChange(query: string): void {
+    this.filterQuery = query;
+
+    if (!query.trim()) {
+      return;
+    }
+
+    const groupsToLoad = this.resourceGroups.filter((group) =>
+      !this.groupResources[group.name] && !this.loadingResources[group.name]
+    );
+
+    from(groupsToLoad)
+      .pipe(
+        mergeMap((group) => {
+          this.loadingResources[group.name] = true;
+          return this.resourceGraphService.getResourcesByResourceGroup(group.name).pipe(
+            tap((resources) => this.groupResources[group.name] = resources),
+            catchError((error: unknown) => {
+              console.error(`Failed to fetch resources for group ${group.name}:`, error);
+              this.groupResources[group.name] = [];
+              return EMPTY;
+            }),
+            finalize(() => this.loadingResources[group.name] = false)
+          );
+        }, 5),
+        takeUntil(this.destroy$)
+      )
+      .subscribe();
+  }
+
+  public filteredGroupResources(groupName: string): AzureResource[] {
+    return (this.groupResources[groupName] ?? []).filter((resource) =>
+      matchesTextFilter(this.filterQuery, groupName, resource.name)
+    );
   }
 
   public selectResource(resource: AzureResource): void {

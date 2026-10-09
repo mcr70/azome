@@ -11,13 +11,34 @@
       </div>
     }
 
+    @if (!loading && !error && resourceGroups.length > 0) {
+      <app-text-filter
+        label="Filter resource groups and resources by name"
+        placeholder="Search terms; prefix a term with ! to exclude it"
+        [query]="filterQuery"
+        (queryChange)="onFilterChange($event)">
+      </app-text-filter>
+    }
+
     @if (!loading && !error && resourceGroups.length === 0) {
       <div class="empty-state">
         No resource groups found or subscription empty.
       </div>
     }
 
-    @for (group of resourceGroups; track group) {
+    @if (!loading && !error && loadingFilteredResources) {
+      <div class="empty-state">
+        Searching resource names...
+      </div>
+    }
+
+    @if (!loading && !error && !loadingFilteredResources && resourceGroups.length > 0 && filteredResourceGroups.length === 0) {
+      <div class="empty-state">
+        No resource groups or resources match this filter.
+      </div>
+    }
+
+    @for (group of filteredResourceGroups; track group.name) {
       <div
         class="resource-group-card"
         [class.expanded]="expandedGroup === group.name"
@@ -58,17 +79,21 @@
                 Loading resources...
               </div>
             }
-            @if (!loadingResources[group.name] && (!groupResources[group.name] || (groupResources[group.name]?.length ?? 0) === 0)) {
+            @if (!loadingResources[group.name] && filteredGroupResources(group.name).length === 0) {
               <div
                 class="no-resources"
                 >
-                No individual resources found in this resource group.
+                @if (filterQuery.trim()) {
+                  No resources in this resource group match the filter.
+                } @else {
+                  No individual resources found in this resource group.
+                }
               </div>
             }
-            @if (!loadingResources[group.name] && (groupResources[group.name]?.length ?? 0) > 0) {
+            @if (!loadingResources[group.name] && filteredGroupResources(group.name).length > 0) {
               <div
                 class="resource-grid" >
-                @for (resource of groupResources[group.name]; track resource) {
+                @for (resource of filteredGroupResources(group.name); track resource.id) {
                   <app-resource-card
                     [type]="resource.type"
                     [name]="resource.name"

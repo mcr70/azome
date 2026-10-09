@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { TextFilterComponent } from '../../components/text-filter.component';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ResourceDetailPaneComponent } from '../../components/resources/resource-detail-pane.component';
@@ -13,6 +14,7 @@ import {
   ResourceDetailPanelService,
   ResourcePanelConfig
 } from '../../services/azome/resource-detail-panel.service';
+import { matchesTextFilter } from '../../utils/text-filter';
 
 interface DataResourceTypeGroup {
   type: string;
@@ -31,7 +33,8 @@ interface DataResourceCategoryGroup {
   imports: [
     ResourceDetailPaneComponent,
     ResourceCardComponent,
-    DataBrowsePaneComponent
+    DataBrowsePaneComponent,
+    TextFilterComponent
   ],
   templateUrl: './data-perspective.component.html',
   styleUrl: './data-perspective.component.scss'
@@ -43,6 +46,7 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
   public error: string | null = null;
   public panels: ResourcePanelConfig[] = [];
   public browseResource: AzureResourceDetail | null = null;
+  public filterQuery = '';
 
   private readonly destroy$ = new Subject<void>();
   private detailRequestId = 0;
@@ -56,7 +60,7 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
   public get categoryGroups(): DataResourceCategoryGroup[] {
     const categories = new Map<DataResourceCategory, Map<string, AzureDataResource[]>>();
 
-    for (const resource of this.resources) {
+    for (const resource of this.filteredResources) {
       const category = resource.category;
       const categoryTypes = categories.get(category) ?? new Map<string, AzureDataResource[]>();
       const resourceType = resource.type.toLowerCase();
@@ -79,6 +83,12 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
             resources
           }))
       }));
+  }
+
+  public get filteredResources(): AzureDataResource[] {
+    return this.resources.filter((resource) =>
+      matchesTextFilter(this.filterQuery, resource.resourceGroup, resource.name)
+    );
   }
 
   public get pinnedPanels(): ResourcePanelConfig[] {

@@ -8,15 +8,12 @@
   </span>
 </div>
 
-<label class="activity-filter">
-  <span>Filter activity events</span>
-  <input
-    type="search"
-    [value]="filterQuery"
-    (input)="applyFilter($any($event.target).value)"
-    placeholder="Search terms separated by spaces"
-    aria-label="Filter activity events by words in the event JSON">
-</label>
+<app-text-filter
+  label="Filter activity events"
+  placeholder="Search terms; prefix a term with ! to exclude it"
+  [query]="filterQuery"
+  (queryChange)="applyFilter($event)">
+</app-text-filter>
 
 @if (events.length === 0) {
   <div class="empty-state">No activity events were found for the last 7 days.</div>

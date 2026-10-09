@@ -2,13 +2,21 @@ import { AfterViewInit, Component, Input, OnChanges, SimpleChanges, ViewChild } 
 import { CommonModule } from '@angular/common';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
+import { TextFilterComponent } from '../../../components/text-filter.component';
 import { ActivityLogEvent } from '../../../services/azure/monitoring.service';
 import { ActivityLogDetailComponent } from './activity-log-detail.component';
+import { matchesTextFilter } from '../../../utils/text-filter';
 
 @Component({
   selector: 'app-activity-log',
   standalone: true,
-  imports: [CommonModule, MatPaginatorModule, MatTableModule, ActivityLogDetailComponent],
+  imports: [
+    CommonModule,
+    MatPaginatorModule,
+    MatTableModule,
+    TextFilterComponent,
+    ActivityLogDetailComponent
+  ],
   templateUrl: './activity-log.component.html',
   styleUrl: './activity-log.component.scss'
 })
@@ -23,20 +31,8 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
   public selectedEvent: ActivityLogEvent | null = null;
 
   constructor() {
-    this.dataSource.filterPredicate = (event, filter) => {
-      const terms = filter.split(/\s+/).filter(Boolean);
-      const searchable = JSON.stringify(event).toLocaleLowerCase();
-
-      return terms.every((term) => {
-        if (term.startsWith('!')) {
-          const excludeTerm = term.slice(1);
-          return excludeTerm ? !searchable.includes(excludeTerm) : true;
-        } 
-        else {
-          return searchable.includes(term);
-        }
-      });
-    };
+    this.dataSource.filterPredicate = (event, filter) =>
+      matchesTextFilter(filter, JSON.stringify(event));
   }
 
   public ngOnChanges(changes: SimpleChanges): void {

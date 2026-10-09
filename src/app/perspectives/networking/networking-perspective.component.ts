@@ -11,6 +11,8 @@ import { ResourceDetailPaneComponent } from '../../components/resources/resource
 import { ResourceDetailPanelService, ResourcePanelConfig } from '../../services/azome/resource-detail-panel.service';
 import { ResourceTypeIconComponent } from '../../components/resource-type-icon.component';
 import { ResourceCardComponent } from '../../components/resource-card.component';
+import { TextFilterComponent } from '../../components/text-filter.component';
+import { matchesTextFilter } from '../../utils/text-filter';
 
 @Component({
   selector: 'app-networking-perspective',
@@ -19,16 +21,19 @@ import { ResourceCardComponent } from '../../components/resource-card.component'
     NetworkGraphComponent,
     ResourceDetailPaneComponent,
     ResourceTypeIconComponent,
-    ResourceCardComponent
-],
+    ResourceCardComponent,
+    TextFilterComponent
+  ],
   templateUrl: './networking-perspective.component.html',
   styleUrl: './networking-perspective.component.scss'
 })
 export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
   public topologies: NetworkTopology[] = [];
+  public filteredTopologies: NetworkTopology[] = [];
   public loading = false;
   public error: string | null = null;
   public viewMode: 'list' | 'graph' = 'list';
+  public filterQuery = '';
 
   public loadingDetails = false;
   public panels: ResourcePanelConfig[] = [];
@@ -88,6 +93,37 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
     return this.panels.find((panel) => !panel.pinned) ?? null;
   }
 
+  public onFilterChange(query: string): void {
+    this.filterQuery = query;
+    this.updateFilteredTopologies();
+  }
+
+  private updateFilteredTopologies(): void {
+    if (!this.filterQuery.trim()) {
+      this.filteredTopologies = this.topologies;
+      return;
+    }
+
+    this.filteredTopologies = this.topologies
+      .map((topology) => ({
+        ...topology,
+        subnets: topology.subnets.filter((subnet) =>
+          matchesTextFilter(
+            this.filterQuery,
+            topology.resourceGroup,
+            topology.name,
+            subnet.name,
+            subnet.networkSecurityGroupName,
+            subnet.routeTableName
+          )
+        )
+      }))
+      .filter((topology) =>
+        matchesTextFilter(this.filterQuery, topology.resourceGroup, topology.name)
+        || topology.subnets.length > 0
+      );
+  }
+
   public getShortType(fullType: string): string {
     if (!fullType) return 'Resource';
     const parts = fullType.split('/');
@@ -106,6 +142,7 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (topologies) => {
           this.topologies = topologies;
+          this.updateFilteredTopologies();
           this.loading = false;
         },
         error: (error) => {
