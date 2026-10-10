@@ -19,6 +19,8 @@
         </button>
       </div>
 
+      <app-resource-selection-bar></app-resource-selection-bar>
+
       @if (loading) {
         <p
           class="status-message">
@@ -94,7 +96,10 @@
                 @for (resource of typeGroup.resources; track resource.id) {
                   <app-resource-card
                     [type]="resource.type"
-                    [name]="resource.name">
+                    [name]="resource.name"
+                    [resourceId]="resource.id"
+                    [resourceGroup]="resource.resourceGroup"
+                    [selectable]="true">
                     <ng-container card-actions>
                       <button
                         class="resource-action details-action"

@@ -12,6 +12,7 @@ import { ResourceDetailPanelService, ResourcePanelConfig } from '@services/azome
 import { ResourceTypeIconComponent } from '@components/resource-type-icon.component';
 import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
 import { TextFilterComponent } from '@components/text-filter/text-filter.component';
+import { ResourceSelectionBarComponent } from '@components/resource-selection-bar.component';
 import { matchesTextFilter } from '@app/utils/text-filter';
 
 @Component({
@@ -22,7 +23,8 @@ import { matchesTextFilter } from '@app/utils/text-filter';
     ResourceDetailPaneComponent,
     ResourceTypeIconComponent,
     ResourceCardComponent,
-    TextFilterComponent
+    TextFilterComponent,
+    ResourceSelectionBarComponent
   ],
   templateUrl: './networking-perspective.component.html',
   styleUrl: './networking-perspective.component.scss'
@@ -128,6 +130,10 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
     if (!fullType) return 'Resource';
     const parts = fullType.split('/');
     return parts[parts.length - 1] || fullType;
+  }
+
+  public subnetResourceId(topologyId: string, subnetName: string): string {
+    return `${topologyId}/subnets/${subnetName}`;
   }
 
   public closePanel(panelId: string): void { this.panelService.closePanel(panelId); }

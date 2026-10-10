@@ -12,6 +12,8 @@
         </button>
       </div>
 
+      <app-resource-selection-bar></app-resource-selection-bar>
+
       @if (!loading && !error && topologies.length > 0) {
         <app-text-filter
           label="Filter networking resources by resource group or name"
@@ -94,6 +96,9 @@
                     class="subnet"
                     type="Microsoft.Network/virtualNetworks/subnets"
                     [name]="subnet.name"
+                    [resourceId]="subnetResourceId(topology.id, subnet.name)"
+                    [resourceGroup]="topology.resourceGroup"
+                    [selectable]="true"
                     [iconSize]="28"
                     [maxWidth]="'none'"
                     [hasFooter]="true">

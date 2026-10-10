@@ -10,6 +10,7 @@ import { ResourceCardComponent } from '@components/resource-card/resource-card.c
 import { ResourceDetailPanelService, ResourcePanelConfig } from '@services/azome/resource-detail-panel.service';
 import { TextFilterComponent } from '@components/text-filter/text-filter.component';
 import { matchesTextFilter } from '@app/utils/text-filter';
+import { ResourceSelectionService } from '@services/azome/resource-selection.service';
 
 @Component({
   selector: 'app-resource-group-list',
@@ -29,7 +30,7 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
   public loading = false;
   public error: string | null = null;
 
-  public expandedGroup: string | null = null;
+  public expandedGroups = new Set<string>();
   public groupResources: { [groupName: string]: AzureResource[] } = {};
   public loadingResources: { [groupName: string]: boolean } = {};
 
@@ -42,7 +43,8 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
   constructor(
     private resourceGroupService: ResourceGroupService,
     private resourceGraphService: ResourceGraphService,
-    private panelService: ResourceDetailPanelService
+    private panelService: ResourceDetailPanelService,
+    private resourceSelection: ResourceSelectionService
   ) {}
 
   ngOnInit(): void {
@@ -81,6 +83,7 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (groups) => {
           this.resourceGroups = groups;
+          this.expandSelectedResourceGroups(groups);
           this.loading = false;
         },
         error: (error) => {
@@ -92,16 +95,20 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
   }
 
   public toggleGroup(groupName: string): void {
-    if (this.expandedGroup === groupName) {
-      this.expandedGroup = null;
+    if (this.expandedGroups.has(groupName)) {
+      this.expandedGroups.delete(groupName);
       return;
     }
 
-    this.expandedGroup = groupName;
+    this.expandedGroups.add(groupName);
 
     if (!this.groupResources[groupName]) {
       this.fetchResourcesForGroup(groupName);
     }
+  }
+
+  public isGroupExpanded(groupName: string): boolean {
+    return this.expandedGroups.has(groupName);
   }
 
   public onFilterChange(query: string): void {
@@ -176,6 +183,23 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
           this.loadingResources[groupName] = false;
         }
       });
+  }
+
+  private expandSelectedResourceGroups(groups: ResourceGroup[]): void {
+    for (const resource of this.resourceSelection.selectedResources) {
+      const group = groups.find(
+        (candidate) => candidate.name.toLocaleLowerCase() === resource.resourceGroup.toLocaleLowerCase()
+      );
+
+      if (!group) {
+        continue;
+      }
+
+      this.expandedGroups.add(group.name);
+      if (!this.groupResources[group.name]) {
+        this.fetchResourcesForGroup(group.name);
+      }
+    }
   }
 
   public getShortType(fullType: string): string {

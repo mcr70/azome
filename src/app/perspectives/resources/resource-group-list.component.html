@@ -41,13 +41,13 @@
     @for (group of filteredResourceGroups; track group.name) {
       <div
         class="resource-group-card"
-        [class.expanded]="expandedGroup === group.name"
+        [class.expanded]="isGroupExpanded(group.name)"
         >
         <button
           type="button"
           class="resource-group-header"
           (click)="toggleGroup(group.name)"
-          [attr.aria-expanded]="expandedGroup === group.name"
+          [attr.aria-expanded]="isGroupExpanded(group.name)"
           >
           <div class="group-title">
             <div>
@@ -69,10 +69,10 @@
                 <dd>{{ group.properties?.provisioningState }}</dd>
               </dl>
             }
-            <span class="chevron" [class.open]="expandedGroup === group.name"></span>
+            <span class="chevron" [class.open]="isGroupExpanded(group.name)"></span>
           </div>
         </button>
-        @if (expandedGroup === group.name) {
+        @if (isGroupExpanded(group.name)) {
           <div class="resources-panel">
             @if (loadingResources[group.name]) {
               <div class="loading-resources">
@@ -97,6 +97,9 @@
                   <app-resource-card
                     [type]="resource.type"
                     [name]="resource.name"
+                    [resourceId]="resource.id"
+                    [resourceGroup]="group.name"
+                    [selectable]="true"
                     [iconSize]="18">
                     <ng-container card-actions>
                       <button

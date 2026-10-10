@@ -1,0 +1,42 @@
+<article
+  #cardElement
+  class="resource-card"
+  [style.--resource-card-max-width]="maxWidth">
+  <header class="resource-card-header">
+    <div class="resource-title-area">
+      <app-resource-type-icon
+        [type]="type"
+        [size]="iconSize">
+      </app-resource-type-icon>
+      <div class="resource-heading">
+        <ng-content select="[card-title-prefix]"></ng-content>
+        <span class="resource-name">{{ name }}</span>
+      </div>
+    </div>
+
+    <div class="resource-actions">
+      <ng-content select="[card-header-trailing]"></ng-content>
+      <ng-content select="[card-actions]"></ng-content>
+      @if (selectable && resourceId) {
+        <label class="resource-selection-control">
+          <input
+            type="checkbox"
+            [checked]="isSelected"
+            [attr.aria-label]="(isSelected ? 'Deselect ' : 'Select ') + name"
+            (change)="onSelectionChange($event)">
+          <span>Select</span>
+        </label>
+      }
+    </div>
+  </header>
+
+  <div class="resource-metadata">
+    <ng-content select="[card-metadata]"></ng-content>
+  </div>
+
+  @if (hasFooter) {
+    <footer class="resource-footer">
+      <ng-content select="[card-footer]"></ng-content>
+    </footer>
+  }
+</article>

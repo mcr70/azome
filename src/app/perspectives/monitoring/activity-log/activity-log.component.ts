@@ -1,4 +1,12 @@
-import { AfterViewInit, Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  Input,
+  OnChanges,
+  SimpleChanges,
+  ViewChild
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatTableDataSource, MatTableModule } from '@angular/material/table';
@@ -6,6 +14,12 @@ import { TextFilterComponent } from '@components/text-filter/text-filter.compone
 import { ActivityLogEvent } from '@services/azure/monitoring.service';
 import { ActivityLogDetailComponent } from './activity-log-detail.component';
 import { matchesTextFilter } from '@app/utils/text-filter';
+import { SelectedAzureResource } from '@services/azome/resource-selection.service';
+
+interface ActivityLogFilter {
+  query: string;
+  resourceIds: string[];
+}
 
 @Component({
   selector: 'app-activity-log',
@@ -22,6 +36,7 @@ import { matchesTextFilter } from '@app/utils/text-filter';
 })
 export class ActivityLogComponent implements AfterViewInit, OnChanges {
   @Input() events: ActivityLogEvent[] = [];
+  @Input() selectedResources: SelectedAzureResource[] = [];
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -30,15 +45,27 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
   public filterQuery = '';
   public selectedEvent: ActivityLogEvent | null = null;
 
-  constructor() {
-    this.dataSource.filterPredicate = (event, filter) =>
-      matchesTextFilter(filter, JSON.stringify(event));
+  constructor(private host: ElementRef<HTMLElement>) {
+    this.dataSource.filterPredicate = (event, filter) => {
+      const parsedFilter = JSON.parse(filter) as ActivityLogFilter;
+      const matchesResource = parsedFilter.resourceIds.length === 0
+        || this.matchesSelectedResource(event, parsedFilter.resourceIds);
+
+      return matchesResource && matchesTextFilter(parsedFilter.query, JSON.stringify(event));
+    };
   }
 
   public ngOnChanges(changes: SimpleChanges): void {
     if (changes['events']) {
       this.dataSource.data = this.events;
-      this.paginator?.firstPage();
+    }
+
+    this.updateDataSourceFilter();
+
+    if (changes['selectedResources'] && this.selectedResources.length > 0) {
+      setTimeout(() => {
+        this.host.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     }
   }
 
@@ -48,7 +75,7 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
 
   public applyFilter(value: string): void {
     this.filterQuery = value;
-    this.dataSource.filter = value.trim().toLocaleLowerCase();
+    this.updateDataSourceFilter();
   }
 
   public operationName(event: ActivityLogEvent): string {
@@ -68,5 +95,26 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
       keyboardEvent.preventDefault();
       this.openDetails(event);
     }
+  }
+
+  private updateDataSourceFilter(): void {
+    const filter: ActivityLogFilter = {
+      query: this.filterQuery.trim().toLocaleLowerCase(),
+      resourceIds: this.selectedResources.map((resource) => this.normalizeId(resource.id))
+    };
+
+    this.dataSource.filter = JSON.stringify(filter);
+    this.paginator?.firstPage();
+  }
+
+  private matchesSelectedResource(event: ActivityLogEvent, resourceIds: string[]): boolean {
+    const eventResourceId = this.normalizeId(event.resourceId ?? '');
+    return resourceIds.some((resourceId) =>
+      eventResourceId === resourceId || eventResourceId.startsWith(`${resourceId}/`)
+    );
+  }
+
+  private normalizeId(resourceId: string): string {
+    return resourceId.replace(/\/+$/, '').toLocaleLowerCase();
   }
 }

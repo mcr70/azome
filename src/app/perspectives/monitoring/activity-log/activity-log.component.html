@@ -19,7 +19,13 @@
   <div class="empty-state">No activity events were found for the last 7 days.</div>
 } @else {
   @if (dataSource.filteredData.length === 0) {
-    <div class="empty-state">No activity events match all of those terms.</div>
+    <div class="empty-state">
+      @if (selectedResources.length > 0) {
+        No activity events were found for the selected resources and filter.
+      } @else {
+        No activity events match all of those terms.
+      }
+    </div>
   } @else {
     <div class="table-scroll">
       <table mat-table [dataSource]="dataSource" aria-label="Activity log events">
