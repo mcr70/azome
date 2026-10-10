@@ -11,11 +11,25 @@ export interface SelectedAzureResource {
 @Injectable({ providedIn: 'root' })
 export class ResourceSelectionService {
   private readonly selectedResourcesSubject = new BehaviorSubject<SelectedAzureResource[]>([]);
+  private readonly selectionModeSubject = new BehaviorSubject<boolean>(false);
 
   public readonly selectedResources$ = this.selectedResourcesSubject.asObservable();
+  public readonly selectionMode$ = this.selectionModeSubject.asObservable();
 
   public get selectedResources(): SelectedAzureResource[] {
     return this.selectedResourcesSubject.value;
+  }
+
+  public get isSelecting(): boolean {
+    return this.selectionModeSubject.value;
+  }
+
+  public startSelecting(): void {
+    this.selectionModeSubject.next(true);
+  }
+
+  public finishSelecting(): void {
+    this.selectionModeSubject.next(false);
   }
 
   public isSelected(resourceId: string): boolean {

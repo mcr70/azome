@@ -15,4 +15,13 @@ export class ResourceSelectionBarComponent {
   public clearSelection(): void {
     this.selection.clear();
   }
+
+  public toggleSelectionMode(): void {
+    if (this.selection.isSelecting) {
+      this.selection.finishSelecting();
+      return;
+    }
+
+    this.selection.startSelecting();
+  }
 }

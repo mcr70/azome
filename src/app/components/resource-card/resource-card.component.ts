@@ -51,6 +51,10 @@ export class ResourceCardComponent implements AfterViewInit {
     return this.resourceId ? this.selection.isSelected(this.resourceId) : false;
   }
 
+  public get isSelecting(): boolean {
+    return this.selection.isSelecting;
+  }
+
   public ngAfterViewInit(): void {
     if (this.resourceId && this.selection.isFirstSelected(this.resourceId)) {
       this.cardElement.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });

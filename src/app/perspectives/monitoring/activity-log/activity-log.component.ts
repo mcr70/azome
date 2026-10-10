@@ -14,7 +14,10 @@ import { TextFilterComponent } from '@components/text-filter/text-filter.compone
 import { ActivityLogEvent } from '@services/azure/monitoring.service';
 import { ActivityLogDetailComponent } from './activity-log-detail.component';
 import { matchesTextFilter } from '@app/utils/text-filter';
-import { SelectedAzureResource } from '@services/azome/resource-selection.service';
+import {
+  ResourceSelectionService,
+  SelectedAzureResource
+} from '@services/azome/resource-selection.service';
 
 interface ActivityLogFilter {
   query: string;
@@ -40,12 +43,16 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
-  public readonly displayedColumns = ['time', 'operation', 'status', 'resourceGroup', 'caller'];
+  private readonly standardColumns = ['time', 'operation', 'status', 'resourceGroup', 'caller'];
+  private readonly selectionColumns = ['select', ...this.standardColumns];
   public readonly dataSource = new MatTableDataSource<ActivityLogEvent>([]);
   public filterQuery = '';
   public selectedEvent: ActivityLogEvent | null = null;
 
-  constructor(private host: ElementRef<HTMLElement>) {
+  constructor(
+    private host: ElementRef<HTMLElement>,
+    public resourceSelection: ResourceSelectionService
+  ) {
     this.dataSource.filterPredicate = (event, filter) => {
       const parsedFilter = JSON.parse(filter) as ActivityLogFilter;
       const matchesResource = parsedFilter.resourceIds.length === 0
@@ -67,6 +74,10 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
         this.host.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
     }
+  }
+
+  public get displayedColumns(): string[] {
+    return this.resourceSelection.isSelecting ? this.selectionColumns : this.standardColumns;
   }
 
   public ngAfterViewInit(): void {
@@ -91,10 +102,35 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
   }
 
   public onRowKeydown(keyboardEvent: KeyboardEvent, event: ActivityLogEvent): void {
+    if (keyboardEvent.target !== keyboardEvent.currentTarget) {
+      return;
+    }
+
     if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
       keyboardEvent.preventDefault();
       this.openDetails(event);
     }
+  }
+
+  public isEventSelected(event: ActivityLogEvent): boolean {
+    return Boolean(event.resourceId && this.resourceSelection.isSelected(event.resourceId));
+  }
+
+  public onEventSelectionChange(changeEvent: Event, event: ActivityLogEvent): void {
+    if (!event.resourceId) {
+      return;
+    }
+
+    const checkbox = changeEvent.target as HTMLInputElement;
+    if (checkbox.checked) {
+      const resource = this.resourceFromEvent(event);
+      if (resource) {
+        this.resourceSelection.select(resource);
+      }
+      return;
+    }
+
+    this.resourceSelection.deselect(event.resourceId);
   }
 
   private updateDataSourceFilter(): void {
@@ -116,5 +152,39 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
 
   private normalizeId(resourceId: string): string {
     return resourceId.replace(/\/+$/, '').toLocaleLowerCase();
+  }
+
+  private resourceFromEvent(event: ActivityLogEvent): SelectedAzureResource | null {
+    const id = event.resourceId?.trim();
+    if (!id) {
+      return null;
+    }
+
+    const segments = id.split('/').filter(Boolean);
+    const providerIndex = segments.findIndex((segment) => segment.toLocaleLowerCase() === 'providers');
+    const provider = providerIndex >= 0 ? segments[providerIndex + 1] : null;
+    const resourceTypes: string[] = [];
+    const resourceNames: string[] = [];
+
+    if (providerIndex >= 0) {
+      for (let index = providerIndex + 2; index < segments.length; index += 2) {
+        resourceTypes.push(segments[index]);
+        if (segments[index + 1]) {
+          resourceNames.push(segments[index + 1]);
+        }
+      }
+    }
+
+    const resourceGroupIndex = segments.findIndex(
+      (segment) => segment.toLocaleLowerCase() === 'resourcegroups'
+    );
+
+    return {
+      id,
+      type: provider ? `${provider}/${resourceTypes.join('/')}` : 'Unknown',
+      name: resourceNames.at(-1) ?? segments.at(-1) ?? id,
+      resourceGroup: event.resourceGroupName
+        ?? (resourceGroupIndex >= 0 ? segments[resourceGroupIndex + 1] : '')
+    };
   }
 }

@@ -17,14 +17,13 @@
     <div class="resource-actions">
       <ng-content select="[card-header-trailing]"></ng-content>
       <ng-content select="[card-actions]"></ng-content>
-      @if (selectable && resourceId) {
+      @if (selectable && resourceId && isSelecting) {
         <label class="resource-selection-control">
           <input
             type="checkbox"
             [checked]="isSelected"
             [attr.aria-label]="(isSelected ? 'Deselect ' : 'Select ') + name"
             (change)="onSelectionChange($event)">
-          <span>Select</span>
         </label>
       }
     </div>

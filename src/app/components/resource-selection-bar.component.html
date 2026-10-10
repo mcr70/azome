@@ -1,29 +1,34 @@
 @if (selection.selectedResources$ | async; as selectedResources) {
-  <section class="resource-selection-bar" aria-label="Selected resources">
-    <div class="selection-summary">
-      <strong>Selected resources</strong>
-      <span class="selection-count">{{ selectedResources.length }}</span>
-    </div>
-
-    @if (selectedResources.length > 0) {
-      <ul class="selected-resource-list">
-        @for (resource of selectedResources; track resource.id) {
-          <li>
-            <span class="selected-resource-name">{{ resource.name }}</span>
-            <span class="selected-resource-group">{{ resource.resourceGroup }}</span>
-          </li>
-        }
-      </ul>
-    } @else {
-      <span class="selection-empty">No resources selected</span>
-    }
-
+  <section class="resource-selection-bar" aria-label="Resource selection">
     <button
       type="button"
-      class="clear-selection-button"
-      [disabled]="selectedResources.length === 0"
-      (click)="clearSelection()">
-      Clear selection
+      class="selection-mode-button"
+      [attr.aria-pressed]="selection.isSelecting"
+      (click)="toggleSelectionMode()">
+      {{ selection.isSelecting ? 'Done' : 'Select resources' }}
     </button>
+
+    @if (!selection.isSelecting && selectedResources.length > 0) {
+      <div class="selection-summary">
+        <div class="selection-heading">
+          <strong>Selected resources</strong>
+          <span class="selection-count">{{ selectedResources.length }}</span>
+        </div>
+        <ul class="selected-resource-list">
+          @for (resource of selectedResources; track resource.id) {
+            <li>
+              <span class="selected-resource-name">{{ resource.name }}</span>
+              <span class="selected-resource-group">{{ resource.resourceGroup }}</span>
+            </li>
+          }
+        </ul>
+        <button
+          type="button"
+          class="clear-selection-button"
+          (click)="clearSelection()">
+          Clear selection
+        </button>
+      </div>
+    }
   </section>
 }

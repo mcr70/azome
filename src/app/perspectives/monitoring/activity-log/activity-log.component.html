@@ -29,6 +29,19 @@
   } @else {
     <div class="table-scroll">
       <table mat-table [dataSource]="dataSource" aria-label="Activity log events">
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let event" class="selection-cell">
+            <input
+              type="checkbox"
+              [checked]="isEventSelected(event)"
+              [disabled]="!event.resourceId"
+              [attr.aria-label]="'Select activity resource ' + (event.resourceId || '')"
+              (click)="$event.stopPropagation()"
+              (change)="onEventSelectionChange($event, event)">
+          </td>
+        </ng-container>
+
         <ng-container matColumnDef="time">
           <th mat-header-cell *matHeaderCellDef>Time</th>
           <td mat-cell *matCellDef="let event" class="event-time">
@@ -68,7 +81,6 @@
           *matRowDef="let event; columns: displayedColumns"
           class="activity-row"
           tabindex="0"
-          role="button"
           (click)="openDetails(event)"
           (keydown)="onRowKeydown($event, event)"
           [attr.aria-label]="'Show details for ' + operationName(event)">
