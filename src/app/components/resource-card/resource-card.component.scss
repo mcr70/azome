@@ -21,6 +21,12 @@
   font: inherit;
 }
 
+.resource-card.selected {
+  border-color: #0f766e;
+  background: #f0fdfa;
+  box-shadow: 0 0 0 1px #0f766e;
+}
+
 .resource-card-header,
 .resource-title-area,
 .resource-actions,
