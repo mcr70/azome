@@ -12,7 +12,8 @@ const PERSPECTIVE_ROUTES: Record<string, string> = {
   '/rg': 'resources',
   '/networking': 'networking',
   '/monitoring': 'monitoring',
-  '/data': 'data'
+  '/data': 'data',
+  '/app': 'app'
 };
 
 @Component({
@@ -83,7 +84,8 @@ export class AppComponent implements OnInit, OnDestroy {
       resources: '/rg',
       networking: '/networking',
       monitoring: '/monitoring',
-      data: '/data'
+      data: '/data',
+      app: '/app'
     };
     this.router.navigate([routes[perspective] ?? '/rg']);
   }

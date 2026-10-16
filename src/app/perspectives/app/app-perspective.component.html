@@ -1,0 +1,153 @@
+<section class="app-perspective" aria-labelledby="app-title">
+  <div
+    class="app-workspace-layout"
+    [class.has-one-pinned-panel]="pinnedPanels.length === 1"
+    [class.has-two-pinned-panels]="pinnedPanels.length === 2">
+    <div class="app-main-content">
+      <div class="perspective-heading">
+        <div>
+          <p class="eyebrow">Perspective</p>
+          <h1 id="app-title">App</h1>
+          <p class="description">Application resources available in this Azure subscription.</p>
+        </div>
+        <button
+          class="refresh-button"
+          type="button"
+          (click)="loadResources()"
+          [disabled]="loading">
+          Refresh
+        </button>
+      </div>
+
+      <app-resource-selection-bar></app-resource-selection-bar>
+
+      @if (loading) {
+        <p class="status-message">
+          Loading application resources...
+        </p>
+      }
+
+      @if (error) {
+        <div
+          class="error-message"
+          role="alert">
+          <strong>
+            Application resources could not be loaded.
+          </strong>
+          <span>
+            {{ error }}
+          </span>
+        </div>
+      }
+
+      @if (!loading && !error && resources.length > 0) {
+        <app-text-filter
+          label="Filter app resources by resource group or name"
+          placeholder="Search terms; prefix a term with ! to exclude it"
+          [query]="filterQuery"
+          (queryChange)="filterQuery = $event">
+        </app-text-filter>
+      }
+
+      @if (!loading && !error && resources.length === 0) {
+        <div class="empty-state">
+          No supported application resources were found in this subscription.
+        </div>
+      }
+
+      @if (!loading && !error && resources.length > 0 && filteredResources.length === 0) {
+        <div class="empty-state">
+          No application resources match this filter.
+        </div>
+      }
+
+      @for (category of categoryGroups; track category.category) {
+        <section
+          class="category-section"
+          [attr.aria-label]="category.category + ' resources'">
+          <header class="section-heading">
+            <div>
+              <p class="resource-kind">
+                App category
+              </p>
+              <h2>
+                {{ category.category }}
+              </h2>
+            </div>
+            <span class="resource-count">
+              {{ category.types.length }} resource types
+            </span>
+          </header>
+
+          @for (typeGroup of category.types; track typeGroup.type) {
+            <section
+              class="resource-type-section"
+              [attr.aria-label]="typeGroup.label">
+              <div class="type-heading">
+                <h3>
+                  {{ typeGroup.label }}
+                </h3>
+                <span>
+                  {{ typeGroup.resources.length }}
+                </span>
+              </div>
+
+              <div class="resource-grid">
+                @for (resource of typeGroup.resources; track resource.id) {
+                  <app-resource-card
+                    [type]="resource.type"
+                    [name]="resource.name"
+                    [resourceId]="resource.id"
+                    [resourceGroup]="resource.resourceGroup"
+                    [selectable]="true">
+                    <ng-container card-actions>
+                      <button
+                        class="resource-action details-action"
+                        type="button"
+                        [attr.aria-label]="'Show details for ' + resource.name"
+                        (click)="openResourceDetails(resource.id, $event)"
+                        title="Resource details">
+                        <span aria-hidden="true">i</span>
+                      </button>
+                    </ng-container>
+                    <ng-container card-metadata>
+                      <span>
+                        {{ resource.resourceGroup }}
+                      </span>
+                      <span>
+                        {{ resource.location || 'Global' }}
+                      </span>
+                    </ng-container>
+                  </app-resource-card>
+                }
+              </div>
+            </section>
+          }
+        </section>
+      }
+    </div>
+
+    @if (pinnedPanels.length > 0) {
+      <div
+        class="pinned-panel-slots"
+        aria-label="Pinned resource panels">
+        @for (panel of pinnedPanels; track panel) {
+          <app-resource-detail-pane
+            [panel]="panel"
+            [pinned]="true"
+            (close)="closePanel($event)"
+            (togglePin)="togglePanelPin($event)">
+          </app-resource-detail-pane>
+        }
+      </div>
+    }
+  </div>
+
+  @if (floatingPanel; as panel) {
+    <app-resource-detail-pane
+      [panel]="panel"
+      (close)="closePanel($event)"
+      (togglePin)="togglePanelPin($event)">
+    </app-resource-detail-pane>
+  }
+</section>

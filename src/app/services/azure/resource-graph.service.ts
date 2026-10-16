@@ -5,6 +5,21 @@ import { map } from 'rxjs/operators';
 import { environment } from '@environments/environment';
 import { AzureDataResource } from './data.model';
 
+export type AppResourceCategory =
+  | 'Serverless'
+  | 'Containers'
+  | 'Web'
+  | 'Compute'
+  | 'Integration'
+  | 'Other';
+
+export interface AzureAppResource extends AzureResource {
+  kind?: string;
+  category: AppResourceCategory;
+  subscriptionId?: string;
+  tags?: Record<string, string>;
+  properties?: Record<string, unknown>;
+}
 
 export interface AzureResource {
   id: string;
@@ -231,6 +246,41 @@ export class ResourceGraphService {
     `;
 
     return this.http.post<{ data: AzureDataResource[] }>(url, {
+      subscriptions: [environment.azure.subscriptionId],
+      query,
+      options: { resultFormat: 'objectArray' }
+    }).pipe(
+      map((response) => response.data ?? [])
+    );
+  }
+
+  public getApplicationResources(): Observable<AzureAppResource[]> {
+    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
+
+    const query = `
+      resources
+      | where type in~ (
+          'microsoft.web/sites',
+          'microsoft.web/serverfarms',
+          'microsoft.app/containerapps',
+          'microsoft.app/managedenvironments',
+          'microsoft.logic/workflows',
+          'microsoft.containerinstance/containergroups'
+      )
+      | project id, name, type, location, resourceGroup, kind, subscriptionId, tags, properties
+      | extend category = case(
+          type =~ 'microsoft.app/containerapps', 'Containers',
+          type =~ 'microsoft.app/managedenvironments', 'Containers',
+          type =~ 'microsoft.web/sites' and isnotempty(kind) and kind has 'functionapp', 'Serverless',
+          type =~ 'microsoft.web/sites', 'Web',
+          type =~ 'microsoft.web/serverfarms', 'Compute',
+          type =~ 'microsoft.logic/workflows', 'Integration',
+          'Other'
+      )
+      | order by category asc, name asc
+    `;
+
+    return this.http.post<{ data: AzureAppResource[] }>(url, {
       subscriptions: [environment.azure.subscriptionId],
       query,
       options: { resultFormat: 'objectArray' }

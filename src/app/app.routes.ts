@@ -5,6 +5,7 @@ import { NetworkingPerspectiveComponent } from './perspectives/networking/networ
 import { SubnetDetailComponent } from './perspectives/networking/subnet-detail.component';
 import { MonitoringPerspectiveComponent } from './perspectives/monitoring/monitoring-perspective.component';
 import { DataPerspectiveComponent } from './perspectives/data/data-perspective.component';
+import { AppPerspectiveComponent } from './perspectives/app/app-perspective.component';
 import { MsalGuard } from '@azure/msal-angular';
 
 export const routes: Routes = [
@@ -13,6 +14,7 @@ export const routes: Routes = [
   { path: 'networking', component: NetworkingPerspectiveComponent, canActivate: [MsalGuard] },
   { path: 'monitoring', component: MonitoringPerspectiveComponent, canActivate: [MsalGuard] },
   { path: 'data', component: DataPerspectiveComponent, canActivate: [MsalGuard] },
+  { path: 'app', component: AppPerspectiveComponent, canActivate: [MsalGuard] },
   { path: 'networking/subnets/:subnetId', component: SubnetDetailComponent, canActivate: [MsalGuard] },
   { path: '**', redirectTo: '' } // Any undefined route redirects to login
 ];
