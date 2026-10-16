@@ -36,6 +36,38 @@ resource "azurerm_storage_account" "azome_storage" {
   }
 }
 
+# Free Linux App Service hosts the companion data proxy.
+resource "azurerm_service_plan" "azome_proxy" {
+  name                = "asp-azome-proxy"
+  resource_group_name = azurerm_resource_group.azome_rg.name
+  location            = azurerm_resource_group.azome_rg.location
+  os_type             = "Linux"
+  sku_name            = "F1"
+}
+
+resource "azurerm_linux_web_app" "azome_proxy" {
+  name                = "azome-proxy-${substr(data.azurerm_client_config.current.subscription_id, 0, 8)}"
+  resource_group_name = azurerm_resource_group.azome_rg.name
+  location            = azurerm_resource_group.azome_rg.location
+  service_plan_id     = azurerm_service_plan.azome_proxy.id
+  https_only          = true
+
+  site_config {
+    always_on        = false
+    app_command_line = "node /home/site/wwwroot/storage-proxy.mjs"
+
+    application_stack {
+      node_version = "20-lts"
+    }
+  }
+
+  app_settings = {
+    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "false"
+    "ALLOWED_ORIGIN"                   = trimsuffix(azurerm_storage_account.azome_storage.primary_web_endpoint, "/")
+    "WEBSITES_PORT"                    = "8080"
+  }
+}
+
 # Entra ID Application Registration for the Angular SPA
 resource "azuread_application" "azome" {
   display_name     = "Azome UI"

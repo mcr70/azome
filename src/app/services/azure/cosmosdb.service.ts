@@ -1,5 +1,6 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { environment } from '@environments/environment';
 import { Observable, forkJoin, map, of, switchMap } from 'rxjs';
 
 export interface CosmosResource<T> {
@@ -207,7 +208,7 @@ export class CosmosDbService {
   }
 
   private url(account: string, path: string): string {
-    return `/cosmos-proxy/${encodeURIComponent(account)}/${path}`;
+    return `${environment.azure.proxyUrl}/cosmos-proxy/${encodeURIComponent(account)}/${path}`;
   }
 
 }

@@ -1,147 +1,57 @@
-# Azome Companion Proxy (`azome-proxy`)
+# Azome data proxy
 
-The Azome Companion Proxy is a lightweight, on-demand deployable backend extension for the **Azome UI** single-page application. Its primary purpose is to enable secure Data Plane access to Azure resources (such as Cosmos DB, Storage Accounts, and Key Vault) when those resources are isolated from the public internet using **Private Endpoints** and **VNet Integration**.
+`scripts/storage-proxy.mjs` is a small Node.js HTTP proxy used by the Angular
+application for Azure Storage and Cosmos DB data-plane requests. The same script
+runs locally alongside `ng serve` and in the Azure Linux App Service provisioned
+by Terraform.
 
----
+## Routes and access
 
-## 1. Architectural Principles & Operating Model
-```
-+------------------------------------------------------------------------+
-| Azome UI (Browser / SPA)                                               |
-+------------------------------------------------------------------------+
-       │ 
-       ├── 1. Control Plane (ARM API: management.azure.com) ──> Azure Resources (Metadata)
-       │
-       └── 2. Data Plane (When Private Endpoint is enabled)
-               │
-               ▼ HTTPS / Entra ID Bearer (User Context)
-       +-----------------------------------------------------------------+
-       | Azome Companion Proxy (Container App / Function)                |
-       +-----------------------------------------------------------------+
-               │ (Egress VNet Subnet Delegation)
-               ▼ Azure VNet / Private Link
-       +-----------------------------------------------------------------+
-       | Target Resource (Cosmos DB, Storage, etc.)                      |
-       +-----------------------------------------------------------------+
-```
+- `GET /storage-proxy/{account}/{service}/...` forwards read requests to Azure
+  Blob, File, Queue, and Table endpoints. Storage SAS query parameters pass
+  through to the Storage service.
+- `GET|POST|PUT|DELETE /cosmos-proxy/{account}/...` forwards requests to the
+  account's Cosmos DB endpoint, including the caller's Cosmos authorization
+  header.
+- `GET /health` returns a small health response.
+- `OPTIONS` handles browser CORS preflight requests.
 
-1. **Zero-Footprint Default:** If target resources are publicly accessible and CORS policies allow, Azome UI operates strictly as a 100% client-side SPA without requiring a proxy.
-2. **On-Demand Provisioning:** Azome UI automatically detects VNet-isolated resources and orchestrates step-by-step ARM deployments to provision and configure the proxy dynamically.
-3. **Stateless & Transparent:** The proxy does not maintain persistent state, store data, or utilize its own database. It validates requests, verifies the caller's Entra ID token context, and routes traffic within the VNet.
-4. **Scale-to-Zero Cost Model:** Built on serverless runtimes like Azure Container Apps (ACA) or Azure Functions (Consumption Plan) to ensure zero operational costs (€0/month) when inactive.
+The proxy permits browser CORS requests only from `ALLOWED_ORIGIN`. This is a
+browser policy, not proxy authentication. Storage authorization still depends
+on the supplied short-lived, read-only SAS token, and Cosmos authorization still
+depends on the signed-in user's Cosmos DB token and permissions. Keep the Azure
+website and proxy URLs under your control, and grant users only the Azure access
+they need.
 
----
+## Azure deployment
 
-## 2. Proxy Scope & Boundaries
+Terraform provisions an HTTPS-only Linux Web App on the Free F1 service plan and
+sets `ALLOWED_ORIGIN` to the Storage static website origin. The App Service is
+public and is not connected to a virtual network. It can reach public Azure
+service endpoints; this deployment does not provide access to resources that
+are reachable only through private endpoints. VNet integration requires a
+separately designed and appropriately priced App Service plan and subnet.
 
-### In-Scope Responsibilities
-* **VNet Access:** Routes Data Plane traffic through VNet Integration to Private Endpoints (`*.documents.azure.com`, `*.blob.core.windows.net`, etc.).
-* **Header & Auth Forwarding:** Passes the caller's Entra ID Bearer token directly through to target data APIs (or utilizes temporary authorization tokens obtained via ARM by the UI).
-* **CORS Harmonization:** Provides uniform CORS response headers tailored to the Azome UI App Registration.
+After applying Terraform, build the Angular application with `proxyUrl` set to
+the `storage_proxy_url` Terraform output. Deploy the proxy and static website
+using the commands in [README.md](README.md). The proxy package consists of
+`scripts/storage-proxy.mjs`; App Service starts it with Node.js and supplies the
+listening port. Check `https://<proxy-host>/health` after deployment.
 
-### Out-of-Scope (Non-Responsibilities)
-* **No Custom Auth Database:** User identity and authorization rely entirely on Entra ID tokens.
-* **No Data Caching:** Every request is proxied in real time to the target service.
-* **No Payload Transformation:** Returns raw upstream responses directly (passthrough JSON/streams).
+To deploy a proxy-only update:
 
----
-
-## 3. UI Discovery & Multi-Stage Provisioning Protocol
-
-Azome UI manages the lifecycle of the Companion Proxy using a phased workflow:
-```
-+------------------------------------------------------------------------+
-| Stage 1: Resource Discovery & Detection                                |
-|  • UI queries ARM/ARG for resource network configuration               |
-|  • If Private Endpoint is active, UI checks if Proxy exists in RG      |
-+------------------------------------------------------------------------+
-                                   │
-                                   ▼
-+------------------------------------------------------------------------+
-| Stage 2: Core Proxy Provisioning (ARM Deployment)                      |
-|  • UI executes ARM template (assets/arm/companion-proxy.json)          |
-|  • Deploys Container App / Function shell with scale-to-zero runtime   |
-+------------------------------------------------------------------------+
-                                   │
-                                   ▼
-+------------------------------------------------------------------------+
-| Stage 3: VNet & Subnet Discovery                                       |
-|  • UI inspects Private Endpoint network details (Target VNet ID)       |
-|  • UI queries/validates available Subnets with proper delegation       |
-+------------------------------------------------------------------------+
-                                   │
-                                   ▼
-+------------------------------------------------------------------------+
-| Stage 4: VNet Integration Binding                                      |
-|  • UI executes incremental ARM PATCH / Deployment                      |
-|  • Binds Proxy Egress traffic to the target VNet Subnet                |
-+------------------------------------------------------------------------+
-                                   │
-                                   ▼
-+------------------------------------------------------------------------+
-| Stage 5: Health Check & Traffic Activation                             |
-|  • UI probes GET https://<proxy-fqdn>/health                           |
-|  • Once 200 OK & VNet bound, UI routes Data Plane queries via Proxy    |
-+------------------------------------------------------------------------+
+```bash
+zip -j /tmp/azome-proxy.zip scripts/storage-proxy.mjs
+az webapp deploy \
+  --resource-group rg-azome \
+  --name "$(terraform -chdir=terraform output -raw storage_proxy_app_name)" \
+  --src-path /tmp/azome-proxy.zip \
+  --type zip
 ```
 
-### Health Check Endpoint (`GET /health`)
-The proxy MUST expose a lightweight health endpoint returning its current network context:
-```
-{
-  "status": "Healthy",
-  "version": "1.0.0",
-  "vnetIntegration": {
-    "enabled": true,
-    "subnetId": "/subscriptions/.../subnets/azome-proxy-subnet"
-  }
-}
-```
----
+## Local development
 
-## 4. Infrastructure-as-Code Spec (Bicep / ARM)
-
-When generating Bicep or ARM templates for automated proxy provisioning, AI agents and automation tools MUST adhere to the following spec:
-
-1. **Runtime Specifications:**
-   * Azure Container App Environment or Azure Function App.
-   * Minimal allocation: `cpu: 0.25`, `memory: 0.5Gi`.
-   * Scale-to-zero enabled: `minReplicas: 0`.
-
-2. **VNet Subnet Delegation:**
-   * Target subnet must have appropriate delegation enabled: `Microsoft.App/environments` (for Container Apps) or `Microsoft.Web/serverFarms` (for App Service/Functions).
-
-3. **Inbound & Outbound Configuration:**
-   * Ingress: `External` (Secured via Entra ID auth or CORS restriction).
-   * Egress: Bound to delegated VNet subnet.
-
----
-
-## 5. Local Development & Setup
-
-To develop and test the proxy locally:
-```
-# 1. Install dependencies
-cd azome-proxy
-npm install
-
-# 2. Configure environment variables (.env)
-AZURE_TENANT_ID="<your-tenant-id>"
-ALLOWED_ORIGIN="http://localhost:4200"
-
-# 3. Start local development server
-npm run dev
-```
-
-### Local VNet Testing
-To simulate Private Endpoint connectivity during local development, connect the host machine to the target Azure VNet using **Azure VPN Client** or an SSH tunnel through a bastion host.
-
----
-
-## 6. Guidelines for AI Assistants (Codex / Copilot)
-
-> **Instructions for AI Code Generators:**
-> 1. Ensure all code written for this repository remains strictly **stateless**.
-> 2. Do NOT implement custom user authentication. Always rely on `Authorization: Bearer <token>` pass-through validation.
-> 3. Support streaming responses across proxy routes for handling large Cosmos DB query payloads and Azure Blob storage transfers efficiently.
-> 4. Separate core infrastructure creation templates from VNet integration binding templates to support phased UI-driven deployment.
+`npm start` runs the proxy on `127.0.0.1:4201` and Angular on
+`http://localhost:4100`. Angular's `proxy.conf.json` routes the data-plane paths
+to the local process. Local CORS allows the configured website origin only;
+requests proxied through Angular's development server are same-origin.

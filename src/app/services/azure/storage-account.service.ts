@@ -1,5 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { environment } from '@environments/environment';
 import { Observable, map, switchMap } from 'rxjs';
 
 export interface BlobContainerItem {
@@ -366,7 +367,7 @@ export class StorageAccountService {
     if (!account) {
       throw new Error('Could not determine the Storage Account name from its ARM resource ID.');
     }
-    return '/storage-proxy/' + account + '/' + service;
+    return environment.azure.proxyUrl + '/storage-proxy/' + account + '/' + service;
   }
 
   private xml(
