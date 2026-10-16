@@ -14,6 +14,8 @@
     </button>
   </div>
 
+  <app-resource-selection-bar></app-resource-selection-bar>
+
   <div class="monitoring-tabs" role="tablist" aria-label="Monitoring views">
     <button
       id="activity-tab"
@@ -51,7 +53,10 @@
     aria-labelledby="activity-tab"
     [hidden]="activeTab !== 'activity'">
     @if (!loading && !error) {
-      <app-activity-log [events]="activityEvents"></app-activity-log>
+      <app-activity-log
+        [events]="activityEvents"
+        [selectedResources]="selectedResources">
+      </app-activity-log>
     }
   </section>
 

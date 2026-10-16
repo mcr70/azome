@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { AuthService } from './services/azome/auth.service';
 import { ProfileService } from './services/azure/profile.service';
+import { ResourceSelectionService } from './services/azome/resource-selection.service';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -30,7 +31,8 @@ export class AppComponent implements OnInit, OnDestroy {
   constructor(
     public auth: AuthService,
     private azure: ProfileService,
-    private router: Router
+    private router: Router,
+    private resourceSelection: ResourceSelectionService
   ) {}
 
   ngOnInit(): void {
@@ -40,6 +42,8 @@ export class AppComponent implements OnInit, OnDestroy {
         if (!(event instanceof NavigationEnd)) {
           return;
         }
+
+        this.resourceSelection.finishSelecting();
 
         const route = event.urlAfterRedirects;
         const routePath = route.split(/[?#]/)[0];
@@ -74,6 +78,7 @@ export class AppComponent implements OnInit, OnDestroy {
   public changePerspective(event: Event): void {
     const perspective = (event.target as HTMLSelectElement).value;
     this.selectedPerspective = perspective;
+    this.resourceSelection.finishSelecting();
     const routes: Record<string, string> = {
       resources: '/rg',
       networking: '/networking',

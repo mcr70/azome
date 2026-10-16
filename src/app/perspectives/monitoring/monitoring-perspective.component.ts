@@ -2,13 +2,15 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject, forkJoin } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ActivityLogEvent, LogAnalyticsWorkspace, MonitoringService } from '@services/azure/monitoring.service';
+import { ResourceSelectionBarComponent } from '@components/resource-selection-bar.component';
+import { SelectedAzureResource, ResourceSelectionService } from '@services/azome/resource-selection.service';
 import { ActivityLogComponent } from './activity-log/activity-log.component';
 import { LogAnalyticsComponent } from './log-analytics/log-analytics.component';
 
 @Component({
   selector: 'app-monitoring-perspective',
   standalone: true,
-  imports: [ActivityLogComponent, LogAnalyticsComponent],
+  imports: [ActivityLogComponent, LogAnalyticsComponent, ResourceSelectionBarComponent],
   templateUrl: './monitoring-perspective.component.html',
   styleUrl: './monitoring-perspective.component.scss'
 })
@@ -18,11 +20,18 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
   public activityEvents: ActivityLogEvent[] = [];
   public loading = false;
   public error: string | null = null;
+  public selectedResources: SelectedAzureResource[] = [];
   private readonly destroy$ = new Subject<void>();
 
-  constructor(private monitoring: MonitoringService) {}
+  constructor(
+    private monitoring: MonitoringService,
+    private resourceSelection: ResourceSelectionService
+  ) {}
 
   ngOnInit(): void {
+    this.resourceSelection.selectedResources$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((resources) => this.selectedResources = resources);
     this.loadMonitoringData();
   }
 

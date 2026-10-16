@@ -1,0 +1,39 @@
+@if (selection.selectedResources$ | async; as selectedResources) {
+  <section class="resource-selection-bar" aria-label="Resource selection">
+    <button
+      type="button"
+      class="selection-mode-button"
+      [attr.aria-pressed]="selection.isSelecting"
+      (click)="toggleSelectionMode()">
+      {{ selection.isSelecting ? 'Done' : 'Select resources' }}
+    </button>
+
+    @if (!selection.isSelecting && selectedResources.length > 0) {
+      <div class="selection-summary">
+        <div class="selection-heading">
+          <strong>Selected resources</strong>
+          <span class="selection-count">{{ selectedResources.length }}</span>
+        </div>
+        <ul class="selected-resource-list">
+          @for (resource of selectedResources; track resource.id) {
+            <li>
+              <button
+                type="button"
+                class="selected-resource-name"
+                (click)="scrollToResource(resource.id)">
+                {{ resource.name }}
+              </button>
+              <span class="selected-resource-group">{{ resource.resourceGroup }}</span>
+            </li>
+          }
+        </ul>
+        <button
+          type="button"
+          class="clear-selection-button"
+          (click)="clearSelection()">
+          Clear selection
+        </button>
+      </div>
+    }
+  </section>
+}

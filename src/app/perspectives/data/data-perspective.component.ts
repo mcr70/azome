@@ -1,5 +1,6 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { TextFilterComponent } from '@components/text-filter/text-filter.component';
+import { ResourceSelectionBarComponent } from '@components/resource-selection-bar.component';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
@@ -34,7 +35,8 @@ interface DataResourceCategoryGroup {
     ResourceDetailPaneComponent,
     ResourceCardComponent,
     DataBrowsePaneComponent,
-    TextFilterComponent
+    TextFilterComponent,
+    ResourceSelectionBarComponent
   ],
   templateUrl: './data-perspective.component.html',
   styleUrl: './data-perspective.component.scss'
