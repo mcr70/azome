@@ -24,4 +24,9 @@ export class ResourceSelectionBarComponent {
 
     this.selection.startSelecting();
   }
+
+  public scrollToResource(resourceId: string): void {
+    const cardId = `resource-card-${encodeURIComponent(resourceId)}`;
+    document.getElementById(cardId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
 }

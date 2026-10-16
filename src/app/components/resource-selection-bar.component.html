@@ -17,7 +17,12 @@
         <ul class="selected-resource-list">
           @for (resource of selectedResources; track resource.id) {
             <li>
-              <span class="selected-resource-name">{{ resource.name }}</span>
+              <button
+                type="button"
+                class="selected-resource-name"
+                (click)="scrollToResource(resource.id)">
+                {{ resource.name }}
+              </button>
               <span class="selected-resource-group">{{ resource.resourceGroup }}</span>
             </li>
           }

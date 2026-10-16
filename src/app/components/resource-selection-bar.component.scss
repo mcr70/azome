@@ -82,7 +82,17 @@
 }
 
 .selected-resource-name {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #0f766e;
+  cursor: pointer;
+  font: inherit;
   font-weight: 600;
+}
+
+.selected-resource-name:hover {
+  text-decoration: underline;
 }
 
 .selected-resource-group {
