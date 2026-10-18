@@ -33,6 +33,35 @@ interface SavedResourceGraphQuery {
   query: string;
 }
 
+function getResourceGraphErrorDetails(error: unknown): string[] {
+  if (!error || typeof error !== 'object' || !('error' in error)) {
+    return [];
+  }
+
+  const responseBody = error.error;
+  if (!responseBody || typeof responseBody !== 'object') {
+    return [];
+  }
+
+  const graphError = 'error' in responseBody && responseBody.error
+    && typeof responseBody.error === 'object'
+    ? responseBody.error
+    : responseBody;
+  if (!('details' in graphError) || !Array.isArray(graphError.details)) {
+    return [];
+  }
+
+  return graphError.details
+    .filter((detail): detail is { message: string } =>
+      !!detail
+      && typeof detail === 'object'
+      && 'message' in detail
+      && typeof detail.message === 'string'
+      && detail.message.trim().length > 0
+    )
+    .map((detail) => "- " + detail.message.trim());
+}
+
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -249,9 +278,13 @@ export class AppComponent implements OnInit, OnDestroy {
         },
         error: (error: unknown) => {
           console.error('Failed to run Azure Resource Graph query:', error);
-          this.resourceGraphQueryError = error instanceof Error
+          const errorMessage = error instanceof Error
             ? error.message
             : 'The Resource Graph query failed. Check the query and permissions.';
+          const errorDetails = getResourceGraphErrorDetails(error);
+          this.resourceGraphQueryError = errorDetails.length > 0
+            ? `${errorMessage}\n${errorDetails.join('\n')}`
+            : errorMessage;
           this.resourceGraphQueryLoading = false;
           this.resourceGraphQuerySubscription = null;
         }

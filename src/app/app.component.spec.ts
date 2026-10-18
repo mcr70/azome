@@ -6,7 +6,7 @@ import { ProfileService } from './services/azure/profile.service';
 import { ResourceGraphService } from './services/azure/resource-graph.service';
 import { DEFAULT_PERSPECTIVES } from './components/preferences/perspective-preference.model';
 import { Router } from '@angular/router';
-import { EMPTY } from 'rxjs';
+import { EMPTY, throwError } from 'rxjs';
 
 describe('AppComponent', () => {
   let router: jasmine.SpyObj<Router>;
@@ -73,6 +73,31 @@ describe('AppComponent', () => {
 
     expect(app.toSelectedAzureResource({ id: 'resource-id', name: 'resource' })).toBeNull();
     expect(app.toSelectedAzureResource(null)).toBeNull();
+  });
+
+  it('includes Resource Graph error detail messages in the query error', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    const error = Object.assign(new Error('HTTP 400 Bad Request'), {
+      error: {
+        code: 'BadRequest',
+        details: [
+          {
+            code: 'DisallowedLogicalTableName',
+            message: 'Table Resourcsses is invalid, unsupported or disallowed.'
+          }
+        ]
+      }
+    });
+    spyOn(TestBed.inject(ResourceGraphService), 'executeQuery')
+      .and.returnValue(throwError(() => error));
+
+    app.runResourceGraphQuery();
+
+    expect(app.resourceGraphQueryError).toBe(
+      'HTTP 400 Bad Request\nTable Resourcsses is invalid, unsupported or disallowed.'
+    );
+    expect(app.resourceGraphQueryLoading).toBeFalse();
   });
 
   it('adds all selectable Resource Graph results to the shared selection', () => {
