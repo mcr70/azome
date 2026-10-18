@@ -4,6 +4,10 @@ Azome is an Angular single-page application for exploring Azure resources throug
 Azure Resource Manager and Microsoft Graph. Terraform provisions static website
 hosting, the Entra ID application registration, and a small Node.js data proxy.
 
+## Perspectives
+
+<a href="/src/app/perspectives/README-perspectives.md">Perspectives</a> is a way to collect similar resources for another view of the Azure resources.
+
 ## Prerequisites
 
 - Node.js 20 or newer and npm

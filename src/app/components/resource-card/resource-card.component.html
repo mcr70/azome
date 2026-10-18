@@ -1,7 +1,8 @@
 <article
   #cardElement
   class="resource-card"
-  [id]="resourceId ? 'resource-card-' + encodeURIComponent(resourceId) : null"
+  [id]="cardId"
+  [attr.data-resource-id]="resourceId"
   [class.selected]="isSelected"
   [style.--resource-card-max-width]="maxWidth">
   <header class="resource-card-header">

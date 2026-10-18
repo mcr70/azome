@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { EMPTY, Observable, of } from 'rxjs';
+import { expand, map, reduce } from 'rxjs/operators';
 import { environment } from '@environments/environment';
 import { AzureDataResource } from './data.model';
 
@@ -19,6 +19,11 @@ export interface AzureAppResource extends AzureResource {
   subscriptionId?: string;
   tags?: Record<string, string>;
   properties?: Record<string, unknown>;
+}
+
+export interface AzureTaggedAppResource extends AzureResource {
+  kind?: string;
+  tags: Record<string, string>;
 }
 
 export interface AzureResource {
@@ -286,6 +291,39 @@ export class ResourceGraphService {
       options: { resultFormat: 'objectArray' }
     }).pipe(
       map((response) => response.data ?? [])
+    );
+  }
+
+  public getTaggedApplicationResources(): Observable<AzureTaggedAppResource[]> {
+    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
+    const query = `
+      Resources
+      | where isnotempty(tags['azome-apps'])
+      | project id, name, type, location, resourceGroup, kind, tags
+      | order by name asc, id asc
+    `;
+    interface TaggedResourceResponse {
+      data: AzureTaggedAppResource[];
+      $skipToken?: string;
+    }
+
+    const fetchPage = (skipToken?: string): Observable<TaggedResourceResponse> => {
+      return this.http.post<TaggedResourceResponse>(url, {
+        subscriptions: [environment.azure.subscriptionId],
+        query,
+        options: {
+          resultFormat: 'objectArray',
+          $top: 1000,
+          ...(skipToken ? { $skipToken: skipToken } : {})
+        }
+      });
+    };
+
+    return fetchPage().pipe(
+      expand((response) => response.$skipToken ? fetchPage(response.$skipToken) : EMPTY),
+      reduce<TaggedResourceResponse, AzureTaggedAppResource[]>(
+        (resources, response) => resources.concat(response.data), []
+      )
     );
   }
 

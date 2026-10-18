@@ -28,6 +28,9 @@ export class ResourceCardComponent implements AfterViewInit {
   /** ARM resource ID used when this card is selectable. */
   @Input() resourceId: string | null = null;
 
+  /** Distinguishes multiple cards representing the same resource in one view. */
+  @Input() instanceKey = '';
+
   /** Resource group associated with this resource. */
   @Input() resourceGroup: string | null | undefined = '';
 
@@ -49,6 +52,15 @@ export class ResourceCardComponent implements AfterViewInit {
 
   public get isSelected(): boolean {
     return this.resourceId ? this.selection.isSelected(this.resourceId) : false;
+  }
+
+  public get cardId(): string | null {
+    if (!this.resourceId) {
+      return null;
+    }
+
+    const baseId = `resource-card-${encodeURIComponent(this.resourceId)}`;
+    return this.instanceKey ? `${baseId}-${encodeURIComponent(this.instanceKey)}` : baseId;
   }
 
   public get isSelecting(): boolean {

@@ -6,9 +6,15 @@
     <div class="app-main-content">
       <div class="perspective-heading">
         <div>
-          <p class="eyebrow">Perspective</p>
-          <h1 id="app-title">App</h1>
-          <p class="description">Application resources available in this Azure subscription.</p>
+          <p class="eyebrow">
+            Perspective
+          </p>
+          <h1 id="app-title">
+            App
+          </h1>
+          <p class="description">
+            Application resources available in this Azure subscription.
+          </p>
         </div>
         <button
           class="refresh-button"
@@ -21,117 +27,161 @@
 
       <app-resource-selection-bar></app-resource-selection-bar>
 
+      <app-text-filter
+        label="Filter by app name, resource group or resource name"
+        placeholder="Search terms; prefix a term with ! to exclude it"
+        [query]="filterQuery"
+        (queryChange)="filterQuery = $event">
+      </app-text-filter>
+
+      <div class="view-tabs" role="tablist" aria-label="Application views">
+        <button
+          #categoriesTab
+          id="categories-tab"
+          type="button"
+          role="tab"
+          aria-controls="categories-panel"
+          [attr.aria-selected]="activeTab === 'categories'"
+          [tabIndex]="activeTab === 'categories' ? 0 : -1"
+          (click)="selectTab('categories')"
+          (keydown.arrowright)="selectTab('apps'); appsTab.focus(); $event.preventDefault()"
+          (keydown.arrowleft)="selectTab('apps'); appsTab.focus(); $event.preventDefault()"
+          (keydown.end)="selectTab('apps'); appsTab.focus(); $event.preventDefault()">
+          Categories
+        </button>
+        <button
+          #appsTab
+          id="apps-tab"
+          type="button"
+          role="tab"
+          aria-controls="apps-panel"
+          [attr.aria-selected]="activeTab === 'apps'"
+          [tabIndex]="activeTab === 'apps' ? 0 : -1"
+          (click)="selectTab('apps')"
+          (keydown.arrowright)="selectTab('categories'); categoriesTab.focus(); $event.preventDefault()"
+          (keydown.arrowleft)="selectTab('categories'); categoriesTab.focus(); $event.preventDefault()"
+          (keydown.home)="selectTab('categories'); categoriesTab.focus(); $event.preventDefault()">
+          Apps
+        </button>
+      </div>
+
       @if (loading) {
-        <p class="status-message">
+        <p class="status-message" role="status">
           Loading application resources...
         </p>
       }
 
       @if (error) {
-        <div
-          class="error-message"
-          role="alert">
-          <strong>
-            Application resources could not be loaded.
-          </strong>
-          <span>
-            {{ error }}
-          </span>
+        <div class="error-message" role="alert">
+          {{ error }}
         </div>
       }
 
-      @if (!loading && !error && resources.length > 0) {
-        <app-text-filter
-          label="Filter app resources by resource group or name"
-          placeholder="Search terms; prefix a term with ! to exclude it"
-          [query]="filterQuery"
-          (queryChange)="filterQuery = $event">
-        </app-text-filter>
-      }
-
-      @if (!loading && !error && resources.length === 0) {
-        <div class="empty-state">
-          No supported application resources were found in this subscription.
-        </div>
-      }
-
-      @if (!loading && !error && resources.length > 0 && filteredResources.length === 0) {
-        <div class="empty-state">
-          No application resources match this filter.
-        </div>
-      }
-
-      @for (category of categoryGroups; track category.category) {
-        <section
-          class="category-section"
-          [attr.aria-label]="category.category + ' resources'">
-          <header class="section-heading">
-            <div>
-              <p class="resource-kind">
-                App category
-              </p>
-              <h2>
-                {{ category.category }}
-              </h2>
+      <div
+        id="categories-panel"
+        role="tabpanel"
+        aria-labelledby="categories-tab"
+        [hidden]="activeTab !== 'categories'">
+        @if (activeTab === 'categories' && !loading && !error) {
+          @if (resources.length === 0) {
+            <div class="empty-state">
+              No supported application resources were found in this subscription.
             </div>
-            <span class="resource-count">
-              {{ category.types.length }} resource types
-            </span>
-          </header>
+          } @else if (filteredResources.length === 0) {
+            <div class="empty-state">
+              No application resources match this filter.
+            </div>
+          }
 
-          @for (typeGroup of category.types; track typeGroup.type) {
-            <section
-              class="resource-type-section"
-              [attr.aria-label]="typeGroup.label">
-              <div class="type-heading">
-                <h3>
-                  {{ typeGroup.label }}
-                </h3>
-                <span>
-                  {{ typeGroup.resources.length }}
+          @for (category of categoryGroups; track category.category) {
+            <section class="category-section" [attr.aria-label]="category.category + ' resources'">
+              <header class="section-heading">
+                <div>
+                  <p class="resource-kind">
+                    App category
+                  </p>
+                  <h2>
+                    {{ category.category }}
+                  </h2>
+                </div>
+                <span class="resource-count">
+                  {{ category.types.length }} resource types
                 </span>
-              </div>
+              </header>
 
+              @for (typeGroup of category.types; track typeGroup.type) {
+                <section class="resource-type-section" [attr.aria-label]="typeGroup.label">
+                  <div class="type-heading">
+                    <h3>
+                      {{ typeGroup.label }}
+                    </h3>
+                    <span>
+                      {{ typeGroup.resources.length }}
+                    </span>
+                  </div>
+                  <div class="resource-grid">
+                    @for (resource of typeGroup.resources; track resource.id) {
+                      <ng-container
+                        [ngTemplateOutlet]="resourceCard"
+                        [ngTemplateOutletContext]="{ $implicit: resource, instanceKey: '' }">
+                      </ng-container>
+                    }
+                  </div>
+                </section>
+              }
+            </section>
+          }
+        }
+      </div>
+
+      <div
+        id="apps-panel"
+        role="tabpanel"
+        aria-labelledby="apps-tab"
+        [hidden]="activeTab !== 'apps'">
+        @if (activeTab === 'apps' && !loading && !error) {
+          @if (!hasAppMemberships) {
+            <div class="empty-state">
+              No apps were found. Add an azome-apps tag with comma-separated app names to your resources.
+            </div>
+          } @else if (appGroups.length === 0) {
+            <div class="empty-state">
+              No apps or resources match this filter.
+            </div>
+          }
+
+          @for (app of appGroups; track app.name) {
+            <section class="category-section" [attr.aria-label]="app.name + ' app'">
+              <header class="section-heading">
+                <div>
+                  <p class="resource-kind">
+                    App
+                  </p>
+                  <h2>
+                    {{ app.name }}
+                  </h2>
+                </div>
+                <span class="resource-count">
+                  {{ app.resources.length }} resources
+                </span>
+              </header>
               <div class="resource-grid">
-                @for (resource of typeGroup.resources; track resource.id) {
-                  <app-resource-card
-                    [type]="resource.type"
-                    [name]="resource.name"
-                    [resourceId]="resource.id"
-                    [resourceGroup]="resource.resourceGroup"
-                    [selectable]="true">
-                    <ng-container card-actions>
-                      <button
-                        class="resource-action details-action"
-                        type="button"
-                        [attr.aria-label]="'Show details for ' + resource.name"
-                        (click)="openResourceDetails(resource.id, $event)"
-                        title="Resource details">
-                        <span aria-hidden="true">i</span>
-                      </button>
-                    </ng-container>
-                    <ng-container card-metadata>
-                      <span>
-                        {{ resource.resourceGroup }}
-                      </span>
-                      <span>
-                        {{ resource.location || 'Global' }}
-                      </span>
-                    </ng-container>
-                  </app-resource-card>
+                @for (resource of app.resources; track resource.id) {
+                  <ng-container
+                    [ngTemplateOutlet]="resourceCard"
+                    [ngTemplateOutletContext]="{ $implicit: resource, instanceKey: app.name }">
+                  </ng-container>
                 }
               </div>
             </section>
           }
-        </section>
-      }
+        }
+      </div>
     </div>
 
     @if (pinnedPanels.length > 0) {
-      <div
-        class="pinned-panel-slots"
-        aria-label="Pinned resource panels">
-        @for (panel of pinnedPanels; track panel) {
+      <div class="pinned-panel-slots" aria-label="Pinned resource panels">
+        @for (panel of pinnedPanels; track panel.id) {
           <app-resource-detail-pane
             [panel]="panel"
             [pinned]="true"
@@ -151,3 +201,34 @@
     </app-resource-detail-pane>
   }
 </section>
+
+<ng-template #resourceCard let-resource let-instanceKey="instanceKey">
+  <app-resource-card
+    [type]="resource.type"
+    [name]="resource.name"
+    [resourceId]="resource.id"
+    [instanceKey]="instanceKey"
+    [resourceGroup]="resource.resourceGroup"
+    [selectable]="true">
+    <ng-container card-actions>
+      <button
+        class="resource-action details-action"
+        type="button"
+        [attr.aria-label]="'Show details for ' + resource.name"
+        (click)="openResourceDetails(resource.id, $event)"
+        title="Resource details">
+        <span aria-hidden="true">
+          i
+        </span>
+      </button>
+    </ng-container>
+    <ng-container card-metadata>
+      <span>
+        {{ resource.resourceGroup }}
+      </span>
+      <span>
+        {{ resource.location || 'Global' }}
+      </span>
+    </ng-container>
+  </app-resource-card>
+</ng-template>

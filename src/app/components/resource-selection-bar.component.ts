@@ -27,6 +27,8 @@ export class ResourceSelectionBarComponent {
 
   public scrollToResource(resourceId: string): void {
     const cardId = `resource-card-${encodeURIComponent(resourceId)}`;
-    document.getElementById(cardId)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const card = document.getElementById(cardId)
+      ?? document.querySelector<HTMLElement>(`[data-resource-id="${CSS.escape(resourceId)}"]`);
+    card?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 }

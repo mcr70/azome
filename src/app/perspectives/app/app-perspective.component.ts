@@ -1,28 +1,23 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { ResourceSelectionBarComponent } from '@components/resource-selection-bar.component';
 import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
 import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
 import { TextFilterComponent } from '@components/text-filter/text-filter.component';
-import { Subject } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { matchesTextFilter } from '@app/utils/text-filter';
 import {
   AzureResourceDetail,
   AzureAppResource,
+  AzureTaggedAppResource,
+  AppResourceCategory,
   ResourceGraphService
 } from '@services/azure/resource-graph.service';
 import {
   ResourceDetailPanelService,
   ResourcePanelConfig
 } from '@services/azome/resource-detail-panel.service';
-
-export type AppResourceCategory =
-  | 'Serverless'
-  | 'Containers'
-  | 'Web'
-  | 'Compute'
-  | 'Integration'
-  | 'Other';
 
 interface AppResourceTypeGroup {
   type: string;
@@ -35,10 +30,16 @@ interface AppResourceCategoryGroup {
   types: AppResourceTypeGroup[];
 }
 
+interface AppGroup {
+  name: string;
+  resources: AzureTaggedAppResource[];
+}
+
 @Component({
   selector: 'app-app-perspective',
   standalone: true,
   imports: [
+    NgTemplateOutlet,
     ResourceDetailPaneComponent,
     ResourceCardComponent,
     TextFilterComponent,
@@ -54,9 +55,12 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
   public error: string | null = null;
   public panels: ResourcePanelConfig[] = [];
   public filterQuery = '';
+  public activeTab: 'categories' | 'apps' = 'categories';
+  public taggedResources: AzureTaggedAppResource[] = [];
 
   private readonly destroy$ = new Subject<void>();
   private detailRequestId = 0;
+  private resourceRequest?: Subscription;
 
   constructor(
     private readonly resourceGraph: ResourceGraphService,
@@ -98,6 +102,37 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
     );
   }
 
+  public get appGroups(): AppGroup[] {
+    const apps = new Map<string, AzureTaggedAppResource[]>();
+
+    for (const resource of this.taggedResources) {
+      const names = new Set(
+        (resource.tags['azome-apps'] ?? '').split(',').map((name) => name.trim()).filter(Boolean)
+      );
+
+      for (const name of names) {
+        if (!matchesTextFilter(
+          this.filterQuery, name, resource.resourceGroup, resource.name, resource.kind
+        )) {
+          continue;
+        }
+
+        const resources = apps.get(name) ?? [];
+        resources.push(resource);
+        apps.set(name, resources);
+      }
+    }
+
+    return Array.from(apps, ([name, resources]) => ({ name, resources }))
+      .sort((appA, appB) => appA.name.localeCompare(appB.name));
+  }
+
+  public get hasAppMemberships(): boolean {
+    return this.taggedResources.some((resource) =>
+      resource.tags['azome-apps']?.split(',').some((name) => name.trim())
+    );
+  }
+
   public get pinnedPanels(): ResourcePanelConfig[] {
     return this.panels.filter((panel) => panel.pinned);
   }
@@ -114,22 +149,47 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   public loadResources(): void {
+    this.resourceRequest?.unsubscribe();
     this.loading = true;
     this.error = null;
 
-    this.resourceGraph.getApplicationResources()
+    if (this.activeTab === 'apps') {
+      this.resourceRequest = this.resourceGraph.getTaggedApplicationResources()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (resources) => {
+            this.taggedResources = resources;
+            this.loading = false;
+          },
+          error: (error: unknown) => this.onResourceLoadError(error)
+        });
+      return;
+    }
+
+    this.resourceRequest = this.resourceGraph.getApplicationResources()
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (resources) => {
           this.resources = resources;
           this.loading = false;
         },
-        error: (error: unknown) => {
-          console.error('Failed to load app resources:', error);
-          this.error = 'Application resources could not be loaded. Check your subscription access and try again.';
-          this.loading = false;
-        }
+        error: (error: unknown) => this.onResourceLoadError(error)
       });
+  }
+
+  public selectTab(tab: 'categories' | 'apps'): void {
+    if (tab === this.activeTab) {
+      return;
+    }
+
+    this.activeTab = tab;
+    this.loadResources();
+  }
+
+  private onResourceLoadError(error: unknown): void {
+    console.error('Failed to load app resources:', error);
+    this.error = 'Application resources could not be loaded. Check your subscription access and try again.';
+    this.loading = false;
   }
 
   public openResourceDetails(resourceId: string, event?: Event): void {
