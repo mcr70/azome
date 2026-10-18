@@ -193,6 +193,20 @@ export class ResourceGraphService {
     );
   }
 
+  public executeQuery(query: string): Observable<unknown[]> {
+    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
+
+    return this.http.post<{ data: unknown[] }>(url, {
+      subscriptions: [environment.azure.subscriptionId],
+      query,
+      options: {
+        resultFormat: 'objectArray'
+      }
+    }).pipe(
+      map((response) => response.data)
+    );
+  }
+
   /**
    * Get all Azure resources within a specific resource group.
    * 

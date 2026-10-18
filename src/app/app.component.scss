@@ -38,9 +38,81 @@
 	font: inherit;
 }
 
-.user-details {
-	color: #86efac;
+.tools-menu {
+	position: relative;
+}
+
+.tools-menu-trigger {
+	color: #cbd5e1;
+	cursor: pointer;
 	font-size: 0.875rem;
+	list-style: none;
+}
+
+.tools-menu-trigger::-webkit-details-marker {
+	display: none;
+}
+
+.tools-menu-content {
+	position: absolute;
+	top: calc(100% + 8px);
+	left: 0;
+	z-index: 2;
+	min-width: 160px;
+	padding: 6px;
+	border: 1px solid #334155;
+	border-radius: 4px;
+	background: #172033;
+	box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
+}
+
+.tools-menu-content button {
+	width: 100%;
+	padding: 8px;
+	border: 0;
+	border-radius: 4px;
+	background: transparent;
+	color: #f8fafc;
+	cursor: pointer;
+	font: inherit;
+	text-align: left;
+}
+
+.tools-menu-content button:hover {
+	background: #24314b;
+}
+
+.user-menu {
+	position: relative;
+}
+
+.user-menu-trigger {
+	color: #86efac;
+	cursor: pointer;
+	font-size: 0.875rem;
+	list-style: none;
+}
+
+.user-menu-trigger::-webkit-details-marker {
+	display: none;
+}
+
+.user-menu-content {
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
+	z-index: 1;
+	min-width: 140px;
+	padding: 6px;
+	border: 1px solid #334155;
+	border-radius: 4px;
+	background: #172033;
+	box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
+}
+
+.user-menu-content .sign-out-button {
+	width: 100%;
+	text-align: left;
 }
 
 .sign-out-button {
@@ -51,6 +123,229 @@
 	color: #ffffff;
 	cursor: pointer;
 	font: inherit;
+}
+
+.resource-graph-dialog-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 24px;
+	background: rgb(15 23 42 / 55%);
+}
+
+.resource-graph-dialog {
+	box-sizing: border-box;
+	display: flex;
+	width: min(900px, 100%);
+	height: 90vh;
+	min-height: 0;
+	flex-direction: column;
+	gap: 16px;
+	overflow: hidden;
+	padding: 24px;
+	border-radius: 8px;
+	background: #ffffff;
+	box-shadow: 0 16px 32px rgb(15 23 42 / 25%);
+	color: #172033;
+}
+
+.resource-graph-dialog-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.resource-graph-dialog-header h2 {
+	margin: 0;
+	font-size: 1.25rem;
+}
+
+.resource-graph-close-button {
+	padding: 4px 8px;
+	border: 0;
+	border-radius: 4px;
+	background: transparent;
+	color: #64748b;
+	cursor: pointer;
+	font-size: 1.75rem;
+	line-height: 1;
+}
+
+.resource-graph-close-button:hover {
+	background: #e2e8f0;
+	color: #0f172a;
+}
+
+.resource-graph-query-form {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.saved-resource-graph-queries,
+.saved-resource-graph-query-controls,
+.save-resource-graph-query-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.saved-resource-graph-queries {
+	flex-direction: column;
+	align-items: stretch;
+}
+
+.saved-resource-graph-query-controls select,
+.save-resource-graph-query-controls input {
+	box-sizing: border-box;
+	min-height: 38px;
+	padding: 7px 10px;
+	border: 1px solid #cbd5e1;
+	border-radius: 4px;
+	background: #ffffff;
+	color: #172033;
+	font: inherit;
+}
+
+.saved-resource-graph-query-controls select {
+	flex: 1 1 auto;
+}
+
+.save-resource-graph-query-controls input {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.save-resource-graph-query-button,
+.delete-saved-query-button {
+	flex: 0 0 auto;
+	min-height: 38px;
+	padding: 7px 12px;
+	border: 1px solid #0f766e;
+	border-radius: 4px;
+	background: #ffffff;
+	color: #0f766e;
+	cursor: pointer;
+	font: inherit;
+}
+
+.delete-saved-query-button {
+	min-width: 38px;
+	padding: 6px;
+	border-color: #dc2626;
+	color: #b91c1c;
+	font-size: 1.1rem;
+}
+
+.save-resource-graph-query-button:disabled,
+.delete-saved-query-button:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.resource-graph-query-form textarea {
+	box-sizing: border-box;
+	width: 100%;
+	padding: 12px;
+	border: 1px solid #cbd5e1;
+	border-radius: 4px;
+	font-family: monospace;
+	resize: vertical;
+}
+
+.resource-graph-query-actions {
+	display: flex;
+	justify-content: flex-end;
+}
+
+.resource-graph-query-actions button {
+	padding: 8px 14px;
+	border: 0;
+	border-radius: 4px;
+	background: #2563eb;
+	color: #ffffff;
+	cursor: pointer;
+	font: inherit;
+}
+
+.resource-graph-query-actions button:disabled {
+	cursor: not-allowed;
+	opacity: 0.6;
+}
+
+.resource-graph-error {
+	margin: 0;
+	color: #b91c1c;
+}
+
+.resource-graph-results {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow: auto;
+}
+
+.resource-graph-results h3 {
+	margin: 0;
+}
+
+.resource-graph-results-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	margin-bottom: 8px;
+}
+
+.add-all-resources-button {
+	padding: 6px 10px;
+	border: 1px solid #0f766e;
+	border-radius: 4px;
+	background: #ffffff;
+	color: #0f766e;
+	cursor: pointer;
+	font: inherit;
+	font-size: 0.875rem;
+}
+
+.add-all-resources-button:hover {
+	background: #f0fdfa;
+}
+
+.resource-graph-result {
+	margin-bottom: 12px;
+	padding: 12px;
+	border: 1px solid #e2e8f0;
+	border-radius: 4px;
+	background: #f8fafc;
+}
+
+.resource-graph-result pre {
+	overflow: auto;
+	margin: 0;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+}
+
+.add-resource-button {
+	margin-bottom: 8px;
+	padding: 6px 10px;
+	border: 1px solid #0f766e;
+	border-radius: 4px;
+	background: #ffffff;
+	color: #0f766e;
+	cursor: pointer;
+	font: inherit;
+	font-size: 0.875rem;
+}
+
+.add-resource-button:disabled {
+	background: #f0fdfa;
+	cursor: default;
+	opacity: 0.75;
 }
 
 .app-content {
@@ -74,5 +369,18 @@
 	.toolbar-end {
 		flex-wrap: wrap;
 		gap: 12px;
+	}
+
+	.resource-graph-dialog-backdrop {
+		padding: 12px;
+	}
+
+	.resource-graph-dialog {
+		padding: 16px;
+	}
+
+	.saved-resource-graph-query-controls,
+	.save-resource-graph-query-controls {
+		align-items: stretch;
 	}
 }

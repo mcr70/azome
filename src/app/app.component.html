@@ -12,12 +12,151 @@
           <option value="app">App</option>
         </select>
       </label>
+      <details class="tools-menu" #toolsMenu>
+        <summary class="tools-menu-trigger">Tools</summary>
+        <div class="tools-menu-content">
+          <button type="button" (click)="openResourceGraphDialog(toolsMenu)">
+            Resource Graph
+          </button>
+        </div>
+      </details>
     </div>
     <div class="toolbar-end">
-      <span class="user-details">{{ userName || 'Loading...' }} ({{ activeUserEmail }})</span>
-      <button (click)="auth.logout()" class="sign-out-button">Sign Out</button>
+      <details class="user-menu">
+        <summary class="user-menu-trigger">{{ userName || 'Loading...' }}</summary>
+        <div class="user-menu-content">
+          <button (click)="auth.logout()" class="sign-out-button">Sign out</button>
+        </div>
+      </details>
     </div>
   </header>
+}
+
+@if (resourceGraphDialogOpen) {
+  <div class="resource-graph-dialog-backdrop">
+    <section
+      class="resource-graph-dialog"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="resource-graph-dialog-title"
+    >
+      <header class="resource-graph-dialog-header">
+        <h2 id="resource-graph-dialog-title">Resource Graph</h2>
+        <button
+          type="button"
+          class="resource-graph-close-button"
+          (click)="closeResourceGraphDialog()"
+          aria-label="Close Resource Graph dialog"
+        >
+          &times;
+        </button>
+      </header>
+      <div class="saved-resource-graph-queries">
+        <div class="saved-resource-graph-query-controls">
+          <select
+            id="saved-resource-graph-query"
+            [value]="selectedSavedResourceGraphQueryName"
+            (change)="selectSavedResourceGraphQuery($event)"
+          >
+            <option value="">Select a saved query</option>
+            @for (savedQuery of savedResourceGraphQueries; track savedQuery.name) {
+              <option [value]="savedQuery.name">{{ savedQuery.name }}</option>
+            }
+          </select>
+          <button
+            type="button"
+            class="delete-saved-query-button"
+            [disabled]="!selectedSavedResourceGraphQueryName"
+            (click)="deleteSavedResourceGraphQuery()"
+            aria-label="Delete selected saved query"
+            title="Delete selected saved query"
+          >
+            <span aria-hidden="true">🗑</span>
+          </button>
+        </div>
+      </div>
+      <form class="resource-graph-query-form" (ngSubmit)="runResourceGraphQuery()">
+        <div class="save-resource-graph-query-controls">
+          <input
+            id="resource-graph-query-name"
+            name="resourceGraphQueryName"
+            [(ngModel)]="resourceGraphQueryName"
+            placeholder="Name this query"
+          />
+          <button
+            type="button"
+            class="save-resource-graph-query-button"
+            [disabled]="!resourceGraphQueryName.trim() || !resourceGraphQuery.trim()"
+            (click)="saveResourceGraphQuery()"
+          >
+            Save query
+          </button>
+        </div>
+        <label for="resource-graph-query">Azure Resource Graph query</label>
+        <textarea
+          id="resource-graph-query"
+          name="resourceGraphQuery"
+          [(ngModel)]="resourceGraphQuery"
+          rows="8"
+          spellcheck="false"
+          required
+        ></textarea>
+        <div class="resource-graph-query-actions">
+          <button
+            type="submit"
+            [disabled]="resourceGraphQueryLoading || !resourceGraphQuery.trim()"
+          >
+            {{ resourceGraphQueryLoading ? 'Running…' : 'Run query' }}
+          </button>
+        </div>
+      </form>
+      @if (savedResourceGraphQueryError) {
+        <p class="resource-graph-error" role="alert">{{ savedResourceGraphQueryError }}</p>
+      }
+      @if (resourceGraphQueryError) {
+        <p class="resource-graph-error" role="alert">{{ resourceGraphQueryError }}</p>
+      }
+      @if (resourceGraphResults !== null) {
+        <section class="resource-graph-results" aria-label="Query results">
+          <div class="resource-graph-results-header">
+            <h3>Results</h3>
+            @if (resourceGraphResults.length > 0) {
+              <button
+                type="button"
+                class="add-all-resources-button"
+                (click)="addAllResultsToSelection()"
+              >
+                Add all to selection
+              </button>
+            }
+          </div>
+          @if (resourceGraphResults.length === 0) {
+            <p>No results.</p>
+          } @else {
+            @for (result of resourceGraphResults; track $index) {
+              <article class="resource-graph-result">
+                @if (toSelectedAzureResource(result); as selectedResource) {
+                  <button
+                    type="button"
+                    class="add-resource-button"
+                    [disabled]="resourceSelection.isSelected(selectedResource.id)"
+                    (click)="addToSelection(selectedResource)"
+                  >
+                    {{
+                      resourceSelection.isSelected(selectedResource.id)
+                        ? 'Added to selection'
+                        : 'Add to selection'
+                    }}
+                  </button>
+                }
+                <pre>{{ result | json }}</pre>
+              </article>
+            }
+          }
+        </section>
+      }
+    </section>
+  </div>
 }
 
 <main class="app-content">

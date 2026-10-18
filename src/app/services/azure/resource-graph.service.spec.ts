@@ -64,6 +64,23 @@ describe('ResourceGraphService tagged apps', () => {
     expect(resources).toEqual([]);
   });
 
+  it('executes a custom query and returns its result rows', () => {
+    const query = 'Resources | limit 5';
+    const results = [{ name: 'storage-one', type: 'microsoft.storage/storageaccounts' }];
+    let response: unknown[] | undefined;
+
+    service.executeQuery(query).subscribe((result) => response = result);
+
+    const request = http.expectOne(url);
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body.subscriptions).toEqual([environment.azure.subscriptionId]);
+    expect(request.request.body.query).toBe(query);
+    expect(request.request.body.options.resultFormat).toBe('objectArray');
+    request.flush({ data: results });
+
+    expect(response).toEqual(results);
+  });
+
   it('propagates page errors rather than returning partial results', () => {
     const next = jasmine.createSpy('next');
     const error = jasmine.createSpy('error');
