@@ -223,7 +223,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (service of encryptionServices; track service) {
+              @for (service of encryptionServices; track service.name) {
                 <tr>
                   <td>
                     <strong>
@@ -270,7 +270,7 @@
               </tr>
             </thead>
             <tbody>
-              @for (tag of tags; track tag) {
+              @for (tag of tags; track tag.name) {
                 <tr>
                   <td>
                     {{ tag.name }}
