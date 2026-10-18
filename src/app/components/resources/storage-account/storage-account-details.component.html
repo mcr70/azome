@@ -190,54 +190,7 @@
         </table>
       </div>
     </section>
-    <section class="storage-section">
-      <h3 class="resource-detail-heading">
-        Primary Endpoints
-      </h3>
-      @if (endpoints.length === 0) {
-        <div class="resource-detail-empty">
-          No endpoints available.
-        </div>
-      }
-      @if (endpoints.length > 0) {
-        <div class="resource-detail-table-wrapper">
-          <table class="resource-detail-table">
-            <thead>
-              <tr>
-                <th>
-                  Service Type
-                </th>
-                <th>
-                  Endpoint URL
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (endpoint of endpoints; track endpoint) {
-                <tr>
-                  <td>
-                    <strong>
-                      {{ endpoint.type }}
-                    </strong>
-                  </td>
-                  <td>
-                    <a
-                      [href]="endpoint.url"
-                      target="_blank"
-                      rel="noopener"
-                      class="endpoint-link">
-                      <code class="resource-detail-code">
-                        {{ endpoint.url }}
-                      </code>
-                    </a>
-                  </td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-    </section>
+
     <section class="storage-section">
       <h3 class="resource-detail-heading">
         Encryption Services

@@ -5,6 +5,11 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { AuthService } from './services/azome/auth.service';
 import { ProfileService } from './services/azure/profile.service';
 import { ResourceGraphService } from './services/azure/resource-graph.service';
+import { PreferencesComponent } from './components/preferences/preferences.component';
+import {
+  DEFAULT_PERSPECTIVES,
+  PerspectivePreference
+} from './components/preferences/perspective-preference.model';
 import {
   ResourceSelectionService,
   SelectedAzureResource
@@ -14,6 +19,7 @@ import { takeUntil } from 'rxjs/operators';
 
 const ACTIVE_ROUTE_KEY = 'azome.activeRoute';
 const SAVED_RESOURCE_GRAPH_QUERIES_KEY = 'azome.savedResourceGraphQueries';
+const PERSPECTIVE_PREFERENCES_KEY = 'azome.perspectivePreferences';
 const PERSPECTIVE_ROUTES: Record<string, string> = {
   '/rg': 'resources',
   '/networking': 'networking',
@@ -30,13 +36,16 @@ interface SavedResourceGraphQuery {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet],
+  imports: [CommonModule, FormsModule, RouterOutlet, PreferencesComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit, OnDestroy {
   public userName: string | null = null;
   public selectedPerspective = 'resources';
+  public perspectives = DEFAULT_PERSPECTIVES.map((preference) => ({ ...preference }));
+  public preferencesDialogOpen = false;
+  public preferencesError: string | null = null;
   public resourceGraphDialogOpen = false;
   public resourceGraphQuery = 'Resources | limit 10';
   public resourceGraphQueryLoading = false;
@@ -49,6 +58,10 @@ export class AppComponent implements OnInit, OnDestroy {
   private readonly destroy$ = new Subject<void>();
   private resourceGraphQuerySubscription: Subscription | null = null;
 
+  public get visiblePerspectives(): PerspectivePreference[] {
+    return this.perspectives.filter((perspective) => perspective.visible);
+  }
+
   constructor(
     public auth: AuthService,
     private azure: ProfileService,
@@ -59,6 +72,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadSavedResourceGraphQueries();
+    this.loadPerspectivePreferences();
 
     this.router.events
       .pipe(takeUntil(this.destroy$))
@@ -73,6 +87,10 @@ export class AppComponent implements OnInit, OnDestroy {
         const routePath = route.split(/[?#]/)[0];
         const perspectiveRoute = this.perspectiveRoute(routePath);
         if (perspectiveRoute) {
+          if (!this.isPerspectiveVisible(perspectiveRoute.perspective)) {
+            this.navigateToFirstVisiblePerspective();
+            return;
+          }
           this.selectedPerspective = perspectiveRoute.perspective;
           window.sessionStorage.setItem(ACTIVE_ROUTE_KEY, route);
         }
@@ -88,22 +106,49 @@ export class AppComponent implements OnInit, OnDestroy {
         } else {
           this.userName = null;
           this.closeResourceGraphDialog();
+          this.closePreferencesDialog();
         }
       });
   }
 
   public changePerspective(event: Event): void {
     const perspective = (event.target as HTMLSelectElement).value;
-    this.selectedPerspective = perspective;
+    const selectedPreference = this.perspectives.find((item) => item.id === perspective);
+    if (!selectedPreference?.visible) {
+      return;
+    }
+
+    this.selectedPerspective = selectedPreference.id;
     this.resourceSelection.finishSelecting();
-    const routes: Record<string, string> = {
-      resources: '/rg',
-      networking: '/networking',
-      monitoring: '/monitoring',
-      data: '/data',
-      app: '/app'
-    };
-    this.router.navigate([routes[perspective] ?? '/rg']);
+    this.router.navigateByUrl(selectedPreference.route);
+  }
+
+  public openPreferencesDialog(userMenu: HTMLDetailsElement): void {
+    userMenu.open = false;
+    this.closeResourceGraphDialog();
+    this.preferencesDialogOpen = true;
+  }
+
+  public closePreferencesDialog(): void {
+    this.preferencesDialogOpen = false;
+  }
+
+  public updatePerspectivePreferences(preferences: PerspectivePreference[]): void {
+    this.perspectives = preferences;
+
+    try {
+      window.localStorage.setItem(PERSPECTIVE_PREFERENCES_KEY, JSON.stringify(preferences));
+      this.preferencesError = null;
+    } catch (error) {
+      console.error('Failed to save perspective preferences:', error);
+      this.preferencesError = error instanceof Error
+        ? error.message
+        : 'Perspective preferences could not be saved to local storage.';
+    }
+
+    if (!this.isPerspectiveVisible(this.selectedPerspective)) {
+      this.navigateToFirstVisiblePerspective();
+    }
   }
 
   public openResourceGraphDialog(toolsMenu: HTMLDetailsElement): void {
@@ -276,6 +321,83 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  private loadPerspectivePreferences(): void {
+    try {
+      const storedValue = window.localStorage.getItem(PERSPECTIVE_PREFERENCES_KEY);
+      if (!storedValue) {
+        return;
+      }
+
+      const parsedValue: unknown = JSON.parse(storedValue);
+      if (!Array.isArray(parsedValue)) {
+        throw new Error('Perspective preferences have an invalid format.');
+      }
+
+      const storedPreferences = new Map<string, boolean>();
+      for (const item of parsedValue) {
+        if (
+          !item
+          || typeof item !== 'object'
+          || typeof (item as Record<string, unknown>)['id'] !== 'string'
+          || typeof (item as Record<string, unknown>)['visible'] !== 'boolean'
+        ) {
+          throw new Error('Perspective preferences have an invalid format.');
+        }
+
+        const preference = item as { id: string; visible: boolean };
+        if (storedPreferences.has(preference.id)) {
+          throw new Error('Perspective preferences contain duplicate entries.');
+        }
+        storedPreferences.set(preference.id, preference.visible);
+      }
+
+      const orderedPreferences: PerspectivePreference[] = [];
+      for (const preference of parsedValue as Array<{ id: string; visible: boolean }>) {
+        const defaultPreference = DEFAULT_PERSPECTIVES.find((item) => item.id === preference.id);
+        if (!defaultPreference) {
+          continue;
+        }
+        orderedPreferences.push({
+          ...defaultPreference,
+          visible: preference.visible
+        });
+      }
+
+      for (const preference of DEFAULT_PERSPECTIVES) {
+        if (!storedPreferences.has(preference.id)) {
+          orderedPreferences.push({ ...preference });
+        }
+      }
+
+      if (orderedPreferences.every((preference) => !preference.visible)) {
+        throw new Error('At least one perspective must remain visible.');
+      }
+
+      this.perspectives = orderedPreferences;
+    } catch (error) {
+      console.error('Failed to load perspective preferences:', error);
+      this.preferencesError = error instanceof Error
+        ? error.message
+        : 'Perspective preferences could not be loaded from local storage.';
+    }
+  }
+
+  private isPerspectiveVisible(perspectiveId: string): boolean {
+    return this.perspectives.some(
+      (preference) => preference.id === perspectiveId && preference.visible
+    );
+  }
+
+  private navigateToFirstVisiblePerspective(): void {
+    const firstVisible = this.visiblePerspectives[0];
+    if (!firstVisible) {
+      return;
+    }
+
+    this.selectedPerspective = firstVisible.id;
+    this.router.navigateByUrl(firstVisible.route);
+  }
+
   private persistSavedResourceGraphQueries(queries: SavedResourceGraphQuery[]): boolean {
     try {
       window.localStorage.setItem(SAVED_RESOURCE_GRAPH_QUERIES_KEY, JSON.stringify(queries));
@@ -303,15 +425,27 @@ export class AppComponent implements OnInit, OnDestroy {
     const currentPath = this.router.url.split(/[?#]/)[0];
     const browserPath = window.location.pathname;
 
-    if (this.perspectiveRoute(currentPath) || this.perspectiveRoute(browserPath)) {
+    const activePath = this.perspectiveRoute(currentPath)
+      ? currentPath
+      : browserPath;
+    const activePerspective = this.perspectiveRoute(activePath);
+    if (activePerspective) {
+      if (!this.isPerspectiveVisible(activePerspective.perspective)) {
+        this.navigateToFirstVisiblePerspective();
+      }
       return;
     }
 
     const savedRoute = window.sessionStorage.getItem(ACTIVE_ROUTE_KEY);
     const savedPath = savedRoute?.split(/[?#]/)[0] ?? '';
-    const route = savedRoute && this.perspectiveRoute(savedPath) ? savedRoute : '/rg';
+    const savedPerspective = this.perspectiveRoute(savedPath);
+    const route = savedRoute
+      && savedPerspective
+      && this.isPerspectiveVisible(savedPerspective.perspective)
+      ? savedRoute
+      : this.visiblePerspectives[0]?.route ?? '/rg';
     const perspective = this.perspectiveRoute(route.split(/[?#]/)[0]);
-    this.selectedPerspective = perspective?.perspective ?? 'resources';
+    this.selectedPerspective = perspective?.perspective ?? this.visiblePerspectives[0]?.id ?? 'resources';
     this.router.navigateByUrl(route);
   }
 

@@ -4,20 +4,34 @@ import { AuthService } from './services/azome/auth.service';
 import { ResourceSelectionService } from './services/azome/resource-selection.service';
 import { ProfileService } from './services/azure/profile.service';
 import { ResourceGraphService } from './services/azure/resource-graph.service';
+import { DEFAULT_PERSPECTIVES } from './components/preferences/perspective-preference.model';
 import { Router } from '@angular/router';
 import { EMPTY } from 'rxjs';
 
 describe('AppComponent', () => {
+  let router: jasmine.SpyObj<Router>;
+
   beforeEach(async () => {
+    window.localStorage.removeItem('azome.savedResourceGraphQueries');
+    window.localStorage.removeItem('azome.perspectivePreferences');
+    router = jasmine.createSpyObj<Router>('Router', ['navigate', 'navigateByUrl']);
+    Object.defineProperty(router, 'events', { value: EMPTY });
+    Object.defineProperty(router, 'url', { value: '/rg' });
+
     await TestBed.configureTestingModule({
       imports: [AppComponent],
       providers: [
         { provide: AuthService, useValue: { isAuthenticated$: EMPTY, user$: EMPTY } },
         { provide: ProfileService, useValue: { getMyProfile: () => EMPTY } },
         { provide: ResourceGraphService, useValue: { executeQuery: () => EMPTY } },
-        { provide: Router, useValue: { navigate: () => Promise.resolve(true) } }
+        { provide: Router, useValue: router }
       ]
     }).compileComponents();
+  });
+
+  afterEach(() => {
+    window.localStorage.removeItem('azome.savedResourceGraphQueries');
+    window.localStorage.removeItem('azome.perspectivePreferences');
   });
 
   it('should create the app', () => {
@@ -173,6 +187,44 @@ describe('AppComponent', () => {
     expect(app.selectedSavedResourceGraphQueryName).toBe('');
     expect(app.resourceGraphQueryName).toBe('');
     expect(app.resourceGraphQuery).toBe('Resources | limit 10');
+  });
+
+  it('loads saved perspective order and visibility from local storage', () => {
+    window.localStorage.setItem('azome.perspectivePreferences', JSON.stringify([
+      { id: 'data', visible: true },
+      { id: 'resources', visible: false }
+    ]));
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+
+    app.ngOnInit();
+
+    expect(app.visiblePerspectives.map((perspective) => perspective.id)).toEqual([
+      'data',
+      'networking',
+      'monitoring',
+      'app'
+    ]);
+    expect(app.perspectives[0].id).toBe('data');
+    expect(app.perspectives.find((perspective) => perspective.id === 'resources')?.visible)
+      .toBeFalse();
+  });
+
+  it('persists perspective preference changes and switches away from hidden current view', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    const preferences = DEFAULT_PERSPECTIVES.map((preference) => ({
+      ...preference,
+      visible: preference.id !== 'networking'
+    }));
+    app.selectedPerspective = 'networking';
+
+    app.updatePerspectivePreferences(preferences);
+
+    expect(JSON.parse(window.localStorage.getItem('azome.perspectivePreferences') ?? '[]'))
+      .toEqual(preferences);
+    expect(app.selectedPerspective).toBe('resources');
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/rg');
   });
 
 });

@@ -3,13 +3,14 @@
     <div class="toolbar-start">
       <strong class="app-name">Azome UI</strong>
       <label class="perspective-picker">
-        <span>Perspective</span>
-        <select [value]="selectedPerspective" (change)="changePerspective($event)" aria-label="Select perspective">
-          <option value="resources">Resources</option>
-          <option value="networking">Networking</option>
-          <option value="monitoring">Monitoring</option>
-          <option value="data">Data</option>
-          <option value="app">App</option>
+        <select
+          [value]="selectedPerspective"
+          (change)="changePerspective($event)"
+          aria-label="Select perspective"
+        >
+          @for (perspective of visiblePerspectives; track perspective.id) {
+            <option [value]="perspective.id">{{ perspective.label }}</option>
+          }
         </select>
       </label>
       <details class="tools-menu" #toolsMenu>
@@ -22,14 +23,36 @@
       </details>
     </div>
     <div class="toolbar-end">
-      <details class="user-menu">
+      <details class="user-menu" #userMenu>
         <summary class="user-menu-trigger">{{ userName || 'Loading...' }}</summary>
         <div class="user-menu-content">
-          <button (click)="auth.logout()" class="sign-out-button">Sign out</button>
+          <button
+            type="button"
+            class="user-menu-button"
+            (click)="openPreferencesDialog(userMenu)"
+          >
+            Preferences
+          </button>
+          <button
+            type="button"
+            (click)="auth.logout()"
+            class="sign-out-button"
+          >
+            Sign out
+          </button>
         </div>
       </details>
     </div>
   </header>
+}
+
+@if (preferencesDialogOpen) {
+  <app-preferences
+    [preferences]="perspectives"
+    [error]="preferencesError"
+    (preferencesChange)="updatePerspectivePreferences($event)"
+    (close)="closePreferencesDialog()"
+  ></app-preferences>
 }
 
 @if (resourceGraphDialogOpen) {

@@ -1,0 +1,68 @@
+<div class="preferences-backdrop" (click)="close.emit()">
+  <section
+    class="preferences-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="preferences-title"
+    (click)="$event.stopPropagation()"
+  >
+    <header class="preferences-header">
+      <div>
+        <h2 id="preferences-title">Preferences</h2>
+        <p>Choose which perspectives are shown and drag to change their order.</p>
+      </div>
+      <div class="preferences-header-actions">
+        <button type="button" class="reset-preferences-button" (click)="reset()">
+          Reset
+        </button>
+        <button
+          type="button"
+          class="close-preferences-button"
+          aria-label="Close Preferences"
+          (click)="close.emit()"
+        >
+          &times;
+        </button>
+      </div>
+    </header>
+
+    @if (error) {
+      <p class="preferences-error" role="alert">{{ error }}</p>
+    }
+
+    <section class="perspective-preferences" aria-labelledby="perspective-preferences-title">
+      <h3 id="perspective-preferences-title">Perspectives</h3>
+      <p>Drag items to reorder them.</p>
+      <div
+        class="perspective-preference-list"
+        cdkDropList
+        [cdkDropListData]="preferences"
+        (cdkDropListDropped)="drop($event)"
+      >
+        @for (preference of preferences; track preference.id) {
+          <div class="perspective-preference-item" cdkDrag>
+            <button
+              type="button"
+              class="perspective-drag-handle"
+              cdkDragHandle
+              [attr.aria-label]="'Reorder ' + preference.label"
+              [attr.title]="'Drag to reorder ' + preference.label"
+            >
+              <span aria-hidden="true">⋮⋮</span>
+            </button>
+            <input
+              type="checkbox"
+              [id]="'perspective-' + preference.id"
+              [checked]="preference.visible"
+              [disabled]="!canHide(preference)"
+              (change)="toggleVisibility(preference.id, $event)"
+            />
+            <label [for]="'perspective-' + preference.id">
+              {{ preference.label }}
+            </label>
+          </div>
+        }
+      </div>
+    </section>
+  </section>
+</div>
