@@ -1,0 +1,84 @@
+<section aria-label="Log Analytics workspace details">
+  <h3 class="resource-detail-heading">
+    Log Analytics workspace
+  </h3>
+
+  @if (properties; as workspace) {
+    <div class="resource-detail-table-wrapper">
+      <table class="resource-detail-table" aria-label="Log Analytics workspace settings">
+        <tbody>
+          <tr>
+            <th scope="row">Workspace ID</th>
+            <td>
+              <code class="resource-detail-code">{{ workspace.customerId ?? '-' }}</code>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Provisioning state</th>
+            <td>{{ workspace.provisioningState ?? '-' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Pricing tier</th>
+            <td>{{ workspace.sku?.name ?? '-' }}</td>
+          </tr>
+          @if (workspace.sku?.capacityReservationLevel != null) {
+            <tr>
+              <th scope="row">Capacity reservation</th>
+              <td>{{ workspace.sku?.capacityReservationLevel }} GB/day</td>
+            </tr>
+          }
+          <tr>
+            <th scope="row">Default retention</th>
+            <td>
+              @if (workspace.retentionInDays != null) {
+                {{ workspace.retentionInDays }} days
+              } @else {
+                -
+              }
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Daily ingestion cap</th>
+            <td>
+              @if (workspace.workspaceCapping?.dailyQuotaGb === -1) {
+                Unlimited
+              } @else if (workspace.workspaceCapping?.dailyQuotaGb != null) {
+                {{ workspace.workspaceCapping?.dailyQuotaGb }} GB/day
+              } @else {
+                -
+              }
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Data ingestion status</th>
+            <td>{{ workspace.workspaceCapping?.dataIngestionStatus ?? '-' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Public network access for ingestion</th>
+            <td>{{ workspace.publicNetworkAccessForIngestion ?? '-' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Public network access for queries</th>
+            <td>{{ workspace.publicNetworkAccessForQuery ?? '-' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Access control mode</th>
+            <td>
+              @if (workspace.features?.enableLogAccessUsingOnlyResourcePermissions === true) {
+                Use resource or workspace permissions
+              } @else if (workspace.features?.enableLogAccessUsingOnlyResourcePermissions === false) {
+                Require workspace permissions
+              } @else {
+                -
+              }
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="resource-detail-empty">
+      No Log Analytics workspace details available.
+    </p>
+  }
+</section>

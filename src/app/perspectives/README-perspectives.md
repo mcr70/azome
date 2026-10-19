@@ -31,7 +31,21 @@ like storage accounts, NoSQL databases, RDS databases and alike.
 
 Show Azure activity logs and other log sources.
 
+Overview lists diagnostic settings in a separate group using the shared resource
+cards. Source-to-destination connections are shown in the resource detail pane,
+not on the cards. Discovery uses paginated Resource Graph inventory followed by ARM
+diagnostic-settings requests (at most six concurrent). It includes the subscription,
+discovered resources, and Storage blob/file/queue/table service
+children. It is limited to the configured subscription and resources visible to the
+signed-in identity; resources not present in inventory cannot be discovered.
+Resource containers are not queried: resource groups do not support diagnostic settings.
+Known unsupported Network Watcher and route table resources are excluded before ARM
+requests. Other resource types remain eligible so that metric-only settings are not
+excluded by a log-only allowlist. Explicit ARM unsupported-type responses are also
+skipped. Other failures are listed and successful results remain visible.
+The filter also matches source and destination IDs and Event Hub names.
+Details show configured routing and log/metric categories, not actual delivery.
+
 ## Networking perspective
 
 In networking perspective, network related things are shown.
-

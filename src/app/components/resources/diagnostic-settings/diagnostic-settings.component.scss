@@ -1,0 +1,34 @@
+@use '../resource-details-shared';
+
+:host {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.resource-detail-heading {
+  margin-top: 20px;
+}
+
+.destination {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.resource-id {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
+
+.resource-detail-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.resource-detail-table th,
+.resource-detail-table td {
+  overflow-wrap: anywhere;
+}

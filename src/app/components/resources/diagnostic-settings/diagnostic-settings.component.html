@@ -1,0 +1,62 @@
+@if (resource; as setting) {
+  <section aria-label="Diagnostic setting connections">
+    <h3 class="resource-detail-heading">Source resource</h3>
+      {{ setting.source.name }}
+
+    <h3 class="resource-detail-heading">Destinations</h3>
+    @for (destination of setting.destinations; track destination.id) {
+      <div class="destination">
+        <strong>{{ destination.label }}</strong>
+          {{ destination.name }}
+        @if (destination.label === 'Event Hubs authorization rule') {
+          <span>Event hub: {{ destination.eventHubName || 'Default (not specified)' }}</span>
+        }
+      </div>
+    } @empty {
+      <p class="resource-detail-empty">No destinations configured.</p>
+    }
+    @if (setting.properties.workspaceId) {
+      <p>
+        Log Analytics table mode:
+        {{ setting.properties.logAnalyticsDestinationType === 'Dedicated'
+          ? 'Resource-specific tables' : 'AzureDiagnostics (default)' }}
+      </p>
+    }
+  </section>
+
+  <section aria-label="Diagnostic log and metric categories">
+    <h3 class="resource-detail-heading">Logs and metrics</h3>
+    <div class="resource-detail-table-wrapper">
+      <table class="resource-detail-table" aria-label="Configured diagnostic categories">
+        <thead>
+          <tr>
+            <th>Signal</th>
+            <th>Category / group</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (log of setting.properties.logs; track $index) {
+            <tr>
+              <td>Log</td>
+              <td>{{ log.categoryGroup ?? log.category ?? '-' }}</td>
+              <td>{{ log.enabled ? 'Enabled' : 'Disabled' }}</td>
+            </tr>
+          }
+          @for (metric of setting.properties.metrics; track $index) {
+            <tr>
+              <td>Metric</td>
+              <td>{{ metric.category ?? '-' }}</td>
+              <td>{{ metric.enabled ? 'Enabled' : 'Disabled' }}</td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    @if (!setting.properties.logs?.length && !setting.properties.metrics?.length) {
+      <p class="resource-detail-empty">No log or metric categories configured.</p>
+    }
+  </section>
+} @else {
+  <p class="resource-detail-empty">No diagnostic setting details available.</p>
+}

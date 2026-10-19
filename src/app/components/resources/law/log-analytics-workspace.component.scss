@@ -1,0 +1,19 @@
+@use '../../resources/resource-details-shared';
+
+:host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.resource-detail-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.resource-detail-table th,
+.resource-detail-table td {
+  overflow-wrap: anywhere;
+}

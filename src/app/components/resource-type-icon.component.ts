@@ -12,6 +12,7 @@ import {
   LucideRouter,
   LucideServer,
   LucideShield,
+  LucideWorkflow,
   LucideDynamicIcon,
   LucideCircleQuestionMark
 } from '@lucide/angular';
@@ -29,6 +30,10 @@ export class ResourceTypeIconComponent {
 
   get icon(): LucideIconData {
     const resourceType = this.type.toLowerCase();
+
+    if (resourceType === 'microsoft.insights/diagnosticsettings') {
+      return LucideWorkflow.icon;
+    }
 
     if (resourceType.includes('resourcegroups') || resourceType === 'resourcegroup') {
       return LucideFolder.icon;

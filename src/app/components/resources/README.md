@@ -11,7 +11,9 @@ resources/
 │   ├── storage-account-details.component.*
 │   └── browser/
 ├── cosmosdb/details/
+├── diagnostic-settings/
 ├── keyvault/details/
+├── law/
 ├── nsg/details/
 ├── route-table/details/
 └── vnet/details/
@@ -20,6 +22,24 @@ resources/
 `ResourceDetailHostComponent` selects a resource-specific view through `ResourceDetailRegistryService`. If no view is registered for a resource type, it uses `DefaultResourceDetailComponent`.
 
 Register resource detail components in `src/app/services/azome/resource-detail.registry.ts`.
+
+## Log Analytics workspace details
+
+The custom view for `Microsoft.OperationalInsights/workspaces` lives in
+`law/`. It displays the workspace ID, provisioning
+state, pricing tier, retention, ingestion cap and status, public network access, and
+access control mode from the existing ARM resource data. Resource group, location,
+tags, and JSON remain available through the shared resource detail pane.
+This view does not query logs or make additional API requests.
+
+## Diagnostic setting details
+
+`diagnostic-settings/` displays `Microsoft.Insights/diagnosticSettings` with its source
+resource, all configured destinations (Log Analytics, Storage, Event Hubs, or partner),
+and enabled/disabled log categories, category groups, and metrics. Full ARM IDs and
+Azure portal links distinguish identically named resources across scopes.
+The Monitoring perspective passes the ARM response directly to the registered view:
+diagnostic settings cannot be retrieved through Azure Resource Graph.
 
 ## Storage account browser
 

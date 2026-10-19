@@ -5,6 +5,12 @@ import { VnetComponent } from '@components/resources/vnet/details/vnet.component
 import { StorageAccountComponent } from '@components/resources/storage-account/storage-account-details.component';
 import { KeyVaultComponent } from '@components/resources/keyvault/details/keyvault.component';
 import { CosmosDbComponent } from '@components/resources/cosmosdb/details/cosmosdb.component';
+import {
+  LogAnalyticsWorkspaceComponent
+} from '@components/resources/law/log-analytics-workspace.component';
+import {
+  DiagnosticSettingsComponent
+} from '@components/resources/diagnostic-settings/diagnostic-settings.component';
 
 
 export type PanelVariant = 'default' | 'wide' | 'content';
@@ -30,6 +36,8 @@ export class ResourceDetailRegistryService {
     this.register('microsoft.storage/storageaccounts', StorageAccountComponent);
     this.register('microsoft.keyvault/vaults', KeyVaultComponent);
     this.register('microsoft.documentdb/databaseaccounts', CosmosDbComponent);
+    this.register('microsoft.operationalinsights/workspaces', LogAnalyticsWorkspaceComponent);
+    this.register('microsoft.insights/diagnosticsettings', DiagnosticSettingsComponent);
   }
 
   public register(resourceType: string, component: ResourceDetailComponentType): void {

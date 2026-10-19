@@ -1,73 +1,289 @@
 <section class="monitoring-perspective" aria-labelledby="monitoring-title">
-  <div class="perspective-heading">
-    <div>
-      <p class="eyebrow">Perspective</p>
-      <h1 id="monitoring-title">Monitoring</h1>
-      <p class="description">Review subscription activity and Log Analytics workspaces.</p>
+  <div
+    class="monitoring-workspace-layout"
+    [class.has-one-pinned-panel]="pinnedPanels.length === 1"
+    [class.has-two-pinned-panels]="pinnedPanels.length === 2">
+    <div class="monitoring-main-content">
+      <div class="perspective-heading">
+        <div>
+          <p class="eyebrow">Perspective</p>
+          <h1 id="monitoring-title">Monitoring</h1>
+          <p class="description">
+            Review monitoring resources, Log Analytics workspaces and subscription activity.
+          </p>
+        </div>
+        <button
+          class="refresh-button"
+          type="button"
+          (click)="loadMonitoringData()"
+          [disabled]="loading || loadingDiagnostics">
+          Refresh
+        </button>
+      </div>
+
+      <app-resource-selection-bar></app-resource-selection-bar>
+
+      <div class="monitoring-tabs" role="tablist" aria-label="Monitoring views">
+        <button
+          #overviewTab
+          id="overview-tab"
+          type="button"
+          role="tab"
+          aria-controls="overview-panel"
+          [attr.aria-selected]="activeTab === 'overview'"
+          [tabIndex]="activeTab === 'overview' ? 0 : -1"
+          (click)="selectTab('overview')"
+          (keydown.arrowright)="selectTab('log-analytics'); logAnalyticsTab.focus(); $event.preventDefault()"
+          (keydown.arrowleft)="selectTab('activity'); activityTab.focus(); $event.preventDefault()"
+          (keydown.home)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
+          (keydown.end)="selectTab('activity'); activityTab.focus(); $event.preventDefault()">
+          Overview
+        </button>
+        <button
+          #logAnalyticsTab
+          id="log-analytics-tab"
+          type="button"
+          role="tab"
+          aria-controls="log-analytics-panel"
+          [attr.aria-selected]="activeTab === 'log-analytics'"
+          [tabIndex]="activeTab === 'log-analytics' ? 0 : -1"
+          (click)="selectTab('log-analytics')"
+          (keydown.arrowright)="selectTab('activity'); activityTab.focus(); $event.preventDefault()"
+          (keydown.arrowleft)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
+          (keydown.home)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
+          (keydown.end)="selectTab('activity'); activityTab.focus(); $event.preventDefault()">
+          Log Analytics
+        </button>
+        <button
+          #activityTab
+          id="activity-tab"
+          type="button"
+          role="tab"
+          aria-controls="activity-panel"
+          [attr.aria-selected]="activeTab === 'activity'"
+          [tabIndex]="activeTab === 'activity' ? 0 : -1"
+          (click)="selectTab('activity')"
+          (keydown.arrowright)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
+          (keydown.arrowleft)="selectTab('log-analytics'); logAnalyticsTab.focus(); $event.preventDefault()"
+          (keydown.home)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
+          (keydown.end)="selectTab('activity'); activityTab.focus(); $event.preventDefault()">
+          Activity log
+        </button>
+      </div>
+
+      @if (loading) {
+        <p class="status-message" role="status">Loading monitoring data...</p>
+      }
+
+      @if (error) {
+        <div class="error-message" role="alert">
+          {{ error }}
+        </div>
+      }
+
+      <section
+        id="overview-panel"
+        class="monitoring-section"
+        role="tabpanel"
+        aria-labelledby="overview-tab"
+        [hidden]="activeTab !== 'overview'">
+        @if (activeTab === 'overview') {
+          <app-text-filter
+            label="Filter monitoring resources, diagnostic sources and destinations"
+            placeholder="Search terms; prefix a term with ! to exclude it"
+            [query]="filterQuery"
+            (queryChange)="filterQuery = $event">
+          </app-text-filter>
+
+          @if (!loading && !error) {
+            @if (resources.length === 0) {
+              <div class="empty-state">
+                No other supported monitoring resources were found in this subscription.
+              </div>
+            } @else if (filteredResources.length === 0) {
+              <div class="empty-state">
+                No monitoring resources match this filter.
+              </div>
+            }
+
+            @for (category of categoryGroups; track category.category) {
+              <section
+                class="category-section"
+                [attr.aria-label]="category.category + ' resources'">
+                <header class="section-heading">
+                  <div>
+                    <p class="resource-kind">Monitoring category</p>
+                    <h2>{{ category.category }}</h2>
+                  </div>
+                  <span class="resource-count">
+                    {{ category.types.length }} resource types
+                  </span>
+                </header>
+
+                @for (typeGroup of category.types; track typeGroup.type) {
+                  <section
+                    class="resource-type-section"
+                    [attr.aria-label]="typeGroup.label">
+                    <div class="type-heading">
+                      <h3>{{ typeGroup.label }}</h3>
+                      <span>{{ typeGroup.resources.length }}</span>
+                    </div>
+                    <div class="resource-grid">
+                      @for (resource of typeGroup.resources; track resource.id) {
+                        <ng-container
+                          [ngTemplateOutlet]="resourceCard"
+                          [ngTemplateOutletContext]="{ $implicit: resource }">
+                        </ng-container>
+                      }
+                    </div>
+                  </section>
+                }
+              </section>
+            }
+          }
+
+          <section class="category-section" aria-label="Diagnostic settings">
+            <header class="section-heading">
+              <div>
+                <p class="resource-kind">Monitoring category</p>
+                <h2>Diagnostic settings</h2>
+              </div>
+              <span class="resource-count">{{ filteredDiagnosticSettings.length }} settings</span>
+            </header>
+            @if (loadingDiagnostics) {
+              <p role="status">
+                Discovering diagnostic settings across subscription resources...
+              </p>
+            } @else if (diagnosticError) {
+              <p class="error-message" role="alert">{{ diagnosticError }}</p>
+              <button class="refresh-button" type="button" (click)="loadDiagnosticSettings()">
+                Retry diagnostic settings
+              </button>
+            } @else {
+              @if (diagnosticFailures.length > 0) {
+                <div class="error-message" role="alert">
+                  Diagnostic settings could not be read for {{ diagnosticFailures.length }} resources.
+                  Results may be incomplete.
+                  <details>
+                    <summary>Failed resources</summary>
+                    <ul>
+                      @for (failure of diagnosticFailures; track failure.source.id) {
+                        <li>{{ failure.source.id }}: {{ failure.message }}</li>
+                      }
+                    </ul>
+                  </details>
+                </div>
+              }
+              <div class="resource-grid diagnostic-grid">
+                @for (setting of filteredDiagnosticSettings; track setting.id) {
+                  <app-resource-card
+                    [type]="setting.type"
+                    [name]="setting.name"
+                    [resourceId]="setting.id"
+                    [resourceGroup]="setting.resourceGroup"
+                    [selectable]="true">
+                    <ng-container card-actions>
+                      <button
+                        class="resource-action details-action"
+                        type="button"
+                        [attr.aria-label]="'Show diagnostic connections for ' + setting.source.name"
+                        (click)="openResourceDetails(setting.id, $event)"
+                        title="Diagnostic setting details">
+                        <span aria-hidden="true">i</span>
+                      </button>
+                    </ng-container>
+                    <ng-container card-metadata>
+                      <span>{{ setting.resourceGroup || 'Subscription' }}</span>
+                      <span>{{ setting.location || 'Global' }}</span>
+                    </ng-container>
+                  </app-resource-card>
+                } @empty {
+                  <p class="empty-state">
+                    @if (diagnosticFailures.length > 0 && diagnosticSettings.length === 0) {
+                      No diagnostic settings were found in the resources that could be read.
+                    } @else if (diagnosticSettings.length === 0) {
+                      No diagnostic settings were found.
+                    } @else {
+                      No diagnostic settings match this filter.
+                    }
+                  </p>
+                }
+              </div>
+            }
+          </section>
+        }
+
+      </section>
+
+      <section
+        id="log-analytics-panel"
+        class="monitoring-section"
+        role="tabpanel"
+        aria-labelledby="log-analytics-tab"
+        [hidden]="activeTab !== 'log-analytics'">
+        @if (activeTab === 'log-analytics' && !loading && !error) {
+          <app-log-analytics [workspaces]="workspaces"></app-log-analytics>
+        }
+      </section>
+
+      <section
+        id="activity-panel"
+        class="monitoring-section"
+        role="tabpanel"
+        aria-labelledby="activity-tab"
+        [hidden]="activeTab !== 'activity'">
+        @if (activeTab === 'activity' && !loading && !error) {
+          <app-activity-log
+            [events]="activityEvents"
+            [selectedResources]="selectedResources">
+          </app-activity-log>
+        }
+      </section>
     </div>
-    <button
-      class="refresh-button"
-      type="button"
-      (click)="loadMonitoringData()"
-      [disabled]="loading">
-      Refresh
-    </button>
+
+    @if (pinnedPanels.length > 0) {
+      <div class="pinned-panel-slots" aria-label="Pinned resource panels">
+        @for (panel of pinnedPanels; track panel.id) {
+          <app-resource-detail-pane
+            [panel]="panel"
+            [pinned]="true"
+            (close)="closePanel($event)"
+            (togglePin)="togglePanelPin($event)">
+          </app-resource-detail-pane>
+        }
+      </div>
+    }
   </div>
 
-  <app-resource-selection-bar></app-resource-selection-bar>
-
-  <div class="monitoring-tabs" role="tablist" aria-label="Monitoring views">
-    <button
-      id="activity-tab"
-      type="button"
-      role="tab"
-      [attr.aria-selected]="activeTab === 'activity'"
-      [attr.aria-controls]="'activity-panel'"
-      [class.active]="activeTab === 'activity'"
-      (click)="activeTab = 'activity'">
-      Activity log
-    </button>
-    <button
-      id="log-analytics-tab"
-      type="button"
-      role="tab"
-      [attr.aria-selected]="activeTab === 'log-analytics'"
-      [attr.aria-controls]="'log-analytics-panel'"
-      [class.active]="activeTab === 'log-analytics'"
-      (click)="activeTab = 'log-analytics'">
-      Log Analytics
-    </button>
-  </div>
-
-  @if (loading) {
-    <p class="status-message">Loading monitoring data...</p>
+  @if (floatingPanel; as panel) {
+    <app-resource-detail-pane
+      [panel]="panel"
+      (close)="closePanel($event)"
+      (togglePin)="togglePanelPin($event)">
+    </app-resource-detail-pane>
   }
-  @if (error) {
-    <div class="error-message" role="alert">{{ error }}</div>
-  }
-
-  <section
-    id="activity-panel"
-    class="monitoring-section"
-    role="tabpanel"
-    aria-labelledby="activity-tab"
-    [hidden]="activeTab !== 'activity'">
-    @if (!loading && !error) {
-      <app-activity-log
-        [events]="activityEvents"
-        [selectedResources]="selectedResources">
-      </app-activity-log>
-    }
-  </section>
-
-  <section
-    id="log-analytics-panel"
-    class="monitoring-section"
-    role="tabpanel"
-    aria-labelledby="log-analytics-tab"
-    [hidden]="activeTab !== 'log-analytics'">
-    @if (!loading && !error) {
-      <app-log-analytics [workspaces]="workspaces"></app-log-analytics>
-    }
-  </section>
 </section>
+
+<ng-template #resourceCard let-resource>
+  <app-resource-card
+    [type]="resource.type"
+    [name]="resource.name"
+    [resourceId]="resource.id"
+    [resourceGroup]="resource.resourceGroup"
+    [selectable]="true">
+    <ng-container card-actions>
+      <button
+        class="resource-action details-action"
+        type="button"
+        [attr.aria-label]="'Show details for ' + resource.name"
+        (click)="openResourceDetails(resource.id, $event)"
+        title="Resource details">
+        <span aria-hidden="true">i</span>
+      </button>
+    </ng-container>
+    <ng-container card-metadata>
+      <span>{{ resource.resourceGroup }}</span>
+      <span>{{ resource.location || 'Global' }}</span>
+    </ng-container>
+  </app-resource-card>
+</ng-template>
