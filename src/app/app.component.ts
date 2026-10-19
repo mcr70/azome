@@ -1,4 +1,11 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  HostListener,
+  OnInit,
+  OnDestroy,
+  ViewChild
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
@@ -70,6 +77,10 @@ function getResourceGraphErrorDetails(error: unknown): string[] {
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit, OnDestroy {
+  @ViewChild('perspectiveMenu') private perspectiveMenu?: ElementRef<HTMLDetailsElement>;
+  @ViewChild('toolsMenu') private toolsMenu?: ElementRef<HTMLDetailsElement>;
+  @ViewChild('userMenu') private userMenu?: ElementRef<HTMLDetailsElement>;
+
   public userName: string | null = null;
   public selectedPerspective = 'resources';
   public perspectives = DEFAULT_PERSPECTIVES.map((preference) => ({ ...preference }));
@@ -140,9 +151,9 @@ export class AppComponent implements OnInit, OnDestroy {
       });
   }
 
-  public changePerspective(event: Event): void {
-    const perspective = (event.target as HTMLSelectElement).value;
-    const selectedPreference = this.perspectives.find((item) => item.id === perspective);
+  public changePerspective(perspectiveId: string, menu: HTMLDetailsElement): void {
+    menu.open = false;
+    const selectedPreference = this.perspectives.find((item) => item.id === perspectiveId);
     if (!selectedPreference?.visible) {
       return;
     }
@@ -189,6 +200,27 @@ export class AppComponent implements OnInit, OnDestroy {
     this.savedResourceGraphQueryError = null;
     this.resourceGraphResults = null;
     this.resourceGraphDialogOpen = true;
+  }
+
+  @HostListener('document:click', ['$event'])
+  public closeMenusOnOutsideClick(event: MouseEvent): void {
+    const target = event.target;
+    if (!(target instanceof Node)) {
+      return;
+    }
+
+    if (
+      this.perspectiveMenu
+      && !this.perspectiveMenu.nativeElement.contains(target)
+    ) {
+      this.perspectiveMenu.nativeElement.open = false;
+    }
+    if (this.toolsMenu && !this.toolsMenu.nativeElement.contains(target)) {
+      this.toolsMenu.nativeElement.open = false;
+    }
+    if (this.userMenu && !this.userMenu.nativeElement.contains(target)) {
+      this.userMenu.nativeElement.open = false;
+    }
   }
 
   public selectSavedResourceGraphQuery(event: Event): void {

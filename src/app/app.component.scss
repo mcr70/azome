@@ -20,45 +20,35 @@
 	font-size: 1.125rem;
 }
 
-.perspective-picker {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	color: #cbd5e1;
-	font-size: 0.875rem;
-}
-
-.perspective-picker select {
-	min-width: 150px;
-	padding: 7px 28px 7px 10px;
-	border: 1px solid #64748b;
-	border-radius: 4px;
-	background: #24314b;
-	color: #ffffff;
-	font: inherit;
-}
-
-.tools-menu {
+.header-menu {
 	position: relative;
 }
 
-.tools-menu-trigger {
+.header-menu-trigger {
+	display: block;
+	padding: 8px 12px;
+	border-radius: 4px;
 	color: #cbd5e1;
 	cursor: pointer;
 	font-size: 0.875rem;
 	list-style: none;
 }
 
-.tools-menu-trigger::-webkit-details-marker {
+.header-menu-trigger::-webkit-details-marker {
 	display: none;
 }
 
-.tools-menu-content {
+.header-menu[open] > .header-menu-trigger {
+	background: #24314b;
+	color: #ffffff;
+}
+
+.header-menu-content {
 	position: absolute;
 	top: calc(100% + 8px);
 	left: 0;
 	z-index: 2;
-	min-width: 160px;
+	min-width: 190px;
 	padding: 6px;
 	border: 1px solid #334155;
 	border-radius: 4px;
@@ -66,9 +56,10 @@
 	box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
 }
 
-.tools-menu-content button {
+.header-menu-item {
+	display: block;
 	width: 100%;
-	padding: 8px;
+	padding: 8px 10px;
 	border: 0;
 	border-radius: 4px;
 	background: transparent;
@@ -78,67 +69,29 @@
 	text-align: left;
 }
 
-.tools-menu-content button:hover {
+.header-menu-item:hover,
+.header-menu-item.active {
 	background: #24314b;
+	color: #ffffff;
 }
 
-.user-menu {
-	position: relative;
-}
-
-.user-menu-trigger {
+.user-menu .header-menu-trigger {
 	color: #86efac;
-	cursor: pointer;
-	font-size: 0.875rem;
-	list-style: none;
 }
 
-.user-menu-trigger::-webkit-details-marker {
-	display: none;
-}
-
-.user-menu-content {
-	position: absolute;
-	top: calc(100% + 8px);
+.user-menu .header-menu-content {
 	right: 0;
 	z-index: 1;
-	min-width: 140px;
-	padding: 6px;
-	border: 1px solid #334155;
-	border-radius: 4px;
-	background: #172033;
-	box-shadow: 0 4px 12px rgb(0 0 0 / 25%);
-}
-
-.user-menu-content .sign-out-button {
-	width: 100%;
-	text-align: left;
-}
-
-.user-menu-button {
-	width: 100%;
-	padding: 7px 12px;
-	border: 0;
-	border-radius: 4px;
-	background: transparent;
-	color: #f8fafc;
-	cursor: pointer;
-	font: inherit;
-	text-align: left;
-}
-
-.user-menu-button:hover {
-	background: #24314b;
+	min-width: 160px;
 }
 
 .sign-out-button {
-	padding: 7px 12px;
-	border: 0;
-	border-radius: 4px;
 	background: #dc2626;
 	color: #ffffff;
-	cursor: pointer;
-	font: inherit;
+}
+
+.sign-out-button:hover {
+	background: #b91c1c;
 }
 
 .resource-graph-dialog-backdrop {

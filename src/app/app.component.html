@@ -2,33 +2,41 @@
   <header class="app-toolbar">
     <div class="toolbar-start">
       <strong class="app-name">Azome UI</strong>
-      <label class="perspective-picker">
-        <select
-          [value]="selectedPerspective"
-          (change)="changePerspective($event)"
-          aria-label="Select perspective"
-        >
+      <details class="header-menu" #perspectiveMenu>
+        <summary class="header-menu-trigger">Perspective</summary>
+        <div class="header-menu-content">
           @for (perspective of visiblePerspectives; track perspective.id) {
-            <option [value]="perspective.id">{{ perspective.label }}</option>
+            <button
+              type="button"
+              class="header-menu-item"
+              [class.active]="selectedPerspective === perspective.id"
+              (click)="changePerspective(perspective.id, perspectiveMenu)"
+            >
+              {{ perspective.label }}
+            </button>
           }
-        </select>
-      </label>
-      <details class="tools-menu" #toolsMenu>
-        <summary class="tools-menu-trigger">Tools</summary>
-        <div class="tools-menu-content">
-          <button type="button" (click)="openResourceGraphDialog(toolsMenu)">
+        </div>
+      </details>
+      <details class="header-menu" #toolsMenu>
+        <summary class="header-menu-trigger">Tools</summary>
+        <div class="header-menu-content">
+          <button
+            type="button"
+            class="header-menu-item"
+            (click)="openResourceGraphDialog(toolsMenu)"
+          >
             Resource Graph
           </button>
         </div>
       </details>
     </div>
     <div class="toolbar-end">
-      <details class="user-menu" #userMenu>
-        <summary class="user-menu-trigger">{{ userName || 'Loading...' }}</summary>
-        <div class="user-menu-content">
+      <details class="header-menu user-menu" #userMenu>
+        <summary class="header-menu-trigger">{{ userName || 'Loading...' }}</summary>
+        <div class="header-menu-content">
           <button
             type="button"
-            class="user-menu-button"
+            class="header-menu-item"
             (click)="openPreferencesDialog(userMenu)"
           >
             Preferences
@@ -36,7 +44,7 @@
           <button
             type="button"
             (click)="auth.logout()"
-            class="sign-out-button"
+            class="header-menu-item sign-out-button"
           >
             Sign out
           </button>
