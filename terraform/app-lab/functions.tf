@@ -35,9 +35,13 @@ resource "azurerm_linux_function_app" "func" {
     }
   }
 
+  tags = {
+    azome-apps = "sample" // azome-apps marks this as being part of app called "sample"
+  }
+
   lifecycle { // Handle deployment manually, Terraform should not interfere
     ignore_changes = [
-      app_settings,
+      app_settings
     ]
   }  
 }
