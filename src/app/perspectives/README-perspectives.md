@@ -15,6 +15,13 @@ Other grids' selections are preserved. The **Selected resources** summary and
 **Clear selection** action are shared across perspectives. Activity log resource checkboxes are always available;
 opening an event still shows its details.
 
+The selection summary sits in the perspective heading next to Refresh (or in the
+same heading area in Resources, which has no Refresh button). By default it shows
+only the selection count. Clicking it opens a floating resource list, keeping the
+content below stable. Each resource has a red remove button to deselect it.
+Resource names scroll to the corresponding card; Clear selection removes all
+selections. Escape, the close button or clicking outside closes the list.
+
 ## Resources perspective
 
 This perspective is most similar with traditinal Azure UI. In that it list

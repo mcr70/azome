@@ -10,7 +10,42 @@
 }
 
 .perspective-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
   margin-bottom: 28px;
+}
+
+.perspective-heading > :first-child {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.perspective-actions {
+  display: flex;
+  flex: 1 1 480px;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 50px;
+}
+
+@media (max-width: 720px) {
+  .perspective-heading > :first-child {
+    flex: 0 1 auto;
+  }
+
+  .perspective-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .perspective-actions {
+    flex: 0 0 auto;
+    width: 100%;
+  }
 }
 
 .eyebrow {

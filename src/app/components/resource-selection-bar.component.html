@@ -1,31 +1,74 @@
 @if (selection.selectedResources$ | async; as selectedResources) {
   @if (selectedResources.length > 0) {
     <section class="resource-selection-bar" aria-label="Resource selection">
-      <div class="selection-summary">
-        <div class="selection-heading">
-          <strong>Selected resources</strong>
-          <span class="selection-count">{{ selectedResources.length }}</span>
-        </div>
-        <ul class="selected-resource-list">
-          @for (resource of selectedResources; track resource.id) {
-            <li>
-              <button
-                type="button"
-                class="selected-resource-name"
-                (click)="scrollToResource(resource.id)">
-                {{ resource.name }}
-              </button>
-              <span class="selected-resource-group">{{ resource.resourceGroup }}</span>
-            </li>
-          }
-        </ul>
-        <button
-          type="button"
-          class="clear-selection-button"
-          (click)="clearSelection()">
-          Clear selection
-        </button>
-      </div>
+      <button
+        cdkOverlayOrigin
+        #origin="cdkOverlayOrigin"
+        type="button"
+        class="selection-summary"
+        aria-haspopup="dialog"
+        [attr.aria-expanded]="isOpen"
+        (click)="isOpen = !isOpen">
+        <span>Selected resources</span>
+        <span class="selection-count">{{ selectedResources.length }}</span>
+      </button>
+
+      <ng-template
+        cdkConnectedOverlay
+        [cdkConnectedOverlayOrigin]="origin"
+        [cdkConnectedOverlayOpen]="isOpen"
+        [cdkConnectedOverlayPositions]="panelPositions"
+        [cdkConnectedOverlayPush]="true"
+        [cdkConnectedOverlayViewportMargin]="12"
+        (overlayOutsideClick)="isOpen = false"
+        (overlayKeydown)="onPanelKeydown($event)">
+        <section
+          class="selection-panel"
+          role="dialog"
+          aria-label="Selected resources"
+          cdkTrapFocus
+          [cdkTrapFocusAutoCapture]="true">
+          <header class="selection-panel-heading">
+            <strong>Selected resources ({{ selectedResources.length }})</strong>
+            <button
+              type="button"
+              class="close-panel-button"
+              aria-label="Close selected resources"
+              (click)="isOpen = false">
+              &times;
+            </button>
+          </header>
+          <ul class="selected-resource-list">
+            @for (resource of selectedResources; track resource.id) {
+              <li>
+                <div class="selected-resource-info">
+                  <button
+                    type="button"
+                    class="selected-resource-name"
+                    (click)="scrollToResource(resource.id)">
+                    {{ resource.name }}
+                  </button>
+                  <span class="selected-resource-group">{{ resource.resourceGroup }}</span>
+                </div>
+                <button
+                  type="button"
+                  class="remove-resource-button"
+                  [attr.aria-label]="'Deselect ' + resource.name"
+                  [title]="'Deselect ' + resource.name"
+                  (click)="removeResource(resource.id)">
+                  &times;
+                </button>
+              </li>
+            }
+          </ul>
+          <button
+            type="button"
+            class="clear-selection-button"
+            (click)="clearSelection()">
+            Clear selection
+          </button>
+        </section>
+      </ng-template>
     </section>
   }
 }

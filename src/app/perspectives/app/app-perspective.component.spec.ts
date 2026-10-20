@@ -77,12 +77,65 @@ describe('AppPerspectiveComponent', () => {
     expect(element.querySelector('#categories-panel h2')?.textContent).toContain('Serverless');
   });
 
+  it('keeps selection next to Refresh without moving the filter when selection changes', () => {
+    const actions = element.querySelector<HTMLElement>('.perspective-actions')!;
+    const summary = actions.querySelector('app-resource-selection-bar');
+    const refresh = actions.querySelector('.refresh-button');
+    expect(summary).not.toBeNull();
+    expect(refresh).not.toBeNull();
+    expect(summary!.nextElementSibling).toBe(refresh);
+
+    const filter = element.querySelector<HTMLElement>('app-text-filter')!;
+    const initialTop = filter.getBoundingClientRect().top;
+    const selection = TestBed.inject(ResourceSelectionService);
+    for (let index = 0; index < 20; index++) {
+      selection.select({
+        id: `resource-${index}`,
+        name: `long-resource-name-${index}`,
+        type: 'test/resource',
+        resourceGroup: 'production'
+      });
+    }
+    fixture.detectChanges();
+    expect(filter.getBoundingClientRect().top).toBe(initialTop);
+    expect(actions.getBoundingClientRect().height).toBe(50);
+    expect(actions.querySelector('.selected-resource-list')).toBeNull();
+    expect(actions.querySelector('.selection-count')?.textContent).toBe('20');
+
+    actions.querySelector<HTMLButtonElement>('.selection-summary')!.click();
+    fixture.detectChanges();
+    expect(filter.getBoundingClientRect().top).toBe(initialTop);
+    expect(actions.getBoundingClientRect().height).toBe(50);
+
+    selection.clear();
+    fixture.detectChanges();
+    expect(filter.getBoundingClientRect().top).toBe(initialTop);
+  });
+
   it('trims app names, ignores empty names and deduplicates membership within each app', () => {
     component.selectTab('apps');
     expect(component.appGroups).toEqual([
       { name: 'Orders', resources: [taggedFunction, cosmos] },
       { name: 'Reporting', resources: [taggedFunction] }
     ]);
+  });
+
+  it('keeps the heading actions inside a narrow content area when resources are selected', () => {
+    const content = element.querySelector<HTMLElement>('.app-main-content')!;
+    content.style.width = '360px';
+    const filter = element.querySelector<HTMLElement>('app-text-filter')!;
+    const initialTop = filter.getBoundingClientRect().top;
+    TestBed.inject(ResourceSelectionService).select({
+      id: 'resource-id',
+      name: 'a-very-long-selected-resource-name',
+      type: 'test/resource',
+      resourceGroup: 'production'
+    });
+    fixture.detectChanges();
+
+    const actions = element.querySelector<HTMLElement>('.perspective-actions')!;
+    expect(actions.scrollWidth).toBeLessThanOrEqual(actions.clientWidth);
+    expect(filter.getBoundingClientRect().top).toBe(initialTop);
   });
 
   it('filters by app name, member name and resource group with exclusions', () => {

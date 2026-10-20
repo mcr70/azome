@@ -7,12 +7,13 @@
           <h1 id="networking-title">Networking</h1>
           <p class="description">Relationships between virtual networks, subnets, and their security controls.</p>
         </div>
-        <button class="refresh-button" type="button" (click)="loadTopologies()" [disabled]="loading">
-          Refresh
-        </button>
+        <div class="perspective-actions">
+          <app-resource-selection-bar></app-resource-selection-bar>
+          <button class="refresh-button" type="button" (click)="loadTopologies()" [disabled]="loading">
+            Refresh
+          </button>
+        </div>
       </div>
-
-      <app-resource-selection-bar></app-resource-selection-bar>
 
       @if (!loading && !error && topologies.length > 0) {
         <app-text-filter

@@ -10,16 +10,17 @@
           <h1 id="data-title">Data</h1>
           <p class="description">Data services available in this Azure subscription.</p>
         </div>
-        <button
-          class="refresh-button"
-          type="button"
-          (click)="loadResources()"
-          [disabled]="loading">
-          Refresh
-        </button>
+        <div class="perspective-actions">
+          <app-resource-selection-bar></app-resource-selection-bar>
+          <button
+            class="refresh-button"
+            type="button"
+            (click)="loadResources()"
+            [disabled]="loading">
+            Refresh
+          </button>
+        </div>
       </div>
-
-      <app-resource-selection-bar></app-resource-selection-bar>
 
       @if (loading) {
         <p

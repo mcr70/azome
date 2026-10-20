@@ -12,16 +12,17 @@
             Review monitoring resources, Log Analytics workspaces and subscription activity.
           </p>
         </div>
-        <button
-          class="refresh-button"
-          type="button"
-          (click)="loadMonitoringData()"
-          [disabled]="loading || loadingDiagnostics">
-          Refresh
-        </button>
+        <div class="perspective-actions">
+          <app-resource-selection-bar></app-resource-selection-bar>
+          <button
+            class="refresh-button"
+            type="button"
+            (click)="loadMonitoringData()"
+            [disabled]="loading || loadingDiagnostics">
+            Refresh
+          </button>
+        </div>
       </div>
-
-      <app-resource-selection-bar></app-resource-selection-bar>
 
       <div class="monitoring-tabs" role="tablist" aria-label="Monitoring views">
         <button
