@@ -13,7 +13,4 @@ export class DiagnosticSettingsComponent implements ResourceDetailItem {
 
   @Input() resource: DiagnosticSetting | null = null;
 
-  public portalUrl(id: string): string {
-    return `https://portal.azure.com/#resource${id.split('/').map(encodeURIComponent).join('/')}`;
-  }
 }

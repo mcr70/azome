@@ -5,7 +5,7 @@ import { catchError, finalize, mergeMap, takeUntil, tap } from 'rxjs/operators';
 import { ResourceGroup, ResourceGroupService } from '@services/azure/resource-group.service';
 import { AzureResource, ResourceGraphService } from '@services/azure/resource-graph.service';
 import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
-import { ResourceTypeIconComponent } from '@components/resource-type-icon.component';
+import { ResourceTypeIconComponent } from '@components/resource-card/resource-type-icon.component';
 import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
 import { ResourceDetailPanelService, ResourcePanelConfig } from '@services/azome/resource-detail-panel.service';
 import { TextFilterComponent } from '@components/text-filter/text-filter.component';
@@ -51,6 +51,12 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
     this.loadResourceGroups();
     this.panelService.panels$.pipe(takeUntil(this.destroy$)).subscribe((panels) => this.panels = panels);
   }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
 
   public get pinnedPanels(): ResourcePanelConfig[] {
     return this.panels.filter((panel) => panel.pinned);
@@ -211,8 +217,4 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
   public closePanel(panelId: string): void { this.panelService.closePanel(panelId); }
   public togglePanelPin(panelId: string): void { this.panelService.togglePin(panelId); }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
 }

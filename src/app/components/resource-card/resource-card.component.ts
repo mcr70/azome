@@ -1,7 +1,7 @@
 
 import { AfterViewInit, Component, ElementRef, Input, ViewChild } from '@angular/core';
-import { ResourceTypeIconComponent } from '../resource-type-icon.component';
-import { ResourceSelectionService } from '../../services/azome/resource-selection.service';
+import { ResourceTypeIconComponent } from './resource-type-icon.component';
+import { ResourceSelectionService } from '@services/azome/resource-selection.service';
 
 /**
  * Shared visual shell for resource cards across perspectives.

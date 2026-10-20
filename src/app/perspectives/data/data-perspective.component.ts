@@ -59,6 +59,19 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
   ) {
   }
 
+  ngOnInit(): void {
+    this.loadResources();
+    this.panelService.panels$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((panels) => this.panels = panels);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+
   public get categoryGroups(): DataResourceCategoryGroup[] {
     const categories = new Map<DataResourceCategory, Map<string, AzureDataResource[]>>();
 
@@ -101,12 +114,6 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
     return this.panels.find((panel) => !panel.pinned) ?? null;
   }
 
-  ngOnInit(): void {
-    this.loadResources();
-    this.panelService.panels$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((panels) => this.panels = panels);
-  }
 
   public loadResources(): void {
     this.loading = true;
@@ -204,8 +211,4 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
     this.panelService.togglePin(panelId);
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
 }

@@ -76,12 +76,13 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
     }
   }
 
-  public get displayedColumns(): string[] {
-    return this.resourceSelection.isSelecting ? this.selectionColumns : this.standardColumns;
-  }
-
   public ngAfterViewInit(): void {
     this.dataSource.paginator = this.paginator;
+  }
+
+
+  public get displayedColumns(): string[] {
+    return this.resourceSelection.isSelecting ? this.selectionColumns : this.standardColumns;
   }
 
   public applyFilter(value: string): void {

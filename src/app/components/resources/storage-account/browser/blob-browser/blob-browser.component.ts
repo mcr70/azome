@@ -46,6 +46,7 @@ export class BlobBrowserComponent extends StorageBrowserBase implements OnInit, 
     this.clearPreview();
   }
 
+  
   /** Selects a blob container and loads its root entries. */
   selectContainer(name: string): void {
     this.container = name;

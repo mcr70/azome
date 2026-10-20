@@ -9,7 +9,7 @@ import {
 import { NetworkGraphComponent } from './network-graph.component';
 import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
 import { ResourceDetailPanelService, ResourcePanelConfig } from '@services/azome/resource-detail-panel.service';
-import { ResourceTypeIconComponent } from '@components/resource-type-icon.component';
+import { ResourceTypeIconComponent } from '@components/resource-card/resource-type-icon.component';
 import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
 import { TextFilterComponent } from '@components/text-filter/text-filter.component';
 import { ResourceSelectionBarComponent } from '@components/resource-selection-bar.component';
@@ -51,6 +51,12 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
     this.loadTopologies();
     this.panelService.panels$.pipe(takeUntil(this.destroy$)).subscribe((panels) => this.panels = panels);
   }
+
+  public ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
 
   onGraphResourceSelect(resourceId: string): void {
     this.openResourceDetails(resourceId);
@@ -157,11 +163,6 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
           this.loading = false;
         }
       });
-  }
-
-  public ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 
 }

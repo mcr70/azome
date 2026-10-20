@@ -41,6 +41,7 @@ export class TableBrowserComponent extends StorageBrowserBase implements OnInit,
     this.dispose();
   }
 
+  
   /** Selects a table and clears results from the previously selected table. */
   selectTable(name: string): void {
     this.table = name;

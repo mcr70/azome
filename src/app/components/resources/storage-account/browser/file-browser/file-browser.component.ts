@@ -46,6 +46,7 @@ export class FileBrowserComponent extends StorageBrowserBase implements OnInit, 
     this.clearPreview();
   }
 
+  
   /** Selects a file share and loads its root entries. */
   selectShare(name: string): void {
     this.share = name;

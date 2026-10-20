@@ -4,7 +4,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subject } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
 import { ResourceGraphService, SubnetRoutingDetail } from '@services/azure/resource-graph.service';
-import { ResourceTypeIconComponent } from '@components/resource-type-icon.component';
+import { ResourceTypeIconComponent } from '@components/resource-card/resource-type-icon.component';
 
 @Component({
   selector: 'app-subnet-detail',

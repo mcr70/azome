@@ -41,6 +41,7 @@ export class QueueBrowserComponent extends StorageBrowserBase implements OnInit,
     this.dispose();
   }
 
+  
   /**
    * Selects a queue and loads its message count and first peek results.
    * @param name Name of the queue

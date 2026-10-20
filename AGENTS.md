@@ -16,8 +16,7 @@ Decorator Formatting: The @Component decorator properties (selector, standalone,
 
 Property Declarations: Declare each property on a separate line. Never stack multiple variable declarations onto a single line.
 
-Method Formatting: Every method body MUST be formatted across multiple lines with proper indentation (2 spaces). Never write inline single-line methods. Write comment
-in following format:
+Method Formatting: Every method body MUST be formatted across multiple lines with proper indentation (2 spaces). Never write inline single-line methods. Write comment in following format:
 ```
   /** 
    * Selects a queue and loads its message count and first peek results. 
@@ -27,6 +26,8 @@ in following format:
 ```
 
 Line Length & Whitespace: Keep maximum line length around 100–120 characters. Leave blank lines between class properties and methods.
+
+Angular methods (ngInit, ngDestroy, etc.) are placed after right after constructor.
 
 ## 3. SCSS / CSS Styling
 One Selector / Property per Line: Always place selectors, CSS rules, and closing braces on separate lines.

@@ -68,6 +68,19 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
   ) {
   }
 
+  ngOnInit(): void {
+    this.loadResources();
+    this.panelService.panels$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((panels) => this.panels = panels);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+
   public get categoryGroups(): AppResourceCategoryGroup[] {
     const categories = new Map<AppResourceCategory, Map<string, AzureAppResource[]>>();
 
@@ -141,12 +154,6 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
     return this.panels.find((panel) => !panel.pinned) ?? null;
   }
 
-  ngOnInit(): void {
-    this.loadResources();
-    this.panelService.panels$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((panels) => this.panels = panels);
-  }
 
   public loadResources(): void {
     this.resourceRequest?.unsubscribe();
@@ -247,8 +254,4 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
     this.panelService.togglePin(panelId);
   }
 
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
 }

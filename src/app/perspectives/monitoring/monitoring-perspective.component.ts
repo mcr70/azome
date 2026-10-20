@@ -80,6 +80,22 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     private readonly diagnostics: DiagnosticSettingsService
   ) {}
 
+  ngOnInit(): void {
+    this.resourceSelection.selectedResources$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((resources) => this.selectedResources = resources);
+    this.panelService.panels$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((panels) => this.panels = panels);
+    this.loadMonitoringData();
+  }
+
+  public ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  
   public get filteredResources(): MonitoringResource[] {
     return this.resources.filter((resource) =>
       matchesTextFilter(this.filterQuery, resource.resourceGroup, resource.name, resource.type)
@@ -138,15 +154,6 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     return this.panels.find((panel) => !panel.pinned) ?? null;
   }
 
-  ngOnInit(): void {
-    this.resourceSelection.selectedResources$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((resources) => this.selectedResources = resources);
-    this.panelService.panels$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((panels) => this.panels = panels);
-    this.loadMonitoringData();
-  }
 
   public loadMonitoringData(): void {
     this.loadDiagnosticSettings();
@@ -275,8 +282,4 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     this.panelService.togglePin(panelId);
   }
 
-  public ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
-  }
 }
