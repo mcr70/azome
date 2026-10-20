@@ -43,8 +43,7 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
-  private readonly standardColumns = ['time', 'operation', 'status', 'resourceGroup', 'caller'];
-  private readonly selectionColumns = ['select', ...this.standardColumns];
+  public readonly displayedColumns = ['select', 'time', 'operation', 'status', 'resourceGroup', 'caller'];
   public readonly dataSource = new MatTableDataSource<ActivityLogEvent>([]);
   public filterQuery = '';
   public selectedEvent: ActivityLogEvent | null = null;
@@ -80,10 +79,6 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
     this.dataSource.paginator = this.paginator;
   }
 
-
-  public get displayedColumns(): string[] {
-    return this.resourceSelection.isSelecting ? this.selectionColumns : this.standardColumns;
-  }
 
   public applyFilter(value: string): void {
     this.filterQuery = value;

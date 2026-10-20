@@ -180,6 +180,13 @@ h1 {
   background: #f8fafc;
 }
 
+.grid-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-width: 0;
+}
+
 .network-header h2 {
   margin: 4px 0 0;
   font-size: 1.25rem;

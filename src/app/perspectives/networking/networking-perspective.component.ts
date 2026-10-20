@@ -11,9 +11,11 @@ import { ResourceDetailPaneComponent } from '@components/resources/resource-deta
 import { ResourceDetailPanelService, ResourcePanelConfig } from '@services/azome/resource-detail-panel.service';
 import { ResourceTypeIconComponent } from '@components/resource-card/resource-type-icon.component';
 import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
+import { ResourceGridSelectionComponent } from '@components/resource-grid-selection/resource-grid-selection.component';
 import { TextFilterComponent } from '@components/text-filter/text-filter.component';
 import { ResourceSelectionBarComponent } from '@components/resource-selection-bar.component';
 import { matchesTextFilter } from '@app/utils/text-filter';
+import { SelectedAzureResource } from '@services/azome/resource-selection.service';
 
 @Component({
   selector: 'app-networking-perspective',
@@ -23,6 +25,7 @@ import { matchesTextFilter } from '@app/utils/text-filter';
     ResourceDetailPaneComponent,
     ResourceTypeIconComponent,
     ResourceCardComponent,
+    ResourceGridSelectionComponent,
     TextFilterComponent,
     ResourceSelectionBarComponent
   ],
@@ -140,6 +143,15 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
 
   public subnetResourceId(topologyId: string, subnetName: string): string {
     return `${topologyId}/subnets/${subnetName}`;
+  }
+
+  public subnetSelectionResources(topology: NetworkTopology): SelectedAzureResource[] {
+    return topology.subnets.map((subnet) => ({
+      id: this.subnetResourceId(topology.id, subnet.name),
+      type: 'Microsoft.Network/virtualNetworks/subnets',
+      name: subnet.name,
+      resourceGroup: topology.resourceGroup
+    }));
   }
 
   public closePanel(panelId: string): void { this.panelService.closePanel(panelId); }

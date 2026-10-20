@@ -10,6 +10,7 @@ import {
 } from '@services/azure/monitoring.service';
 import { ResourceSelectionBarComponent } from '@components/resource-selection-bar.component';
 import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
+import { ResourceGridSelectionComponent } from '@components/resource-grid-selection/resource-grid-selection.component';
 import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
 import { TextFilterComponent } from '@components/text-filter/text-filter.component';
 import { SelectedAzureResource, ResourceSelectionService } from '@services/azome/resource-selection.service';
@@ -46,6 +47,7 @@ interface MonitoringResourceCategoryGroup {
     ActivityLogComponent,
     LogAnalyticsComponent,
     ResourceCardComponent,
+    ResourceGridSelectionComponent,
     ResourceDetailPaneComponent,
     ResourceSelectionBarComponent,
     TextFilterComponent

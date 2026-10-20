@@ -16,15 +16,6 @@ export class ResourceSelectionBarComponent {
     this.selection.clear();
   }
 
-  public toggleSelectionMode(): void {
-    if (this.selection.isSelecting) {
-      this.selection.finishSelecting();
-      return;
-    }
-
-    this.selection.startSelecting();
-  }
-
   public scrollToResource(resourceId: string): void {
     const cardId = `resource-card-${encodeURIComponent(resourceId)}`;
     const card = document.getElementById(cardId)

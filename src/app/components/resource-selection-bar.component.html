@@ -1,14 +1,6 @@
 @if (selection.selectedResources$ | async; as selectedResources) {
-  <section class="resource-selection-bar" aria-label="Resource selection">
-    <button
-      type="button"
-      class="selection-mode-button"
-      [attr.aria-pressed]="selection.isSelecting"
-      (click)="toggleSelectionMode()">
-      {{ selection.isSelecting ? 'Done' : 'Select resources' }}
-    </button>
-
-    @if (!selection.isSelecting && selectedResources.length > 0) {
+  @if (selectedResources.length > 0) {
+    <section class="resource-selection-bar" aria-label="Resource selection">
       <div class="selection-summary">
         <div class="selection-heading">
           <strong>Selected resources</strong>
@@ -34,6 +26,6 @@
           Clear selection
         </button>
       </div>
-    }
-  </section>
+    </section>
+  }
 }

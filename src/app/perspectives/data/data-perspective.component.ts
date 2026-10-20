@@ -5,6 +5,7 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
 import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
+import { ResourceGridSelectionComponent } from '@components/resource-grid-selection/resource-grid-selection.component';
 import { DataBrowsePaneComponent } from './data-browse-pane.component';
 import { AzureDataResource, DataResourceCategory } from '@services/azure/data.model';
 import {
@@ -34,6 +35,7 @@ interface DataResourceCategoryGroup {
   imports: [
     ResourceDetailPaneComponent,
     ResourceCardComponent,
+    ResourceGridSelectionComponent,
     DataBrowsePaneComponent,
     TextFilterComponent,
     ResourceSelectionBarComponent

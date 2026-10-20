@@ -182,6 +182,12 @@ h1 {
   font-size: 1.25rem;
 }
 
+.grid-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .resource-count,
 .type-heading span {
   color: #64748b;

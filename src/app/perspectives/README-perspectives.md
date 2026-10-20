@@ -1,5 +1,20 @@
 # Perspectices
 
+## Resource selection
+
+Click a resource card to select it or remove its selection. Selectable cards show
+a subtle background highlight on hover, and their selection button also supports
+keyboard activation. Details, browse links and other controls inside a card keep
+their own actions without changing selection.
+
+Each card grid has a selection checkbox in its header after the metadata, for its
+currently visible resources. It is unchecked when none are selected, indeterminate
+when some are selected, and checked when all are selected. Clicking an unchecked
+or indeterminate checkbox selects all; clicking a checked checkbox deselects all.
+Other grids' selections are preserved. The **Selected resources** summary and
+**Clear selection** action are shared across perspectives. Activity log resource checkboxes are always available;
+opening an event still shows its details.
+
 ## Resources perspective
 
 This perspective is most similar with traditinal Azure UI. In that it list

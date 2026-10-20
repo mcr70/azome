@@ -7,6 +7,7 @@ import { AzureResource, ResourceGraphService } from '@services/azure/resource-gr
 import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
 import { ResourceTypeIconComponent } from '@components/resource-card/resource-type-icon.component';
 import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
+import { ResourceGridSelectionComponent } from '@components/resource-grid-selection/resource-grid-selection.component';
 import { ResourceDetailPanelService, ResourcePanelConfig } from '@services/azome/resource-detail-panel.service';
 import { TextFilterComponent } from '@components/text-filter/text-filter.component';
 import { matchesTextFilter } from '@app/utils/text-filter';
@@ -19,6 +20,7 @@ import { ResourceSelectionService } from '@services/azome/resource-selection.ser
     ResourceDetailPaneComponent,
     ResourceTypeIconComponent,
     ResourceCardComponent,
+    ResourceGridSelectionComponent,
     TextFilterComponent
   ],
   templateUrl: './resource-group-list.component.html',

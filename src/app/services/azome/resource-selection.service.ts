@@ -11,25 +11,11 @@ export interface SelectedAzureResource {
 @Injectable({ providedIn: 'root' })
 export class ResourceSelectionService {
   private readonly selectedResourcesSubject = new BehaviorSubject<SelectedAzureResource[]>([]);
-  private readonly selectionModeSubject = new BehaviorSubject<boolean>(false);
 
   public readonly selectedResources$ = this.selectedResourcesSubject.asObservable();
-  public readonly selectionMode$ = this.selectionModeSubject.asObservable();
 
   public get selectedResources(): SelectedAzureResource[] {
     return this.selectedResourcesSubject.value;
-  }
-
-  public get isSelecting(): boolean {
-    return this.selectionModeSubject.value;
-  }
-
-  public startSelecting(): void {
-    this.selectionModeSubject.next(true);
-  }
-
-  public finishSelecting(): void {
-    this.selectionModeSubject.next(false);
   }
 
   public isSelected(resourceId: string): boolean {
@@ -56,6 +42,27 @@ export class ResourceSelectionService {
     this.selectedResourcesSubject.next(
       this.selectedResources.filter((resource) => this.normalizeId(resource.id) !== normalizedId)
     );
+  }
+
+  public toggleResources(resources: readonly SelectedAzureResource[]): void {
+    if (resources.length === 0) {
+      return;
+    }
+
+    const resourceIds = new Set(resources.map((resource) => this.normalizeId(resource.id)));
+    const allSelected = resources.every((resource) => this.isSelected(resource.id));
+    const selected = this.selectedResources.filter(
+      (resource) => !resourceIds.has(this.normalizeId(resource.id))
+    );
+
+    if (!allSelected) {
+      const uniqueResources = new Map(
+        resources.map((resource) => [this.normalizeId(resource.id), resource])
+      );
+      selected.push(...uniqueResources.values());
+    }
+
+    this.selectedResourcesSubject.next(selected);
   }
 
   public clear(): void {

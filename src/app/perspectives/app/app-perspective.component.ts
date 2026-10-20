@@ -2,6 +2,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { ResourceSelectionBarComponent } from '@components/resource-selection-bar.component';
 import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
+import { ResourceGridSelectionComponent } from '@components/resource-grid-selection/resource-grid-selection.component';
 import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
 import { TextFilterComponent } from '@components/text-filter/text-filter.component';
 import { Subject, Subscription } from 'rxjs';
@@ -42,6 +43,7 @@ interface AppGroup {
     NgTemplateOutlet,
     ResourceDetailPaneComponent,
     ResourceCardComponent,
+    ResourceGridSelectionComponent,
     TextFilterComponent,
     ResourceSelectionBarComponent
   ],

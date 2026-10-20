@@ -95,7 +95,7 @@ describe('AppComponent', () => {
     app.runResourceGraphQuery();
 
     expect(app.resourceGraphQueryError).toBe(
-      'HTTP 400 Bad Request\nTable Resourcsses is invalid, unsupported or disallowed.'
+      'HTTP 400 Bad Request\n- Table Resourcsses is invalid, unsupported or disallowed.'
     );
     expect(app.resourceGraphQueryLoading).toBeFalse();
   });

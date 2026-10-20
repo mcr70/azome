@@ -115,9 +115,13 @@
                     <h3>
                       {{ typeGroup.label }}
                     </h3>
-                    <span>
-                      {{ typeGroup.resources.length }}
-                    </span>
+                    <div class="grid-heading-actions">
+                      <span>{{ typeGroup.resources.length }}</span>
+                      <app-resource-grid-selection
+                        [resources]="typeGroup.resources"
+                        [label]="typeGroup.label">
+                      </app-resource-grid-selection>
+                    </div>
                   </div>
                   <div class="resource-grid">
                     @for (resource of typeGroup.resources; track resource.id) {
@@ -161,9 +165,13 @@
                     {{ app.name }}
                   </h2>
                 </div>
-                <span class="resource-count">
-                  {{ app.resources.length }} resources
-                </span>
+                <div class="grid-heading-actions">
+                  <span class="resource-count">{{ app.resources.length }} resources</span>
+                  <app-resource-grid-selection
+                    [resources]="app.resources"
+                    [label]="app.name">
+                  </app-resource-grid-selection>
+                </div>
               </header>
               <div class="resource-grid">
                 @for (resource of app.resources; track resource.id) {

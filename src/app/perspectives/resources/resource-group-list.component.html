@@ -43,35 +43,43 @@
         class="resource-group-card"
         [class.expanded]="isGroupExpanded(group.name)"
         >
-        <button
-          type="button"
-          class="resource-group-header"
-          (click)="toggleGroup(group.name)"
-          [attr.aria-expanded]="isGroupExpanded(group.name)"
-          >
-          <div class="group-title">
-            <div>
-              <p class="resource-kind">Resource group</p>
-              <h2 class="group-name">
-                <app-resource-type-icon type="resourceGroup"></app-resource-type-icon>
-                {{ group.name }}
-              </h2>
+        <header class="resource-group-heading">
+          <button
+            type="button"
+            class="resource-group-header"
+            (click)="toggleGroup(group.name)"
+            [attr.aria-expanded]="isGroupExpanded(group.name)">
+            <div class="group-title">
+              <div>
+                <p class="resource-kind">Resource group</p>
+                <h2 class="group-name">
+                  <app-resource-type-icon type="resourceGroup"></app-resource-type-icon>
+                  {{ group.name }}
+                </h2>
+              </div>
             </div>
-          </div>
-          <div class="group-meta">
-            <dl class="meta-item">
-              <dt>Location</dt>
-              <dd>{{ group.location }}</dd>
-            </dl>
-            @if (group.properties?.provisioningState) {
+            <div class="group-meta">
               <dl class="meta-item">
-                <dt>State</dt>
-                <dd>{{ group.properties?.provisioningState }}</dd>
+                <dt>Location</dt>
+                <dd>{{ group.location }}</dd>
               </dl>
-            }
-            <span class="chevron" [class.open]="isGroupExpanded(group.name)"></span>
-          </div>
-        </button>
+              @if (group.properties?.provisioningState) {
+                <dl class="meta-item">
+                  <dt>State</dt>
+                  <dd>{{ group.properties?.provisioningState }}</dd>
+                </dl>
+              }
+              <span class="chevron" [class.open]="isGroupExpanded(group.name)"></span>
+            </div>
+          </button>
+          @if (isGroupExpanded(group.name) && !loadingResources[group.name]) {
+            <app-resource-grid-selection
+              [resources]="filteredGroupResources(group.name)"
+              [resourceGroup]="group.name"
+              [label]="group.name">
+            </app-resource-grid-selection>
+          }
+        </header>
         @if (isGroupExpanded(group.name)) {
           <div class="resources-panel">
             @if (loadingResources[group.name]) {

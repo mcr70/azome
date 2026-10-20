@@ -1,0 +1,18 @@
+:host {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #0f766e;
+  cursor: pointer;
+}
+
+input:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
+}

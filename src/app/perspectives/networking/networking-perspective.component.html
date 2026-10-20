@@ -64,20 +64,26 @@
                     {{ topology.name }}
                   </h2>
                 </div>
-                <dl>
-                  <div>
-                    <dt>Resource group</dt>
-                    <dd>{{ topology.resourceGroup }}</dd>
-                  </div>
-                  <div>
-                    <dt>Address space</dt>
-                    <dd>{{ topology.addressPrefixes.join(', ') || 'Not configured' }}</dd>
-                  </div>
-                  <div>
-                    <dt>Region</dt>
-                    <dd>{{ topology.location }}</dd>
-                  </div>
-                </dl>
+                <div class="grid-heading-actions">
+                  <dl>
+                    <div>
+                      <dt>Resource group</dt>
+                      <dd>{{ topology.resourceGroup }}</dd>
+                    </div>
+                    <div>
+                      <dt>Address space</dt>
+                      <dd>{{ topology.addressPrefixes.join(', ') || 'Not configured' }}</dd>
+                    </div>
+                    <div>
+                      <dt>Region</dt>
+                      <dd>{{ topology.location }}</dd>
+                    </div>
+                  </dl>
+                  <app-resource-grid-selection
+                    [resources]="subnetSelectionResources(topology)"
+                    [label]="topology.name + ' subnets'">
+                  </app-resource-grid-selection>
+                </div>
               </header>
               @if (topology.peerings.length > 0) {
                 <div class="peering-list">

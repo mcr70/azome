@@ -34,7 +34,7 @@ export class ResourceCardComponent implements AfterViewInit {
   /** Resource group associated with this resource. */
   @Input() resourceGroup: string | null | undefined = '';
 
-  /** Shows a selection checkbox when true. */
+  /** Allows toggling selection by clicking the card when true. */
   @Input() selectable = false;
 
   /** Pixel size of the leading resource type icon. Defaults to 24. */
@@ -50,6 +50,12 @@ export class ResourceCardComponent implements AfterViewInit {
 
   constructor(private selection: ResourceSelectionService) {}
 
+  public ngAfterViewInit(): void {
+    if (this.resourceId && this.selection.isFirstSelected(this.resourceId)) {
+      this.cardElement.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+
   public get isSelected(): boolean {
     return this.resourceId ? this.selection.isSelected(this.resourceId) : false;
   }
@@ -63,36 +69,31 @@ export class ResourceCardComponent implements AfterViewInit {
     return this.instanceKey ? `${baseId}-${encodeURIComponent(this.instanceKey)}` : baseId;
   }
 
-  public get isSelecting(): boolean {
-    return this.selection.isSelecting;
-  }
-
   public encodeURIComponent(value: string): string {
     return encodeURIComponent(value);
   }
 
-  public ngAfterViewInit(): void {
-    if (this.resourceId && this.selection.isFirstSelected(this.resourceId)) {
-      this.cardElement.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  public onCardClick(event: MouseEvent): void {
+    const target = event.target;
+    if (target instanceof Element && target.closest(
+      'button, a, input, select, textarea, label, summary, [role="button"], [role="checkbox"], [contenteditable]'
+    )) {
+      return;
     }
+
+    this.toggleSelection();
   }
 
-  public onSelectionChange(event: Event): void {
-    if (!this.resourceId) {
+  public toggleSelection(): void {
+    if (!this.selectable || !this.resourceId) {
       return;
     }
 
-    const checkbox = event.target as HTMLInputElement;
-    if (checkbox.checked) {
-      this.selection.select({
-        id: this.resourceId,
-        type: this.type,
-        name: this.name,
-        resourceGroup: this.resourceGroup ?? ''
-      });
-      return;
-    }
-
-    this.selection.deselect(this.resourceId);
+    this.selection.toggleResources([{
+      id: this.resourceId,
+      type: this.type,
+      name: this.name,
+      resourceGroup: this.resourceGroup ?? ''
+    }]);
   }
 }

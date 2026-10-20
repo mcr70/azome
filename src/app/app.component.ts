@@ -121,8 +121,6 @@ export class AppComponent implements OnInit, OnDestroy {
           return;
         }
 
-        this.resourceSelection.finishSelecting();
-
         const route = event.urlAfterRedirects;
         const routePath = route.split(/[?#]/)[0];
         const perspectiveRoute = this.perspectiveRoute(routePath);
@@ -159,7 +157,6 @@ export class AppComponent implements OnInit, OnDestroy {
     }
 
     this.selectedPerspective = selectedPreference.id;
-    this.resourceSelection.finishSelecting();
     this.router.navigateByUrl(selectedPreference.route);
   }
 

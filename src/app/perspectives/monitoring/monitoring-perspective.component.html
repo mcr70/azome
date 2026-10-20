@@ -126,7 +126,13 @@
                     [attr.aria-label]="typeGroup.label">
                     <div class="type-heading">
                       <h3>{{ typeGroup.label }}</h3>
-                      <span>{{ typeGroup.resources.length }}</span>
+                      <div class="grid-heading-actions">
+                        <span>{{ typeGroup.resources.length }}</span>
+                        <app-resource-grid-selection
+                          [resources]="typeGroup.resources"
+                          [label]="typeGroup.label">
+                        </app-resource-grid-selection>
+                      </div>
                     </div>
                     <div class="resource-grid">
                       @for (resource of typeGroup.resources; track resource.id) {
@@ -148,7 +154,15 @@
                 <p class="resource-kind">Monitoring category</p>
                 <h2>Diagnostic settings</h2>
               </div>
-              <span class="resource-count">{{ filteredDiagnosticSettings.length }} settings</span>
+              <div class="grid-heading-actions">
+                <span class="resource-count">{{ filteredDiagnosticSettings.length }} settings</span>
+                @if (!loadingDiagnostics && !diagnosticError) {
+                  <app-resource-grid-selection
+                    [resources]="filteredDiagnosticSettings"
+                    label="Diagnostic settings">
+                  </app-resource-grid-selection>
+                }
+              </div>
             </header>
             @if (loadingDiagnostics) {
               <p role="status">

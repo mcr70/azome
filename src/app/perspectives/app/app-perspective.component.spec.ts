@@ -122,11 +122,7 @@ describe('AppPerspectiveComponent', () => {
     expect(cards.every((card) => card.componentInstance.selectable)).toBeTrue();
 
     const selection = TestBed.inject(ResourceSelectionService);
-    selection.startSelecting();
-    fixture.detectChanges();
-    const checkbox = element.querySelector<HTMLInputElement>('.resource-card input')!;
-    checkbox.checked = true;
-    checkbox.dispatchEvent(new Event('change'));
+    element.querySelector<HTMLElement>('.resource-name')!.click();
     fixture.detectChanges();
     expect(selection.isSelected(taggedFunction.id)).toBeTrue();
     expect(element.querySelectorAll('.resource-card.selected').length).toBe(2);
@@ -141,6 +137,31 @@ describe('AppPerspectiveComponent', () => {
     element.querySelector<HTMLButtonElement>('.details-action')!.click();
     expect(graph.getResourceDetails).toHaveBeenCalledWith(taggedFunction.id);
     expect(panels.openPanel).toHaveBeenCalledWith(cosmos);
+    expect(selection.isSelected(taggedFunction.id)).toBeTrue();
+  });
+
+  it('selects only visible app members and keeps selection shared across duplicate cards', () => {
+    component.selectTab('apps');
+    component.filterQuery = 'orders !function';
+    fixture.detectChanges();
+    const selection = TestBed.inject(ResourceSelectionService);
+    const selectedFunction = { ...taggedFunction, resourceGroup: 'production' };
+    selection.select(selectedFunction);
+
+    const selectAll = element.querySelector<HTMLInputElement>(
+      '#apps-panel .section-heading app-resource-grid-selection input'
+    )!;
+    selectAll.click();
+    fixture.detectChanges();
+    expect(selection.selectedResources.map((resource) => resource.id))
+      .toEqual([taggedFunction.id, cosmos.id]);
+    expect(selectAll.checked).toBeTrue();
+    expect(selectAll.indeterminate).toBeFalse();
+
+    selectAll.click();
+    fixture.detectChanges();
+    expect(selection.selectedResources).toEqual([selectedFunction]);
+    expect(selectAll.checked).toBeFalse();
   });
 
   it('supports switching tabs using the keyboard', () => {

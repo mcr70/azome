@@ -4,7 +4,18 @@
   [id]="cardId"
   [attr.data-resource-id]="resourceId"
   [class.selected]="isSelected"
-  [style.--resource-card-max-width]="maxWidth">
+  [class.selectable]="selectable && resourceId"
+  [style.--resource-card-max-width]="maxWidth"
+  (click)="onCardClick($event)">
+  @if (selectable && resourceId) {
+    <button
+      type="button"
+      class="resource-selection-toggle"
+      [attr.aria-pressed]="isSelected"
+      [attr.aria-label]="'Select ' + name"
+      (click)="toggleSelection()">
+    </button>
+  }
   <header class="resource-card-header">
     <div class="resource-title-area">
       <app-resource-type-icon
@@ -20,15 +31,6 @@
     <div class="resource-actions">
       <ng-content select="[card-header-trailing]"></ng-content>
       <ng-content select="[card-actions]"></ng-content>
-      @if (selectable && resourceId && isSelecting) {
-        <label class="resource-selection-control">
-          <input
-            type="checkbox"
-            [checked]="isSelected"
-            [attr.aria-label]="(isSelected ? 'Deselect ' : 'Select ') + name"
-            (change)="onSelectionChange($event)">
-        </label>
-      }
     </div>
   </header>
 

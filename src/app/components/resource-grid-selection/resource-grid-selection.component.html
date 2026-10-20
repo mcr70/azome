@@ -1,0 +1,9 @@
+@if (resources.length > 0) {
+  <input
+    type="checkbox"
+    [checked]="allSelected"
+    [indeterminate]="partiallySelected"
+    [attr.aria-label]="(allSelected ? 'Deselect all in ' : 'Select all in ') + label"
+    [title]="(allSelected ? 'Deselect all in ' : 'Select all in ') + label"
+    (change)="toggleSelection()">
+}

@@ -121,12 +121,20 @@
   }
 }
 
+.resource-group-heading {
+  display: flex;
+  align-items: center;
+  padding-right: 24px;
+  background: #f8fafc;
+}
+
 .resource-group-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 24px;
   width: 100%;
+  min-width: 0;
   padding: 20px 24px;
   border: none;
   background: #f8fafc;

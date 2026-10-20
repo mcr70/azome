@@ -88,9 +88,13 @@
                 <h3>
                   {{ typeGroup.label }}
                 </h3>
-                <span>
-                  {{ typeGroup.resources.length }}
-                </span>
+                <div class="grid-heading-actions">
+                  <span>{{ typeGroup.resources.length }}</span>
+                  <app-resource-grid-selection
+                    [resources]="typeGroup.resources"
+                    [label]="typeGroup.label">
+                  </app-resource-grid-selection>
+                </div>
               </div>
               <div class="resource-grid">
                 @for (resource of typeGroup.resources; track resource.id) {
