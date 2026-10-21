@@ -17,3 +17,34 @@
 .resource-detail-table td {
   overflow-wrap: anywhere;
 }
+
+.workspace-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.workspace-heading h3 {
+  margin: 0;
+}
+
+.kql-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #fff;
+  color: #0f766e;
+  cursor: pointer;
+}
+
+.kql-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

@@ -32,6 +32,46 @@ const server = http.createServer((request, response) => {
     return;
   }
 
+  const logsMatch = requestUrl.pathname.match(
+    /^\/log-analytics-proxy(\/v1\/workspaces\/[a-z0-9-]+\/(metadata|query))$/i
+  );
+  if (logsMatch) {
+    const expectedMethod = logsMatch[2].toLowerCase() === 'metadata' ? 'GET' : 'POST';
+    if (request.method !== expectedMethod) {
+      response.writeHead(405, corsHeaders(request, { 'content-type': 'text/plain; charset=utf-8' }));
+      response.end(`Only ${expectedMethod} requests are allowed for this route.`);
+      return;
+    }
+
+    const headers = { ...request.headers };
+    delete headers.origin;
+    delete headers.connection;
+    delete headers['proxy-authorization'];
+    headers.host = 'api.loganalytics.azure.com';
+    const upstream = https.request({
+      hostname: 'api.loganalytics.azure.com',
+      path: logsMatch[1] + requestUrl.search,
+      method: request.method,
+      headers
+    }, upstreamResponse => {
+      response.writeHead(
+        upstreamResponse.statusCode || 502,
+        corsHeaders(request, upstreamResponse.headers)
+      );
+      upstreamResponse.pipe(response);
+    });
+    upstream.setTimeout(90000, () => upstream.destroy(new Error('Log Analytics request timed out.')));
+    upstream.on('error', error => {
+      if (!response.headersSent) {
+        response.writeHead(502, corsHeaders(request, { 'content-type': 'application/json' }));
+      }
+      response.end(JSON.stringify({ error: { message: error.message } }));
+    });
+    response.on('close', () => upstream.destroy());
+    request.pipe(upstream);
+    return;
+  }
+
   const cosmosMatch = requestUrl.pathname.match(/^\/cosmos-proxy\/([a-z0-9-]{3,44})(\/.*)?$/i);
   if (cosmosMatch) {
     const allowedCosmosMethods = new Set(['GET', 'POST', 'PUT', 'DELETE']);

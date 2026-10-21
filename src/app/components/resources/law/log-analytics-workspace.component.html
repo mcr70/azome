@@ -1,7 +1,12 @@
 <section aria-label="Log Analytics workspace details">
-  <h3 class="resource-detail-heading">
-    Log Analytics workspace
-  </h3>
+  <div class="workspace-heading">
+    <h3 class="resource-detail-heading">Log Analytics workspace</h3>
+    <button type="button" class="kql-button" title="Query workspace logs"
+      aria-label="Query workspace logs" [disabled]="!properties?.customerId"
+      (click)="kqlDialogOpen = true">
+      <svg [lucideIcon]="searchIcon" [size]="18" aria-hidden="true"></svg>
+    </button>
+  </div>
 
   @if (properties; as workspace) {
     <div class="resource-detail-table-wrapper">
@@ -82,3 +87,8 @@
     </p>
   }
 </section>
+
+@if (kqlDialogOpen && properties?.customerId) {
+  <app-kql [workspaceId]="properties!.customerId!" [workspaceName]="resource?.name ?? ''"
+    (close)="kqlDialogOpen = false"></app-kql>
+}

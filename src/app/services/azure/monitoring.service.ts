@@ -32,6 +32,7 @@ export interface MonitoringResource {
   location: string;
   category: MonitoringResourceCategory;
   properties?: {
+    customerId?: string;
     retentionInDays?: number;
   };
 }

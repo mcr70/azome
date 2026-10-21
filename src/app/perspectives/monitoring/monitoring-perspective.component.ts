@@ -1,5 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { LucideDynamicIcon, LucideSearch } from '@lucide/angular';
+import { KqlComponent } from '@components/kql/kql.component';
 import { Subject, Subscription, forkJoin } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
@@ -44,6 +46,8 @@ interface MonitoringResourceCategoryGroup {
   standalone: true,
   imports: [
     NgTemplateOutlet,
+    LucideDynamicIcon,
+    KqlComponent,
     ActivityLogComponent,
     LogAnalyticsComponent,
     ResourceCardComponent,
@@ -56,6 +60,8 @@ interface MonitoringResourceCategoryGroup {
   styleUrl: './monitoring-perspective.component.scss'
 })
 export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
+  public readonly searchIcon = LucideSearch.icon;
+  public kqlWorkspace: { id: string; name: string } | null = null;
   public activeTab: 'overview' | 'log-analytics' | 'activity' = 'overview';
   public resources: MonitoringResource[] = [];
   public workspaces: LogAnalyticsWorkspace[] = [];
@@ -176,6 +182,7 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
             resourceGroup: resource.resourceGroup,
             location: resource.location,
             properties: {
+              customerId: resource.properties?.customerId,
               retentionInDays: resource.properties?.retentionInDays
             }
           }));
@@ -217,6 +224,15 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
 
   public selectTab(tab: 'overview' | 'log-analytics' | 'activity'): void {
     this.activeTab = tab;
+  }
+
+  public openWorkspaceQuery(resource: MonitoringResource, event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const workspaceId = resource.properties?.customerId;
+    if (workspaceId) {
+      this.kqlWorkspace = { id: workspaceId, name: resource.name };
+    }
   }
 
   public openResourceDetails(resourceId: string, event?: Event): void {

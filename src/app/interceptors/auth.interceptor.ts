@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
 import { MsalService } from '@azure/msal-angular';
+import { InteractionRequiredAuthError } from '@azure/msal-browser';
 import { EMPTY, Observable, from, throwError } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
 @Injectable()
 export class AuthInterceptor implements HttpInterceptor {
   private loginRedirectStarted = false;
+  private consentRedirectStarted = false;
 
   constructor(private authService: MsalService) {}
 
@@ -19,6 +21,8 @@ export class AuthInterceptor implements HttpInterceptor {
       scope = ['User.Read'];
     } else if (req.url.includes('/cosmos-proxy/')) {
       scope = ['https://cosmos.azure.com/user_impersonation'];
+    } else if (req.url.includes('/log-analytics-proxy/')) {
+      scope = ['https://api.loganalytics.io/Data.Read'];
     } 
     else {
       return next.handle(req); // An API request that doesn't match known patterns, skip token acquisition
@@ -58,13 +62,29 @@ export class AuthInterceptor implements HttpInterceptor {
           return EMPTY;
         }
 
-        if (scope[0].startsWith('https://cosmos.azure.com/')
-          && (errorCode === 'interaction_required' || errorCode === 'consent_required')) {
-          this.authService.acquireTokenRedirect({
+        const interactionRequired = error instanceof InteractionRequiredAuthError
+          || [errorCode, subError].some((code) =>
+            code === 'interaction_required' || code === 'consent_required'
+          )
+          || /\bAADSTS65001\b/.test(errorMessage);
+
+        if ((scope[0].startsWith('https://cosmos.azure.com/')
+          || scope[0].startsWith('https://api.loganalytics.io/'))
+          && interactionRequired) {
+          if (this.consentRedirectStarted) {
+            return EMPTY;
+          }
+          this.consentRedirectStarted = true;
+          return this.authService.acquireTokenRedirect({
             scopes: scope,
             prompt: 'consent'
-          });
-          return EMPTY;
+          }).pipe(
+            switchMap(() => EMPTY),
+            catchError((redirectError: unknown) => {
+              this.consentRedirectStarted = false;
+              return throwError(() => redirectError);
+            })
+          );
         }
         return throwError(() => error);
       })

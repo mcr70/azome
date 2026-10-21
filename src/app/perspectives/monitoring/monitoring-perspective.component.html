@@ -287,6 +287,17 @@
     [resourceGroup]="resource.resourceGroup"
     [selectable]="true">
     <ng-container card-actions>
+      @if (resource.type.toLowerCase() === 'microsoft.operationalinsights/workspaces') {
+        <button
+          class="resource-action kql-action"
+          type="button"
+          [attr.aria-label]="'Query logs for ' + resource.name"
+          [disabled]="!resource.properties?.customerId"
+          (click)="openWorkspaceQuery(resource, $event)"
+          title="Query workspace logs">
+          <svg [lucideIcon]="searchIcon" [size]="18" aria-hidden="true"></svg>
+        </button>
+      }
       <button
         class="resource-action details-action"
         type="button"
@@ -302,3 +313,11 @@
     </ng-container>
   </app-resource-card>
 </ng-template>
+
+@if (kqlWorkspace; as workspace) {
+  <app-kql
+    [workspaceId]="workspace.id"
+    [workspaceName]="workspace.name"
+    (close)="kqlWorkspace = null">
+  </app-kql>
+}

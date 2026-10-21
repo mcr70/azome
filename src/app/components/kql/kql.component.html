@@ -1,0 +1,205 @@
+<dialog #dialog class="kql-backdrop" aria-labelledby="kql-dialog-title"
+  (cancel)="$event.preventDefault(); $event.stopPropagation(); close.emit()">
+  <section class="kql-dialog">
+    <header class="kql-header">
+      <div>
+        <h2 id="kql-dialog-title">KQL query</h2>
+        <p class="workspace-name">{{ workspaceName || workspaceId }}</p>
+      </div>
+      <button type="button" class="icon-button" title="Close" aria-label="Close KQL dialog"
+        (click)="close.emit()">
+        <svg [lucideIcon]="closeIcon" [size]="20" aria-hidden="true"></svg>
+      </button>
+    </header>
+
+    <div class="kql-layout">
+      <aside class="schema" aria-label="Workspace tables">
+        <h3>Tables</h3>
+        <input type="search" aria-label="Filter tables" placeholder="Filter tables"
+          [(ngModel)]="tableFilter" />
+        <select aria-label="Table scope" [(ngModel)]="tableScope" [disabled]="tablesLoading">
+          <option value="recent" [disabled]="activeTableNames === null">
+            Data received (30 days)
+          </option>
+          <option value="all">All tables</option>
+        </select>
+        @if (tablesLoading) {
+          <p role="status">Loading tables...</p>
+        } @else if (tablesError) {
+          <p class="error" role="alert">{{ tablesError }}</p>
+          <button type="button" (click)="loadTables()">Retry</button>
+        } @else {
+          @if (activityError) {
+            <p class="error" role="alert">Table activity unavailable: {{ activityError }}</p>
+            <button type="button" (click)="loadTables()">Retry</button>
+          }
+          <div class="table-list">
+            @for (table of filteredTables; track table.name) {
+              <div class="table-row" [class.selected]="selectedTable?.name === table.name">
+                <button type="button" class="table-name" (click)="selectTable(table)" [disabled]="loading"
+                  [attr.aria-pressed]="selectedTable?.name === table.name"
+                  [title]="'Load default query for ' + table.name">
+                  {{ table.name }}
+                </button>
+              </div>
+            } @empty {
+              <p>
+                {{ tableFilter ? 'No matching tables.' : tableScope === 'recent'
+                  ? 'No tables with recorded ingestion in the last 30 days.' : 'No tables available.' }}
+              </p>
+            }
+          </div>
+        }
+      </aside>
+
+      <div class="query-pane">
+        <form (ngSubmit)="runQuery()">
+          <div class="saved-query-controls">
+            <details #savedQueriesMenu class="saved-queries-menu"
+              (keydown.escape)="savedQueriesMenu.open = false; $event.preventDefault(); $event.stopPropagation()">
+              <summary aria-label="Saved queries">
+                <span>{{ selectedSavedQueryName || 'Saved queries' }}</span>
+                <svg [lucideIcon]="chevronIcon" [size]="16" aria-hidden="true"></svg>
+              </summary>
+              <ul class="saved-query-list" aria-label="Saved queries">
+                @for (savedQuery of savedQueries; track savedQuery.name) {
+                  <li>
+                    <button type="button" class="saved-query-select" [disabled]="loading"
+                      [attr.aria-pressed]="selectedSavedQueryName === savedQuery.name"
+                      (click)="selectSavedQuery(savedQuery)">
+                      {{ savedQuery.name }}
+                    </button>
+                    <button type="button" class="icon-button delete-query"
+                      [attr.aria-label]="'Delete saved query ' + savedQuery.name"
+                      [title]="'Delete saved query ' + savedQuery.name"
+                      (click)="deleteSavedQuery(savedQuery.name)">
+                      <svg [lucideIcon]="closeIcon" [size]="16" aria-hidden="true"></svg>
+                    </button>
+                  </li>
+                } @empty {
+                  <li class="empty-saved-queries">No saved queries.</li>
+                }
+              </ul>
+            </details>
+            <div class="save-query-controls">
+              <input type="text" name="queryName" aria-label="Query name" placeholder="Query name"
+                [(ngModel)]="queryName" />
+              <button type="button" class="icon-button save-button"
+                [disabled]="!queryName.trim() || !query.trim()" (click)="saveQuery()"
+                title="Save query" aria-label="Save query">
+                <svg [lucideIcon]="saveIcon" [size]="16" aria-hidden="true"></svg>
+              </button>
+            </div>
+          </div>
+          <label for="kql-query">KQL</label>
+          <textarea id="kql-query" name="query" [(ngModel)]="query" rows="7"
+            spellcheck="false" required autofocus></textarea>
+          <div class="query-actions">
+            <label for="kql-timespan">Time range</label>
+            <select id="kql-timespan" name="timespan" [(ngModel)]="timespan" [disabled]="loading">
+              <option value="PT1H">Last hour</option>
+              <option value="P1D">Last 24 hours</option>
+              <option value="P7D">Last 7 days</option>
+              <option value="P30D">Last 30 days</option>
+            </select>
+            <button type="submit" class="icon-button run-button" [disabled]="loading || !query.trim()"
+              [title]="loading ? 'Running query...' : 'Run query'" aria-label="Run query">
+              <svg [lucideIcon]="playIcon" [size]="16" aria-hidden="true"></svg>
+            </button>
+            @if (loading) {
+              <button type="button" title="Cancel query" aria-label="Cancel query"
+                class="icon-button" (click)="cancelQuery()">
+                <svg [lucideIcon]="stopIcon" [size]="16" aria-hidden="true"></svg>
+              </button>
+            }
+          </div>
+        </form>
+
+        @if (savedQueryError) {
+          <p class="error" role="alert">{{ savedQueryError }}</p>
+        }
+
+        <details #sourceTablesPanel class="source-tables"
+          (toggle)="onSourceTablesToggle(sourceTablesPanel.open)">
+          <summary>Source tables</summary>
+          <div class="source-tables-toolbar">
+            @if (sourceScanDurationMs !== null) {
+              <span role="status">
+                {{ sourceTables.length }} tables, scan {{ sourceScanDurationMs.toFixed(2) }} ms
+              </span>
+            }
+            <button type="button" class="rescan-button" (click)="scanSourceTables()"
+              [disabled]="tablesLoading || !!tablesError" title="Rescan source tables">
+              <svg [lucideIcon]="rescanIcon" [size]="16" aria-hidden="true"></svg>
+              Rescan
+            </button>
+          </div>
+          @if (tablesLoading) {
+            <p role="status">Loading table schemas...</p>
+          } @else if (tablesError) {
+            <p class="error">{{ tablesError }}</p>
+          } @else if (sourceScanDurationMs !== null) {
+            @for (table of sourceTables; track table.name) {
+              <details class="column-info" [open]="$first">
+                <summary>{{ table.name }}: {{ table.columns.length }} columns</summary>
+                <dl class="column-list">
+                  @for (column of table.columns; track column.name) {
+                    <div>
+                      <dt>{{ column.name }}</dt>
+                      <dd>{{ column.type }}</dd>
+                    </div>
+                  } @empty {
+                    <div>No columns available.</div>
+                  }
+                </dl>
+              </details>
+            } @empty {
+              <p>No known source tables found.</p>
+            }
+          }
+        </details>
+
+        @if (queryError) {
+          <p class="error" role="alert">{{ queryError }}</p>
+        }
+        @if (loading) {
+          <p role="status">Running query...</p>
+        }
+        @if (results !== null) {
+          <section class="results" aria-label="Query results">
+            <h3>Results</h3>
+            @for (table of results; track $index) {
+              <p class="result-count">{{ table.name }}: {{ table.rows.length }} rows</p>
+              @if (table.rows.length) {
+                <div class="results-scroll" tabindex="0" role="region" [attr.aria-label]="table.name">
+                  <table>
+                    <thead>
+                      <tr>
+                        @for (column of table.columns; track $index) {
+                          <th scope="col" [title]="column.type">{{ column.name }}</th>
+                        }
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (row of table.rows; track $index) {
+                        <tr>
+                          @for (cell of row; track $index) {
+                            <td>{{ formatCell(cell) }}</td>
+                          }
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              } @else {
+                <p>No results.</p>
+              }
+            } @empty {
+              <p>No results.</p>
+            }
+          </section>
+        }
+      </div>
+    </div>
+  </section>
+</dialog>

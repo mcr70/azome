@@ -2,13 +2,22 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ResourceDetailHostComponent } from '@components/resources/resource-detail-host.component';
 import { ResourceDetailRegistryService } from '@services/azome/resource-detail.registry';
 import { LogAnalyticsWorkspaceComponent } from './log-analytics-workspace.component';
+import { LogAnalyticsService } from '@services/azure/log-analytics.service';
+import { of } from 'rxjs';
 
 describe('LogAnalyticsWorkspaceComponent', () => {
   let fixture: ComponentFixture<LogAnalyticsWorkspaceComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [LogAnalyticsWorkspaceComponent, ResourceDetailHostComponent]
+      imports: [LogAnalyticsWorkspaceComponent, ResourceDetailHostComponent],
+      providers: [{
+        provide: LogAnalyticsService,
+        useValue: {
+          getTables: () => of([]),
+          getActiveTableNames: () => of([])
+        }
+      }]
     }).compileComponents();
     fixture = TestBed.createComponent(LogAnalyticsWorkspaceComponent);
   });
@@ -82,6 +91,28 @@ describe('LogAnalyticsWorkspaceComponent', () => {
     const element: HTMLElement = fixture.nativeElement;
     expect(element.textContent).toContain('No Log Analytics workspace details available.');
     expect(element.querySelector('table')).toBeNull();
+  });
+
+  it('opens KQL for the selected workspace and closes it', () => {
+    fixture.componentRef.setInput('resource', {
+      name: 'Workspace one',
+      properties: { customerId: 'workspace-one' }
+    });
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+    (element.querySelector('.kql-button') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(element.querySelector('dialog')?.open).toBeTrue();
+    expect(element.querySelector('app-kql')?.textContent).toContain('Workspace one');
+    (element.querySelector('[aria-label="Close KQL dialog"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(element.querySelector('app-kql')).toBeNull();
+  });
+
+  it('disables querying when the workspace ID is missing', () => {
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+    expect((element.querySelector('.kql-button') as HTMLButtonElement).disabled).toBeTrue();
   });
 
   it('registers the workspace type case-insensitively and renders through the detail host', () => {
