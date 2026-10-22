@@ -35,6 +35,13 @@ resource "azurerm_linux_function_app" "func" {
     }
   }
 
+  app_settings = {
+    "FUNCTIONS_WORKER_RUNTIME" = "node"
+    "AzureWebJobsFeatureFlags" = "EnableWorkerIndexing"
+    # Kertoo Azurelle, että funktiot löytyvät suoraan index.js -tiedostosta tai projektin juuresta
+    "scriptRoot"               = "" 
+  }
+
   tags = {
     azome-apps = "sample" // azome-apps marks this as being part of app called "sample"
   }

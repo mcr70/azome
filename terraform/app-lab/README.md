@@ -12,7 +12,7 @@ brew install azure-functions-core-tools@4
 # To deploy
 cd function_app/
 npm install
-func azure functionapp publish azome-test-func-app-2026
+func azure functionapp publish azome-test-func-app-2026 --javascript
 
 # To stop and start
 az functionapp stop --name azome-test-func-app-2026 --resource-group rg-app-lab
