@@ -43,6 +43,24 @@ interface ResourceGraphResponse {
   data: AzureNetworkResource[];
 }
 
+export interface ResourceGraphQueryResult {
+  columns: { name: string; type: string }[];
+  rows: Record<string, unknown>[];
+  totalRecords: number;
+  resultTruncated: 'true' | 'false';
+  $skipToken?: string;
+}
+
+interface ResourceGraphTableResponse {
+  data: {
+    columns: ResourceGraphQueryResult['columns'];
+    rows: unknown[][];
+  };
+  totalRecords: number;
+  resultTruncated: 'true' | 'false';
+  $skipToken?: string;
+}
+
 interface AzureNetworkResource {
   id: string;
   name: string;
@@ -193,17 +211,25 @@ export class ResourceGraphService {
     );
   }
 
-  public executeQuery(query: string): Observable<unknown[]> {
+  public executeQuery(query: string): Observable<ResourceGraphQueryResult> {
     const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
 
-    return this.http.post<{ data: unknown[] }>(url, {
+    return this.http.post<ResourceGraphTableResponse>(url, {
       subscriptions: [environment.azure.subscriptionId],
       query,
       options: {
-        resultFormat: 'objectArray'
+        resultFormat: 'table'
       }
     }).pipe(
-      map((response) => response.data)
+      map((response) => ({
+        columns: response.data.columns,
+        rows: response.data.rows.map((values) => Object.fromEntries(
+          response.data.columns.map((column, index) => [column.name, values[index]])
+        )),
+        totalRecords: response.totalRecords,
+        resultTruncated: response.resultTruncated,
+        $skipToken: response.$skipToken
+      }))
     );
   }
 

@@ -5,10 +5,13 @@ import { QueryEditorComponent } from './components/query-editor/query-editor.com
 import { AuthService } from './services/azome/auth.service';
 import { ResourceSelectionService } from './services/azome/resource-selection.service';
 import { ProfileService } from './services/azure/profile.service';
-import { ResourceGraphService } from './services/azure/resource-graph.service';
+import {
+  ResourceGraphQueryResult,
+  ResourceGraphService
+} from './services/azure/resource-graph.service';
 import { DEFAULT_PERSPECTIVES } from './components/preferences/perspective-preference.model';
 import { Router } from '@angular/router';
-import { EMPTY, throwError } from 'rxjs';
+import { EMPTY, of, throwError } from 'rxjs';
 
 describe('AppComponent', () => {
   let router: jasmine.SpyObj<Router>;
@@ -102,6 +105,159 @@ describe('AppComponent', () => {
     expect(app.resourceGraphQueryLoading).toBeFalse();
   });
 
+  it('renders projected and aggregate columns in response order without resource actions', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    const result: ResourceGraphQueryResult = {
+      columns: [{ name: 'location', type: 'string' }, { name: 'count_', type: 'long' }],
+      rows: [{ location: 'northeurope', count_: 0 }],
+      totalRecords: 1,
+      resultTruncated: 'false'
+    };
+    spyOn(TestBed.inject(ResourceGraphService), 'executeQuery').and.returnValue(of(result));
+    app.resourceGraphDialogOpen = true;
+
+    app.runResourceGraphQuery();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(Array.from(element.querySelectorAll('th')).map((cell) => cell.textContent?.trim()))
+      .toEqual(['location', 'count_']);
+    expect(element.querySelector('.resource-graph-row')?.textContent).toContain('northeurope');
+    expect(element.querySelector('.resource-graph-row')?.textContent).toContain('0');
+    expect(element.querySelector('.add-all-resources-button')).toBeNull();
+    expect(element.querySelector('.resource-graph-json-row')).toBeNull();
+
+    element.querySelector<HTMLTableRowElement>('.resource-graph-row')!.click();
+    fixture.detectChanges();
+    expect(element.querySelector('pre')?.textContent).toBe(JSON.stringify(result.rows[0], null, 2));
+
+    expect(element.querySelector('.resource-graph-json-row td')?.getAttribute('colspan')).toBe('2');
+    element.querySelector<HTMLTableRowElement>('.resource-graph-row')!
+      .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    fixture.detectChanges();
+    expect(element.querySelector('.resource-graph-json-row')).toBeNull();
+  });
+
+  it('limits wide results to eight columns and allows hidden columns to be shown', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    const names = ['id', 'properties', 'tags', 'name', 'type', 'resourceGroup', 'location',
+      'subscriptionId', 'kind', 'custom', 'name1'];
+    const result: ResourceGraphQueryResult = {
+      columns: names.map((name) => ({
+        name,
+        type: ['properties', 'tags'].includes(name) ? 'dynamic' : 'string'
+      })),
+      rows: [Object.fromEntries(names.map((name) => [
+        name, ['properties', 'tags'].includes(name) ? { nested: true } : name
+      ]))],
+      totalRecords: 50,
+      resultTruncated: 'true',
+      $skipToken: 'next'
+    };
+    spyOn(TestBed.inject(ResourceGraphService), 'executeQuery').and.returnValue(of(result));
+    app.resourceGraphDialogOpen = true;
+    app.runResourceGraphQuery();
+    fixture.detectChanges();
+
+    expect(app.resourceGraphVisibleColumns).toEqual([
+      'name', 'type', 'resourceGroup', 'location', 'id', 'subscriptionId', 'kind', 'custom'
+    ]);
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.resource-graph-result-count')?.textContent)
+      .toContain('Showing 1 of 50 results.');
+    expect(element.querySelector('.resource-graph-result-count')?.textContent)
+      .toContain('Results are incomplete.');
+    const checkbox = element.querySelectorAll<HTMLInputElement>('.resource-graph-columns input')[10];
+    checkbox.click();
+    fixture.detectChanges();
+    expect(app.resourceGraphVisibleColumns).toContain('name1');
+    expect(app.resourceGraphVisibleColumns.slice(0, 4))
+      .toEqual(['name', 'type', 'resourceGroup', 'location']);
+    expect(element.querySelectorAll('th').length).toBe(10);
+
+    element.querySelector<HTMLButtonElement>('.add-resource-button')!.click();
+    fixture.detectChanges();
+    expect(app.expandedResourceGraphRows.size).toBe(0);
+    expect(TestBed.inject(ResourceSelectionService).selectedResources.length).toBe(1);
+
+    app.toggleResourceGraphRow(0);
+    app.runResourceGraphQuery();
+    expect(app.expandedResourceGraphRows.size).toBe(0);
+    expect(app.resourceGraphVisibleColumns.length).toBe(8);
+  });
+
+  it('keeps at least one column visible and formats structured and missing cell values', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    spyOn(TestBed.inject(ResourceGraphService), 'executeQuery').and.returnValue(of({
+      columns: [{ name: 'count_', type: 'long' }],
+      rows: [{ count_: 3 }],
+      totalRecords: 1,
+      resultTruncated: 'false'
+    }));
+    app.runResourceGraphQuery();
+    app.toggleResourceGraphColumn('count_');
+
+    expect(app.resourceGraphVisibleColumns).toEqual(['count_']);
+    expect(app.resourceGraphCell(null)).toBe('\u2014');
+    expect(app.resourceGraphCell(undefined)).toBe('\u2014');
+    expect(app.resourceGraphCell(false)).toBe('false');
+    expect(app.resourceGraphCell(0)).toBe('0');
+    expect(app.resourceGraphCell({ nested: true })).toBe('{...}');
+    expect(app.resourceGraphCell(['one', 'two'])).toBe('2 items');
+  });
+
+  it('renders heterogeneous rows without requiring resource identifiers', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    spyOn(TestBed.inject(ResourceGraphService), 'executeQuery').and.returnValue(of({
+      columns: [
+        { name: 'name1', type: 'string' },
+        { name: 'state', type: 'string' },
+        { name: 'properties', type: 'dynamic' }
+      ],
+      rows: [
+        { name1: 'policy', state: null, properties: { enabled: true } },
+        { name1: null, state: 'Compliant', properties: ['one', 'two'] }
+      ],
+      totalRecords: 2,
+      resultTruncated: 'false'
+    }));
+    app.resourceGraphDialogOpen = true;
+    app.runResourceGraphQuery();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const rows = element.querySelectorAll('.resource-graph-row');
+    expect(rows.length).toBe(2);
+    expect(rows[0].textContent).toContain('{...}');
+    expect(rows[0].textContent).toContain('\u2014');
+    expect(rows[1].textContent).toContain('2 items');
+    expect(element.querySelector('.add-resource-button')).toBeNull();
+    expect(element.querySelector('.resource-graph-result-count')?.textContent)
+      .not.toContain('incomplete');
+  });
+
+  it('shows an empty state instead of a table when a query returns no rows', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    spyOn(TestBed.inject(ResourceGraphService), 'executeQuery').and.returnValue(of({
+      columns: [{ name: 'name', type: 'string' }],
+      rows: [],
+      totalRecords: 0,
+      resultTruncated: 'false'
+    }));
+    app.resourceGraphDialogOpen = true;
+    app.runResourceGraphQuery();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.resource-graph-results')?.textContent).toContain('No results.');
+    expect(element.querySelector('.resource-graph-table')).toBeNull();
+  });
+
   it('adds all selectable Resource Graph results to the shared selection', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
@@ -186,6 +342,27 @@ describe('AppComponent', () => {
     const content = element.querySelector('#resource-graph-query');
     expect(content?.textContent).toBe("resources | where type contains 'storage'");
     expect(element.querySelector('.resource-graph-query-form textarea')).toBeNull();
+  });
+
+  it('scrolls long queries while reserving space for query results', async () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    app.resourceGraphDialogOpen = true;
+    app.resourceGraphQuery = ['Resources', ...Array(60).fill('| extend example = name')].join('\n');
+    app.resourceGraphResults = [];
+    fixture.detectChanges();
+    await fixture.debugElement.query(By.directive(QueryEditorComponent))
+      .componentInstance.whenReady();
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const editor = element.querySelector<HTMLElement>('app-query-editor')!;
+    const results = element.querySelector<HTMLElement>('.resource-graph-results')!;
+    expect(editor.getBoundingClientRect().height).toBeLessThanOrEqual(181);
+    expect(editor.scrollHeight).toBeGreaterThan(editor.clientHeight);
+    expect(getComputedStyle(editor).overflowY).toBe('auto');
+    expect(results.getBoundingClientRect().height)
+      .toBeGreaterThanOrEqual(Math.min(window.innerHeight * 0.25, 200) - 1);
   });
 
   it('resets the query and name when the saved query placeholder is selected', () => {

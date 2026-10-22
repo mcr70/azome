@@ -15,6 +15,20 @@ hosting, the Entra ID application registration, and a small Node.js data proxy.
 - Terraform 1.5 or newer
 - An Azure subscription and an Entra ID account allowed to create app registrations
 
+## Resource Graph queries
+
+The Resource Graph tool displays query results as a table using the returned
+column names. Up to eight columns are shown initially for wide results, with
+common resource fields prioritized for resource-shaped results. Use **Columns**
+to show or hide fields, or `project` in the query to choose the output explicitly.
+Objects and arrays have compact cell summaries.
+
+Click a row or focus it and press **Enter** to toggle the JSON returned by the query.
+Projected-out fields are not fetched separately. Resource selection remains
+available for rows containing `id`, `name`, and `type`.
+The result count and an incomplete-results notice indicate when only part of a
+result set was returned; additional pages are not loaded automatically.
+
 ## Deploy to Azure
 
 ### 1. Sign in and select a subscription

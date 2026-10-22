@@ -11,7 +11,10 @@ import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { AuthService } from './services/azome/auth.service';
 import { ProfileService } from './services/azure/profile.service';
-import { ResourceGraphService } from './services/azure/resource-graph.service';
+import {
+  ResourceGraphQueryResult,
+  ResourceGraphService
+} from './services/azure/resource-graph.service';
 import { PreferencesComponent } from './components/preferences/preferences.component';
 import { QueryEditorComponent } from './components/query-editor/query-editor.component';
 import {
@@ -106,6 +109,9 @@ export class AppComponent implements OnInit, OnDestroy {
   public resourceGraphQueryLoading = false;
   public resourceGraphQueryError: string | null = null;
   public resourceGraphResults: unknown[] | null = null;
+  public resourceGraphQueryResult: ResourceGraphQueryResult | null = null;
+  public resourceGraphVisibleColumns: string[] = [];
+  public readonly expandedResourceGraphRows = new Set<number>();
   public savedResourceGraphQueries: SavedResourceGraphQuery[] = [];
   public selectedSavedResourceGraphQueryName = '';
   public resourceGraphQueryName = '';
@@ -312,13 +318,31 @@ export class AppComponent implements OnInit, OnDestroy {
     this.resourceGraphQueryLoading = true;
     this.resourceGraphQueryError = null;
     this.resourceGraphResults = null;
+    this.resourceGraphQueryResult = null;
+    this.resourceGraphVisibleColumns = [];
+    this.expandedResourceGraphRows.clear();
     this.resourceGraphQuerySubscription = this.resourceGraph.executeQuery(query)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (results) => {
-          this.resourceGraphResults = results;
+        next: (result) => {
+          this.resourceGraphQueryResult = result;
+          this.resourceGraphResults = result.rows;
+          const columns = result.columns.map((column) => column.name);
+          const preferred = columns.length > 8
+            && ['id', 'name', 'type'].every((name) => columns.includes(name))
+            ? ['name', 'type', 'resourceGroup', 'location']
+              .filter((name) => columns.includes(name))
+            : [];
+          const scalarColumns = result.columns
+            .filter((column) => column.type !== 'dynamic' || result.rows.some((row) =>
+              row[column.name] !== null && typeof row[column.name] !== 'object'
+            ))
+            .map((column) => column.name);
+          this.resourceGraphVisibleColumns = columns.length <= 8
+            ? columns
+            : [...new Set([...preferred, ...scalarColumns, ...columns])].slice(0, 8);
           collectDynamicPaths(
-            results.filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null),
+            result.rows,
             this.resourceGraphDynamicPaths
           );
           this.resourceGraphQueryLoading = false;
@@ -344,6 +368,40 @@ export class AppComponent implements OnInit, OnDestroy {
     this.resourceGraphQuerySubscription = null;
     this.resourceGraphQueryLoading = false;
     this.resourceGraphDialogOpen = false;
+  }
+
+  public toggleResourceGraphColumn(name: string): void {
+    if (this.resourceGraphVisibleColumns.includes(name)) {
+      if (this.resourceGraphVisibleColumns.length === 1) {
+        return;
+      }
+      this.resourceGraphVisibleColumns = this.resourceGraphVisibleColumns
+        .filter((column) => column !== name);
+    } else {
+      this.resourceGraphVisibleColumns = [...this.resourceGraphVisibleColumns, name];
+    }
+  }
+
+  public toggleResourceGraphRow(index: number): void {
+    if (this.expandedResourceGraphRows.has(index)) {
+      this.expandedResourceGraphRows.delete(index);
+    } else {
+      this.expandedResourceGraphRows.add(index);
+    }
+  }
+
+  public resourceGraphCell(value: unknown): string {
+    if (value === null || value === undefined) {
+      return '\u2014';
+    }
+    if (Array.isArray(value)) {
+      return `${value.length} items`;
+    }
+    return typeof value === 'object' ? '{...}' : String(value);
+  }
+
+  public get hasSelectableResourceGraphResults(): boolean {
+    return this.resourceGraphResults?.some((row) => this.toSelectedAzureResource(row) !== null) ?? false;
   }
 
   public toSelectedAzureResource(result: unknown): SelectedAzureResource | null {

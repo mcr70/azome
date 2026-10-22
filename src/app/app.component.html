@@ -147,9 +147,10 @@
       }
       @if (resourceGraphResults !== null) {
         <section class="resource-graph-results" aria-label="Query results">
+          @let hasSelectableResults = hasSelectableResourceGraphResults;
           <div class="resource-graph-results-header">
             <h3>Results</h3>
-            @if (resourceGraphResults.length > 0) {
+            @if (hasSelectableResults) {
               <button
                 type="button"
                 class="add-all-resources-button"
@@ -161,26 +162,88 @@
           </div>
           @if (resourceGraphResults.length === 0) {
             <p>No results.</p>
-          } @else {
-            @for (result of resourceGraphResults; track $index) {
-              <article class="resource-graph-result">
-                @if (toSelectedAzureResource(result); as selectedResource) {
-                  <button
-                    type="button"
-                    class="add-resource-button"
-                    [disabled]="resourceSelection.isSelected(selectedResource.id)"
-                    (click)="addToSelection(selectedResource)"
-                  >
-                    {{
-                      resourceSelection.isSelected(selectedResource.id)
-                        ? 'Added to selection'
-                        : 'Add to selection'
-                    }}
-                  </button>
+          } @else if (resourceGraphQueryResult; as queryResult) {
+            <p class="resource-graph-result-count">
+              Showing {{ queryResult.rows.length }} of {{ queryResult.totalRecords }} results.
+              @if (queryResult.resultTruncated === 'true' || queryResult.$skipToken) {
+                Results are incomplete. Narrow the query to see a smaller result set.
+              }
+            </p>
+            <details class="resource-graph-columns">
+              <summary>
+                Columns ({{ resourceGraphVisibleColumns.length }}/{{ queryResult.columns.length }})
+              </summary>
+              <div class="resource-graph-column-options">
+                @for (column of queryResult.columns; track column.name) {
+                  <label>
+                    <input
+                      type="checkbox"
+                      [checked]="resourceGraphVisibleColumns.includes(column.name)"
+                      [disabled]="resourceGraphVisibleColumns.length === 1
+                        && resourceGraphVisibleColumns.includes(column.name)"
+                      (change)="toggleResourceGraphColumn(column.name)"
+                    />
+                    {{ column.name }}
+                  </label>
                 }
-                <pre>{{ result | json }}</pre>
-              </article>
-            }
+              </div>
+            </details>
+            <table class="resource-graph-table">
+              <thead>
+                <tr>
+                  @for (column of resourceGraphVisibleColumns; track column) {
+                    <th scope="col">{{ column }}</th>
+                  }
+                  @if (hasSelectableResults) {
+                    <th scope="col">Selection</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (result of queryResult.rows; track $index; let rowIndex = $index) {
+                  <tr
+                    class="resource-graph-row"
+                    tabindex="0"
+                    [attr.aria-expanded]="expandedResourceGraphRows.has(rowIndex)"
+                    [attr.aria-controls]="'resource-graph-json-' + rowIndex"
+                    (click)="toggleResourceGraphRow(rowIndex)"
+                    (keydown.enter)="$event.target === $event.currentTarget && toggleResourceGraphRow(rowIndex)"
+                  >
+                    @for (column of resourceGraphVisibleColumns; track column) {
+                      <td>
+                        <span class="resource-graph-cell" [title]="resourceGraphCell(result[column])">
+                          {{ resourceGraphCell(result[column]) }}
+                        </span>
+                      </td>
+                    }
+                    @if (hasSelectableResults) {
+                      <td>
+                        @if (toSelectedAzureResource(result); as selectedResource) {
+                          <button
+                            type="button"
+                            class="add-resource-button"
+                            [disabled]="resourceSelection.isSelected(selectedResource.id)"
+                            (click)="$event.stopPropagation(); addToSelection(selectedResource)"
+                          >
+                            {{ resourceSelection.isSelected(selectedResource.id) ? 'Added' : 'Add to selection' }}
+                          </button>
+                        }
+                      </td>
+                    }
+                  </tr>
+                  @if (expandedResourceGraphRows.has(rowIndex)) {
+                    <tr class="resource-graph-json-row">
+                      <td
+                        [attr.colspan]="resourceGraphVisibleColumns.length
+                          + (hasSelectableResults ? 1 : 0)"
+                      >
+                        <pre [id]="'resource-graph-json-' + rowIndex">{{ result | json }}</pre>
+                      </td>
+                    </tr>
+                  }
+                }
+              </tbody>
+            </table>
           }
         </section>
       }

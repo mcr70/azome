@@ -2,7 +2,11 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { environment } from '@environments/environment';
-import { AzureTaggedAppResource, ResourceGraphService } from './resource-graph.service';
+import {
+  AzureTaggedAppResource,
+  ResourceGraphQueryResult,
+  ResourceGraphService
+} from './resource-graph.service';
 
 describe('ResourceGraphService tagged apps', () => {
   let service: ResourceGraphService;
@@ -67,7 +71,8 @@ describe('ResourceGraphService tagged apps', () => {
   it('executes a custom query and returns its result rows', () => {
     const query = 'Resources | limit 5';
     const results = [{ name: 'storage-one', type: 'microsoft.storage/storageaccounts' }];
-    let response: unknown[] | undefined;
+    const columns = [{ name: 'name', type: 'string' }, { name: 'type', type: 'string' }];
+    let response: ResourceGraphQueryResult | undefined;
 
     service.executeQuery(query).subscribe((result) => response = result);
 
@@ -75,10 +80,54 @@ describe('ResourceGraphService tagged apps', () => {
     expect(request.request.method).toBe('POST');
     expect(request.request.body.subscriptions).toEqual([environment.azure.subscriptionId]);
     expect(request.request.body.query).toBe(query);
-    expect(request.request.body.options.resultFormat).toBe('objectArray');
-    request.flush({ data: results });
+    expect(request.request.body.options.resultFormat).toBe('table');
+    request.flush({
+      data: { columns, rows: [['storage-one', 'microsoft.storage/storageaccounts']] },
+      totalRecords: 20,
+      resultTruncated: 'true',
+      $skipToken: 'next-page'
+    });
 
-    expect(response).toEqual(results);
+    expect(response).toEqual({
+      columns,
+      rows: results,
+      totalRecords: 20,
+      resultTruncated: 'true',
+      $skipToken: 'next-page'
+    });
+  });
+
+  it('preserves projected column names, nulls and nested values in query rows', () => {
+    let response: ResourceGraphQueryResult | undefined;
+    service.executeQuery('Resources | project name1 = name, properties')
+      .subscribe((result) => response = result);
+    http.expectOne(url).flush({
+      data: {
+        columns: [{ name: 'name1', type: 'string' }, { name: 'properties', type: 'dynamic' }],
+        rows: [[null, { enabled: false, addresses: ['one', 'two'] }]]
+      },
+      totalRecords: 1,
+      resultTruncated: 'false'
+    });
+
+    expect(response?.rows).toEqual([
+      { name1: null, properties: { enabled: false, addresses: ['one', 'two'] } }
+    ]);
+  });
+
+  it('preserves the schema of an empty custom query result', () => {
+    let response: ResourceGraphQueryResult | undefined;
+    service.executeQuery('Resources | where false | project name')
+      .subscribe((result) => response = result);
+    const columns = [{ name: 'name', type: 'string' }];
+    http.expectOne(url).flush({
+      data: { columns, rows: [] },
+      totalRecords: 0,
+      resultTruncated: 'false'
+    });
+
+    expect(response?.columns).toEqual(columns);
+    expect(response?.rows).toEqual([]);
   });
 
   it('propagates page errors rather than returning partial results', () => {
