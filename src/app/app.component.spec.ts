@@ -1,5 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
+import { By } from '@angular/platform-browser';
+import { QueryEditorComponent } from './components/query-editor/query-editor.component';
 import { AuthService } from './services/azome/auth.service';
 import { ResourceSelectionService } from './services/azome/resource-selection.service';
 import { ProfileService } from './services/azure/profile.service';
@@ -169,6 +171,21 @@ describe('AppComponent', () => {
     app.deleteSavedResourceGraphQuery();
     expect(app.savedResourceGraphQueries).toEqual([]);
     expect(app.selectedSavedResourceGraphQueryName).toBe('');
+  });
+
+  it('shows the selected saved query in the Resource Graph editor', async () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    app.resourceGraphDialogOpen = true;
+    app.resourceGraphQuery = "resources | where type contains 'storage'";
+    fixture.detectChanges();
+    await fixture.debugElement.query(By.directive(QueryEditorComponent))
+      .componentInstance.whenReady();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const content = element.querySelector('#resource-graph-query');
+    expect(content?.textContent).toBe("resources | where type contains 'storage'");
+    expect(element.querySelector('.resource-graph-query-form textarea')).toBeNull();
   });
 
   it('resets the query and name when the saved query placeholder is selected', () => {

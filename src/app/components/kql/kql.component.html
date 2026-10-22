@@ -92,8 +92,12 @@
             </div>
           </div>
           <label for="kql-query">KQL</label>
-          <textarea id="kql-query" name="query" [(ngModel)]="query" rows="7"
-            spellcheck="false" required autofocus></textarea>
+          <app-query-editor
+            editorId="kql-query"
+            ariaLabel="KQL query"
+            [extensions]="editorExtensions"
+            [(value)]="query"
+          ></app-query-editor>
           <div class="query-actions">
             <label for="kql-timespan">Time range</label>
             <select id="kql-timespan" name="timespan" [(ngModel)]="timespan" [disabled]="loading">

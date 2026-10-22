@@ -21,6 +21,10 @@ import {
   LucideSquare,
   LucideX
 } from '@lucide/angular';
+import { QueryEditorComponent } from '@components/query-editor/query-editor.component';
+import type { QueryEditorExtensions } from '@components/query-editor/query-editor.component';
+import { kqlEditorExtensions } from '@components/query-editor/kql';
+import type { KqlCompletionSchema } from '@components/query-editor/kql';
 import { Subscription, catchError, finalize, forkJoin, of } from 'rxjs';
 import {
   LogAnalyticsSchemaTable,
@@ -38,7 +42,7 @@ interface SavedKqlQuery {
 @Component({
   selector: 'app-kql',
   standalone: true,
-  imports: [FormsModule, LucideDynamicIcon],
+  imports: [FormsModule, LucideDynamicIcon, QueryEditorComponent],
   templateUrl: './kql.component.html',
   styleUrl: './kql.component.scss'
 })
@@ -47,6 +51,7 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
   @Input() workspaceName = '';
   @Output() close = new EventEmitter<void>();
   @ViewChild('dialog') private dialog!: ElementRef<HTMLDialogElement>;
+  @ViewChild(QueryEditorComponent) private queryEditor?: QueryEditorComponent;
   @ViewChild('savedQueriesMenu') private savedQueriesMenu?: ElementRef<HTMLDetailsElement>;
   @ViewChild('sourceTablesPanel') private sourceTablesPanel?: ElementRef<HTMLDetailsElement>;
 
@@ -56,6 +61,7 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
   public readonly saveIcon = LucideSave.icon;
   public readonly chevronIcon = LucideChevronDown.icon;
   public readonly rescanIcon = LucideRefreshCw.icon;
+  public editorExtensions: QueryEditorExtensions = this.createEditorExtensions([]);
   public savedQueries: SavedKqlQuery[] = [];
   public selectedSavedQueryName = '';
   public queryName = '';
@@ -85,6 +91,7 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     this.dialog.nativeElement.showModal();
+    this.queryEditor?.focus();
   }
 
   ngOnChanges(): void {
@@ -142,6 +149,7 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
     ).subscribe({
       next: ({ tables, activeNames }) => {
         this.tables = tables;
+        this.editorExtensions = this.createEditorExtensions(tables);
         this.activeTableNames = activeNames === null ? null : new Set(activeNames);
         if (this.sourceTablesPanel?.nativeElement.open) {
           this.scanSourceTables();
@@ -166,6 +174,20 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
     if (open && this.sourceScanDurationMs === null && !this.tablesLoading && !this.tablesError) {
       this.scanSourceTables();
     }
+  }
+
+  /**
+   * Creates editor extensions for highlighting and completion based on the workspace schema.
+   * @param tables Tables of the workspace with their columns
+   */
+  private createEditorExtensions(tables: LogAnalyticsSchemaTable[]): QueryEditorExtensions {
+    const schema: KqlCompletionSchema = {
+      tables: tables.map((table) => ({
+        name: table.name,
+        columns: table.columns.map((column) => column.name)
+      }))
+    };
+    return kqlEditorExtensions(() => schema);
   }
 
   public scanSourceTables(): void {

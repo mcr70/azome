@@ -13,6 +13,13 @@ import { AuthService } from './services/azome/auth.service';
 import { ProfileService } from './services/azure/profile.service';
 import { ResourceGraphService } from './services/azure/resource-graph.service';
 import { PreferencesComponent } from './components/preferences/preferences.component';
+import { QueryEditorComponent } from './components/query-editor/query-editor.component';
+import {
+  collectDynamicPaths,
+  kqlEditorExtensions,
+  RESOURCE_GRAPH_COLUMNS,
+  RESOURCE_GRAPH_TABLES
+} from './components/query-editor/kql';
 import {
   DEFAULT_PERSPECTIVES,
   PerspectivePreference
@@ -72,7 +79,7 @@ function getResourceGraphErrorDetails(error: unknown): string[] {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, PreferencesComponent],
+  imports: [CommonModule, FormsModule, RouterOutlet, PreferencesComponent, QueryEditorComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
@@ -88,6 +95,14 @@ export class AppComponent implements OnInit, OnDestroy {
   public preferencesError: string | null = null;
   public resourceGraphDialogOpen = false;
   public resourceGraphQuery = 'Resources | limit 10';
+
+  /** Paths inside dynamic columns (properties, tags, ...) learned from query results. */
+  private readonly resourceGraphDynamicPaths = new Set<string>();
+  public readonly resourceGraphEditorExtensions = kqlEditorExtensions(() => ({
+    tables: RESOURCE_GRAPH_TABLES.map((name) => ({ name, columns: RESOURCE_GRAPH_COLUMNS })),
+    ignoreCase: true,
+    dynamicPaths: this.resourceGraphDynamicPaths
+  }));
   public resourceGraphQueryLoading = false;
   public resourceGraphQueryError: string | null = null;
   public resourceGraphResults: unknown[] | null = null;
@@ -302,6 +317,10 @@ export class AppComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (results) => {
           this.resourceGraphResults = results;
+          collectDynamicPaths(
+            results.filter((row): row is Record<string, unknown> => typeof row === 'object' && row !== null),
+            this.resourceGraphDynamicPaths
+          );
           this.resourceGraphQueryLoading = false;
           this.resourceGraphQuerySubscription = null;
         },

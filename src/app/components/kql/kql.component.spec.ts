@@ -1,7 +1,11 @@
 import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Subject, of, throwError } from 'rxjs';
+import { startCompletion } from '@codemirror/autocomplete';
+import { EditorView } from '@codemirror/view';
 import { LogAnalyticsQueryResult, LogAnalyticsService } from '@services/azure/log-analytics.service';
+import { By } from '@angular/platform-browser';
+import { QueryEditorComponent } from '@components/query-editor/query-editor.component';
 import { KqlComponent } from './kql.component';
 
 describe('KqlComponent', () => {
@@ -9,6 +13,16 @@ describe('KqlComponent', () => {
   let service: jasmine.SpyObj<LogAnalyticsService>;
   let storage: Map<string, string>;
   const schema = [{ name: 'Heartbeat', columns: [{ name: 'Computer', type: 'string' }] }];
+
+  /**
+   * Waits until the lazily loaded query editor and its extensions are ready.
+   */
+  async function editorReady(): Promise<void> {
+    fixture.detectChanges();
+    await fixture.debugElement.query(By.directive(QueryEditorComponent))
+      .componentInstance.whenReady();
+    fixture.detectChanges();
+  }
 
   beforeEach(async () => {
     storage = new Map();
@@ -45,6 +59,56 @@ describe('KqlComponent', () => {
     fixture.componentInstance.tableFilter = 'missing';
     fixture.detectChanges();
     expect(element.textContent).toContain('No matching tables.');
+  });
+
+  it('shows a selected saved query in the CodeMirror editor', async () => {
+    fixture.componentInstance.savedQueries = [
+      { name: 'Recent activity', query: 'Heartbeat | take 10' }
+    ];
+    await editorReady();
+
+    const element: HTMLElement = fixture.nativeElement;
+    const menu = element.querySelector<HTMLDetailsElement>('.saved-queries-menu')!;
+    menu.open = true;
+    element.querySelector<HTMLButtonElement>('.saved-query-select')!.click();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.query).toBe('Heartbeat | take 10');
+    expect(element.querySelector('.cm-content')?.textContent).toContain(
+      'Heartbeat | take 10'
+    );
+  });
+
+  it('colors tables, keywords, functions and columns differently in the editor', async () => {
+    fixture.componentInstance.query = 'Heartbeat | summarize Count = count() by Computer';
+    await editorReady();
+
+    const content = (fixture.nativeElement as HTMLElement).querySelector('.cm-content')!;
+    const colorOf = (text: string): string => {
+      const span = Array.from(content.querySelectorAll('span'))
+        .find((item) => item.textContent === text)!;
+      return getComputedStyle(span).color;
+    };
+    const colors = [colorOf('Heartbeat'), colorOf('summarize'), colorOf('count'), colorOf('Computer')];
+
+    expect(new Set(colors).size).toBe(4);
+    expect(colorOf('Count')).toBe(colorOf('Computer'));
+  });
+
+  it('shows workspace columns in the completion popup', async () => {
+    fixture.componentInstance.query = 'Heartbeat | where Co';
+    await editorReady();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const view = EditorView.findFromDOM(element.querySelector('.cm-editor') as HTMLElement)!;
+    view.dispatch({ selection: { anchor: view.state.doc.length } });
+    view.focus();
+    startCompletion(view);
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    const labels = Array.from(element.querySelectorAll('.cm-tooltip-autocomplete li'))
+      .map((item) => item.querySelector('.cm-completionLabel')?.textContent);
+    expect(labels).toContain('Computer');
   });
 
   it('runs a selected table query against the current workspace and renders typed cells', () => {

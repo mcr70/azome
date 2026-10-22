@@ -124,14 +124,12 @@
           </button>
         </div>
         <label for="resource-graph-query">Azure Resource Graph query</label>
-        <textarea
-          id="resource-graph-query"
-          name="resourceGraphQuery"
-          [(ngModel)]="resourceGraphQuery"
-          rows="8"
-          spellcheck="false"
-          required
-        ></textarea>
+        <app-query-editor
+          editorId="resource-graph-query"
+          ariaLabel="Azure Resource Graph query"
+          [extensions]="resourceGraphEditorExtensions"
+          [(value)]="resourceGraphQuery"
+        ></app-query-editor>
         <div class="resource-graph-query-actions">
           <button
             type="submit"

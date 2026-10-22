@@ -216,14 +216,8 @@
 	opacity: 0.5;
 }
 
-.resource-graph-query-form textarea {
-	box-sizing: border-box;
-	width: 100%;
-	padding: 12px;
-	border: 1px solid #cbd5e1;
-	border-radius: 4px;
-	font-family: monospace;
-	resize: vertical;
+.resource-graph-query-form app-query-editor {
+	margin-bottom: 8px;
 }
 
 .resource-graph-query-actions {
