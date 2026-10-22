@@ -1,0 +1,41 @@
+<!-- The dashboard groups related subscription governance signals into focused cards. -->
+<section class="governance-view" aria-labelledby="governance-title">
+  <header class="perspective-heading">
+    <div>
+      <p class="eyebrow">Perspective</p>
+      <h1 id="governance-title">Governance</h1>
+      <p class="description">
+        Review subscription spend, policy health, required tags, quotas, and resource protection.
+      </p>
+    </div>
+    <button type="button" class="refresh-button" (click)="refresh()" [disabled]="loading()">
+      {{ loading() ? 'Refreshing…' : 'Refresh' }}
+    </button>
+  </header>
+
+  @if (loading() && !snapshot()) {
+    <p class="status-message" role="status">Loading governance data…</p>
+  }
+
+  @if (error()) {
+    <p class="error-message" role="alert">{{ error() }}</p>
+  }
+
+  @if (snapshot(); as data) {
+    @if (data.errors.length > 0) {
+      <div class="partial-warning" role="status">
+        Some Azure data sources could not be read. Review the affected cards and permissions.
+      </div>
+    }
+
+    <div class="governance-grid">
+      <app-governance-cost-card [data]="data.costs"></app-governance-cost-card>
+      <app-governance-subscriptions-card
+        [subscriptions]="data.subscriptions"
+        [quotas]="data.quotas"></app-governance-subscriptions-card>
+      <app-governance-policy-card [data]="data.policy"></app-governance-policy-card>
+      <app-governance-tags-card [resources]="data.resources"></app-governance-tags-card>
+      <app-governance-locks-card [resources]="data.resources"></app-governance-locks-card>
+    </div>
+  }
+</section>

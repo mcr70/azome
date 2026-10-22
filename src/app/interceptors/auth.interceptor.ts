@@ -23,6 +23,9 @@ export class AuthInterceptor implements HttpInterceptor {
       scope = ['https://cosmos.azure.com/user_impersonation'];
     } else if (req.url.includes('/log-analytics-proxy/')) {
       scope = ['https://api.loganalytics.io/Data.Read'];
+    } else if (req.url.includes('/governance-proxy/')) {
+      // Governance proxy calls carry the same delegated ARM scope as direct ARM requests.
+      scope = ['https://management.azure.com/user_impersonation'];
     } 
     else {
       return next.handle(req); // An API request that doesn't match known patterns, skip token acquisition

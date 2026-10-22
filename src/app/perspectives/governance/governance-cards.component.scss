@@ -1,0 +1,70 @@
+/* Shared details keep all five governance sub-cards readable and consistent. */
+.metric-label {
+  color: #65758b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.metric-pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+}
+
+.metric-pair > div {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.metric-pair strong {
+  color: #172b4d;
+  font-size: 1.5rem;
+}
+
+h3 {
+  margin: 1.25rem 0 0.5rem;
+  color: #394b63;
+  font-size: 0.9rem;
+}
+
+.summary-count {
+  margin: 0 0 0.75rem;
+  color: #172b4d;
+  font-weight: 600;
+}
+
+.data-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.data-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  color: #394b63;
+  font-size: 0.9rem;
+}
+
+.compact-list li {
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.data-list .stacked-item {
+  display: grid;
+  justify-content: initial;
+  gap: 0.15rem;
+}
+
+.secondary-value,
+.stacked-item span,
+.empty-state {
+  color: #65758b;
+  font-size: 0.82rem;
+}

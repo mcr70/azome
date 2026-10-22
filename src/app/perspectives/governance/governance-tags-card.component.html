@@ -1,0 +1,17 @@
+<!-- Tag card lists resources missing one or more required governance tags. -->
+<app-governance-domain-card
+  title="Tag Hygiene"
+  subtitle="Missing Environment, Owner, or CostCenter tags"
+  [tone]="resources.missingTags.length > 0 ? 'warning' : 'default'">
+  <p class="summary-count">{{ resources.missingTags.length }} resources reported with tag gaps</p>
+  <ul class="data-list compact-list">
+    @for (resource of resources.missingTags.slice(0, 12); track resource.name + resource.resourceGroup) {
+      <li class="stacked-item">
+        <strong>{{ resource.name }}</strong>
+        <span>{{ resource.resourceGroup }} · Missing {{ resource.missing.join(', ') }}</span>
+      </li>
+    } @empty {
+      <li class="empty-state">No missing required tags were found.</li>
+    }
+  </ul>
+</app-governance-domain-card>

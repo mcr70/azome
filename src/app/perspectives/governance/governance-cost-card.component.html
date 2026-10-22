@@ -1,0 +1,28 @@
+<!-- Cost card pairs the current month total with the forecast through month end. -->
+<app-governance-domain-card
+  title="Cost & FinOps"
+  subtitle="Accessible subscriptions · Month to date">
+  <div class="metric-pair">
+    <div>
+      <span class="metric-label">Cumulative cost</span>
+      <strong>{{ formatCost(data.monthToDate) }}</strong>
+    </div>
+    <div>
+      <span class="metric-label">Month-end forecast</span>
+      <strong>{{ formatCost(data.forecast) }}</strong>
+    </div>
+  </div>
+  <h3>Cost by service</h3>
+  @if (data.services.length === 0) {
+    <p class="empty-state">No service cost details are available.</p>
+  } @else {
+    <ul class="data-list">
+      @for (service of data.services.slice(0, 8); track service.name) {
+        <li>
+          <span>{{ service.name }}</span>
+          <strong>{{ formatCost(service.cost) }}</strong>
+        </li>
+      }
+    </ul>
+  }
+</app-governance-domain-card>

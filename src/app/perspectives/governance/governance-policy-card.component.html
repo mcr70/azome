@@ -1,0 +1,27 @@
+<!-- Policy card distinguishes compliant resources from policy violations. -->
+<app-governance-domain-card
+  title="Policy Compliance"
+  subtitle="Policy state resources across accessible subscriptions"
+  [tone]="data.nonCompliant > 0 ? 'critical' : 'default'">
+  <div class="metric-pair">
+    <div>
+      <span class="metric-label">Compliant resources</span>
+      <strong>{{ data.compliant }}</strong>
+    </div>
+    <div>
+      <span class="metric-label">Non-compliant resources</span>
+      <strong>{{ data.nonCompliant }}</strong>
+    </div>
+  </div>
+  <h3>Policy violations</h3>
+  <ul class="data-list compact-list">
+    @for (violation of data.violations.slice(0, 8); track violation.resource + violation.policy) {
+      <li class="stacked-item">
+        <strong>{{ violation.resource.split('/').pop() }}</strong>
+        <span>{{ violation.policy || 'Policy definition' }}</span>
+      </li>
+    } @empty {
+      <li class="empty-state">No policy violations were returned.</li>
+    }
+  </ul>
+</app-governance-domain-card>

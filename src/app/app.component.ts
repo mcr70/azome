@@ -42,7 +42,9 @@ const PERSPECTIVE_ROUTES: Record<string, string> = {
   '/networking': 'networking',
   '/monitoring': 'monitoring',
   '/data': 'data',
-  '/app': 'app'
+  '/app': 'app',
+  // Route mapping keeps the toolbar selection synchronized with governance navigation.
+  '/governance': 'governance'
 };
 
 interface SavedResourceGraphQuery {

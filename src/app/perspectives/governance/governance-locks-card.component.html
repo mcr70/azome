@@ -1,0 +1,17 @@
+<!-- Lock card lists production resources protected by supported lock levels. -->
+<app-governance-domain-card
+  title="Resource Locks"
+  subtitle="Production resources protected by CanNotDelete or ReadOnly locks"
+  [tone]="resources.locks.length > 0 ? 'warning' : 'default'">
+  <p class="summary-count">{{ resources.locks.length }} protected resources reported</p>
+  <ul class="data-list compact-list">
+    @for (lock of resources.locks.slice(0, 12); track lock.resourceId + lock.name) {
+      <li class="stacked-item">
+        <strong>{{ lock.resourceId.split('/').pop() }}</strong>
+        <span>{{ lock.level }} · {{ lock.name }}</span>
+      </li>
+    } @empty {
+      <li class="empty-state">No matching production resource locks were found.</li>
+    }
+  </ul>
+</app-governance-domain-card>

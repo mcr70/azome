@@ -72,6 +72,47 @@ const server = http.createServer((request, response) => {
     return;
   }
 
+  const governanceMatch = requestUrl.pathname.match(
+    /^\/governance-proxy(\/(?:subscriptions|providers)(?:\/[^?#]*)?)$/i
+  );
+  if (governanceMatch) {
+    const allowedGovernanceMethods = new Set(['GET', 'POST']);
+    if (!allowedGovernanceMethods.has(request.method || '')) {
+      response.writeHead(405, corsHeaders(request, { 'content-type': 'text/plain; charset=utf-8' }));
+      response.end('Only GET and POST requests are allowed for governance routes.');
+      return;
+    }
+
+    const headers = { ...request.headers };
+    delete headers.host;
+    delete headers.origin;
+    delete headers.connection;
+    delete headers['proxy-authorization'];
+    headers.host = 'management.azure.com';
+    const upstream = https.request({
+      hostname: 'management.azure.com',
+      path: governanceMatch[1] + requestUrl.search,
+      method: request.method,
+      headers
+    }, upstreamResponse => {
+      response.writeHead(
+        upstreamResponse.statusCode || 502,
+        corsHeaders(request, upstreamResponse.headers)
+      );
+      upstreamResponse.pipe(response);
+    });
+    upstream.setTimeout(90000, () => upstream.destroy(new Error('Azure governance request timed out.')));
+    upstream.on('error', error => {
+      if (!response.headersSent) {
+        response.writeHead(502, corsHeaders(request, { 'content-type': 'application/json' }));
+      }
+      response.end(JSON.stringify({ error: { message: error.message } }));
+    });
+    response.on('close', () => upstream.destroy());
+    request.pipe(upstream);
+    return;
+  }
+
   const cosmosMatch = requestUrl.pathname.match(/^\/cosmos-proxy\/([a-z0-9-]{3,44})(\/.*)?$/i);
   if (cosmosMatch) {
     const allowedCosmosMethods = new Set(['GET', 'POST', 'PUT', 'DELETE']);

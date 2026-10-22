@@ -1,0 +1,28 @@
+<!-- Subscription card reports accessible subscriptions and high quota usage. -->
+<app-governance-domain-card
+  title="Subscriptions & Quotas"
+  subtitle="Connected subscriptions and elevated East US compute usage"
+  [tone]="quotas.length > 0 ? 'warning' : 'default'">
+  <p class="summary-count">{{ subscriptions.length }} connected subscriptions</p>
+  <ul class="data-list compact-list">
+    @for (subscription of subscriptions; track subscription.subscriptionId) {
+      <li>
+        <span>{{ subscription.displayName }}</span>
+        <span class="secondary-value">{{ subscription.state }}</span>
+      </li>
+    } @empty {
+      <li class="empty-state">No accessible subscriptions were returned.</li>
+    }
+  </ul>
+  <h3>Quota usage at or above 70%</h3>
+  <ul class="data-list compact-list">
+    @for (quota of quotas; track quota.name) {
+      <li>
+        <span>{{ quota.name }}</span>
+        <strong>{{ quota.currentValue }} / {{ quota.limit }} {{ quota.unit }}</strong>
+      </li>
+    } @empty {
+      <li class="empty-state">No elevated quotas were found.</li>
+    }
+  </ul>
+</app-governance-domain-card>

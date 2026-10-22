@@ -1,0 +1,32 @@
+/* Shared card styling keeps dashboard sections readable at every screen size. */
+.governance-card {
+  min-width: 0;
+  padding: 1.25rem;
+  border: 1px solid #dbe2ea;
+  border-radius: 0.75rem;
+  background: #ffffff;
+}
+
+.governance-card.warning {
+  border-color: #f2cf83;
+}
+
+.governance-card.critical {
+  border-color: #e8a5a5;
+}
+
+.card-heading h2 {
+  margin: 0;
+  color: #172b4d;
+  font-size: 1.05rem;
+}
+
+.card-heading p {
+  margin: 0.35rem 0 0;
+  color: #65758b;
+  font-size: 0.875rem;
+}
+
+.card-content {
+  margin-top: 1rem;
+}
