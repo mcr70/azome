@@ -347,6 +347,15 @@ details {
   color: #475569;
 }
 
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
 .results-scroll {
   max-height: 50dvh;
   overflow: auto;

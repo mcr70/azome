@@ -106,16 +106,13 @@
               <option value="P7D">Last 7 days</option>
               <option value="P30D">Last 30 days</option>
             </select>
-            <button type="submit" class="icon-button run-button" [disabled]="loading || !query.trim()"
-              [title]="loading ? 'Running query...' : 'Run query'" aria-label="Run query">
-              <svg [lucideIcon]="playIcon" [size]="16" aria-hidden="true"></svg>
+            <button type="button" class="icon-button run-button" (click)="runOrStopQuery()"
+              [disabled]="!query.trim()"
+              [title]="loading ? 'Stop running query' : 'Run query'"
+              [attr.aria-label]="loading ? 'Stop query' : 'Run query'">
+              <svg [lucideIcon]="loading ? stopIcon : playIcon"
+                [size]="16" aria-hidden="true"></svg>
             </button>
-            @if (loading) {
-              <button type="button" title="Cancel query" aria-label="Cancel query"
-                class="icon-button" (click)="cancelQuery()">
-                <svg [lucideIcon]="stopIcon" [size]="16" aria-hidden="true"></svg>
-              </button>
-            }
           </div>
         </form>
 
@@ -185,7 +182,7 @@
                       </tr>
                     </thead>
                     <tbody>
-                      @for (row of table.rows; track $index) {
+                      @for (row of getPageRows(table, $index); track $index) {
                         <tr>
                           @for (cell of row; track $index) {
                             <td>{{ formatCell(cell) }}</td>
@@ -195,6 +192,20 @@
                     </tbody>
                   </table>
                 </div>
+                @if (!loading && getPageCount(table) > 1) {
+                  <nav class="pagination" [attr.aria-label]="table.name + ' result pages'">
+                    <button type="button" (click)="goToPage(table, $index, getCurrentPage($index) - 1)"
+                      [disabled]="getCurrentPage($index) === 0" aria-label="Previous page">
+                      Previous
+                    </button>
+                    <span>Page {{ getCurrentPage($index) + 1 }} of {{ getPageCount(table) }}</span>
+                    <button type="button" (click)="goToPage(table, $index, getCurrentPage($index) + 1)"
+                      [disabled]="getCurrentPage($index) + 1 >= getPageCount(table)"
+                      aria-label="Next page">
+                      Next
+                    </button>
+                  </nav>
+                }
               } @else {
                 <p>No results.</p>
               }

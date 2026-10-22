@@ -33,6 +33,7 @@ import {
 } from '@services/azure/log-analytics.service';
 
 const SAVED_KQL_QUERIES_KEY = 'azome.savedKqlQueries';
+const RESULTS_PAGE_SIZE = 50;
 
 interface SavedKqlQuery {
   name: string;
@@ -84,6 +85,7 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
 
   private tablesSubscription?: Subscription;
   private querySubscription?: Subscription;
+  private readonly resultPages = new Map<number, number>();
 
   constructor(private logAnalytics: LogAnalyticsService) {
     this.loadSavedQueries();
@@ -259,6 +261,7 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
       return;
     }
     this.results = null;
+    this.resultPages.clear();
     this.queryError = null;
     this.loading = true;
     this.querySubscription = this.logAnalytics.query(this.workspaceId, query, this.timespan).pipe(
@@ -277,6 +280,32 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
   public cancelQuery(): void {
     this.querySubscription?.unsubscribe();
     this.loading = false;
+  }
+
+  public runOrStopQuery(): void {
+    if (this.loading) {
+      this.cancelQuery();
+      return;
+    }
+    this.runQuery();
+  }
+
+  public getPageCount(table: LogAnalyticsTable): number {
+    return Math.max(1, Math.ceil(table.rows.length / RESULTS_PAGE_SIZE));
+  }
+
+  public getCurrentPage(tableIndex: number): number {
+    return this.resultPages.get(tableIndex) ?? 0;
+  }
+
+  public getPageRows(table: LogAnalyticsTable, tableIndex: number): unknown[][] {
+    const start = this.getCurrentPage(tableIndex) * RESULTS_PAGE_SIZE;
+    return table.rows.slice(start, start + RESULTS_PAGE_SIZE);
+  }
+
+  public goToPage(table: LogAnalyticsTable, tableIndex: number, page: number): void {
+    const lastPage = this.getPageCount(table) - 1;
+    this.resultPages.set(tableIndex, Math.min(Math.max(page, 0), lastPage));
   }
 
   public formatCell(value: unknown): string {

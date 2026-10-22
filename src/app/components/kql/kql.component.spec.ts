@@ -61,6 +61,13 @@ describe('KqlComponent', () => {
     expect(element.textContent).toContain('No matching tables.');
   });
 
+  it('shows the query action', () => {
+    const element: HTMLElement = fixture.nativeElement;
+    const actions = element.querySelector('.query-actions')!;
+    expect(actions.querySelectorAll('button').length).toBe(1);
+    expect(actions.querySelector('[aria-label="Run query"]')).not.toBeNull();
+  });
+
   it('shows a selected saved query in the CodeMirror editor', async () => {
     fixture.componentInstance.savedQueries = [
       { name: 'Recent activity', query: 'Heartbeat | take 10' }
@@ -131,6 +138,24 @@ describe('KqlComponent', () => {
     expect(fixture.componentInstance.sourceScanDurationMs).toBeNull();
     const cells = Array.from(element.querySelectorAll('td')).map((cell) => cell.textContent);
     expect(cells).toEqual(['server-one', '0', 'false', '{"key":"value"}']);
+  });
+
+  it('paginates query results in groups of 50 rows', () => {
+    const rows = Array.from({ length: 120 }, (_, index) => [index]);
+    service.query.and.returnValue(of({
+      tables: [{ name: 'PrimaryResult', columns: [{ name: 'Value', type: 'long' }], rows }]
+    }));
+    fixture.componentInstance.query = 'Heartbeat | project Value = 1';
+    fixture.componentInstance.runQuery();
+    fixture.detectChanges();
+
+    const element: HTMLElement = fixture.nativeElement;
+    expect(element.querySelectorAll('tbody tr').length).toBe(50);
+    expect(element.querySelector('.pagination')?.textContent).toContain('Page 1 of 3');
+    element.querySelector<HTMLButtonElement>('.pagination button[aria-label="Next page"]')!.click();
+    fixture.detectChanges();
+    expect(element.querySelectorAll('tbody tr').length).toBe(50);
+    expect(element.querySelector('.pagination')?.textContent).toContain('Page 2 of 3');
   });
 
   it('filters by recent activity and switches to all tables without additional requests', () => {
