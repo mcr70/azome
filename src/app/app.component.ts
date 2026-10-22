@@ -98,6 +98,7 @@ export class AppComponent implements OnInit, OnDestroy {
   public preferencesError: string | null = null;
   public resourceGraphDialogOpen = false;
   public resourceGraphQuery = 'Resources | limit 10';
+  public readonly resourceGraphTables = RESOURCE_GRAPH_TABLES;
 
   /** Paths inside dynamic columns (properties, tags, ...) learned from query results. */
   private readonly resourceGraphDynamicPaths = new Set<string>();

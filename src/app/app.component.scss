@@ -156,6 +156,63 @@
 	gap: 8px;
 }
 
+.resource-graph-query-heading {
+	display: flex;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 8px 12px;
+}
+
+.resource-graph-tables-button {
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: #2563eb;
+	cursor: pointer;
+	font: inherit;
+	font-size: 0.875rem;
+	text-decoration: underline;
+}
+
+.resource-graph-tables {
+	box-sizing: border-box;
+	width: min(460px, calc(100vw - 32px));
+	max-height: calc(100dvh - 48px);
+	overflow: auto;
+	padding: 20px;
+	border: 1px solid #cbd5e1;
+	border-radius: 8px;
+	background: #ffffff;
+	box-shadow: 0 16px 32px rgb(15 23 42 / 25%);
+	color: #172033;
+	font-size: 0.875rem;
+}
+
+.resource-graph-tables p {
+	color: #475569;
+	line-height: 1.5;
+}
+
+.resource-graph-table-list {
+	max-height: 45dvh;
+	overflow: auto;
+	padding: 0;
+	list-style: none;
+}
+
+.resource-graph-table-list li {
+	padding: 6px 8px;
+	overflow-wrap: anywhere;
+}
+
+.resource-graph-table-list li:nth-child(odd) {
+	background: #f1f5f9;
+}
+
+.resource-graph-tables a {
+	color: #2563eb;
+}
+
 .saved-resource-graph-queries,
 .saved-resource-graph-query-controls,
 .save-resource-graph-query-controls {

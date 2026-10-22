@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import { By } from '@angular/platform-browser';
 import { QueryEditorComponent } from './components/query-editor/query-editor.component';
+import { RESOURCE_GRAPH_TABLES } from './components/query-editor/kql';
 import { AuthService } from './services/azome/auth.service';
 import { ResourceSelectionService } from './services/azome/resource-selection.service';
 import { ProfileService } from './services/azure/profile.service';
@@ -43,6 +44,53 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
     expect(app).toBeTruthy();
+  });
+
+  it('opens the built-in table list without running or changing the query', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    const executeQuery = spyOn(TestBed.inject(ResourceGraphService), 'executeQuery');
+    app.resourceGraphDialogOpen = true;
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const trigger = element.querySelector<HTMLButtonElement>('.resource-graph-tables-button')!;
+    const panel = element.querySelector<HTMLElement>('#resource-graph-tables')!;
+    expect(panel.matches(':popover-open')).toBeFalse();
+    expect(trigger.textContent).toContain(`Available tables (${RESOURCE_GRAPH_TABLES.length})`);
+
+    trigger.click();
+    fixture.detectChanges();
+
+    expect(panel.matches(':popover-open')).toBeTrue();
+    expect(Array.from(panel.querySelectorAll('li')).map((item) => item.textContent?.trim()))
+      .toEqual([...RESOURCE_GRAPH_TABLES]);
+    expect(panel.textContent).toContain('This list is not loaded from Azure.');
+    expect(panel.querySelector('a')?.href).toBe(
+      'https://learn.microsoft.com/en-us/azure/governance/resource-graph/reference/supported-tables-resources'
+    );
+    expect(app.resourceGraphQuery).toBe('Resources | limit 10');
+    expect(executeQuery).not.toHaveBeenCalled();
+
+    panel.querySelector<HTMLButtonElement>('[popovertargetaction="hide"]')!.click();
+    expect(panel.matches(':popover-open')).toBeFalse();
+  });
+
+  it('removes the table overlay when the Resource Graph dialog closes', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const app = fixture.componentInstance;
+    app.resourceGraphDialogOpen = true;
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLButtonElement>('.resource-graph-tables-button')!.click();
+    app.closeResourceGraphDialog();
+    fixture.detectChanges();
+    expect(element.querySelector('#resource-graph-tables')).toBeNull();
+
+    app.resourceGraphDialogOpen = true;
+    fixture.detectChanges();
+    expect(element.querySelector('#resource-graph-tables')?.matches(':popover-open')).toBeFalse();
   });
 
   it('adds Resource Graph rows to the shared resource selection', () => {

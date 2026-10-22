@@ -123,7 +123,56 @@
             Save query
           </button>
         </div>
-        <label for="resource-graph-query">Azure Resource Graph query</label>
+        <div class="resource-graph-query-heading">
+          <label for="resource-graph-query">Azure Resource Graph query</label>
+          <button
+            type="button"
+            class="resource-graph-tables-button"
+            popovertarget="resource-graph-tables"
+            aria-haspopup="dialog"
+          >
+            Available tables ({{ resourceGraphTables.length }})
+          </button>
+        </div>
+        <div
+          id="resource-graph-tables"
+          class="resource-graph-tables"
+          popover="auto"
+          role="dialog"
+          aria-labelledby="resource-graph-tables-title"
+        >
+          <header class="resource-graph-dialog-header">
+            <h2 id="resource-graph-tables-title">Resource Graph tables</h2>
+            <button
+              type="button"
+              class="resource-graph-close-button"
+              popovertarget="resource-graph-tables"
+              popovertargetaction="hide"
+              aria-label="Close available tables"
+            >
+              &times;
+            </button>
+          </header>
+          <p>
+            These built-in table names are also used for editor suggestions.
+            This list is not loaded from Azure. Returned data depends on your query scope
+            and permissions; some tables may be empty.
+          </p>
+          <ul class="resource-graph-table-list" aria-label="Resource Graph tables">
+            @for (table of resourceGraphTables; track table) {
+              <li>
+                <code>{{ table }}</code>
+              </li>
+            }
+          </ul>
+          <a
+            href="https://learn.microsoft.com/en-us/azure/governance/resource-graph/reference/supported-tables-resources"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Microsoft table and resource type reference (opens in a new tab)
+          </a>
+        </div>
         <app-query-editor
           editorId="resource-graph-query"
           ariaLabel="Azure Resource Graph query"

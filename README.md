@@ -17,6 +17,13 @@ hosting, the Entra ID application registration, and a small Node.js data proxy.
 
 ## Resource Graph queries
 
+Use **Available tables** next to **Azure Resource Graph query** to open the table
+list. It shares the editor's built-in completion list, not a live Azure schema.
+The overlay links to Microsoft's table and resource type reference for the latest
+supported sources. Query scope and permissions determine the returned data, and
+some tables may be empty. Close the overlay with **Escape**, its close button,
+or by clicking outside it.
+
 The Resource Graph tool displays query results as a table using the returned
 column names. Up to eight columns are shown initially for wide results, with
 common resource fields prioritized for resource-shaped results. Use **Columns**
