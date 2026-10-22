@@ -20,10 +20,10 @@ resource "azurerm_service_plan" "plan_func" {
 
 # Function App, using the zip file and given storage account
 resource "azurerm_linux_function_app" "func" {
-  name                       = var.func_name
-  resource_group_name        = azurerm_resource_group.rg_app.name
-  location                   = azurerm_resource_group.rg_app.location
-  service_plan_id            = azurerm_service_plan.plan_func.id
+  name                = var.func_name
+  resource_group_name = azurerm_resource_group.rg_app.name
+  location            = azurerm_resource_group.rg_app.location
+  service_plan_id     = azurerm_service_plan.plan_func.id
 
   # storage account
   storage_account_name       = azurerm_storage_account.sa_func.name
@@ -39,7 +39,7 @@ resource "azurerm_linux_function_app" "func" {
     "FUNCTIONS_WORKER_RUNTIME" = "node"
     "AzureWebJobsFeatureFlags" = "EnableWorkerIndexing"
     # Kertoo Azurelle, että funktiot löytyvät suoraan index.js -tiedostosta tai projektin juuresta
-    "scriptRoot"               = "" 
+    "scriptRoot" = ""
   }
 
   tags = {
@@ -50,5 +50,55 @@ resource "azurerm_linux_function_app" "func" {
     ignore_changes = [
       app_settings
     ]
-  }  
+  }
+}
+
+# Free Linux App Service used to test application console log streaming.
+resource "azurerm_service_plan" "plan_web" {
+  name                = "plan-azome-test-web-f1"
+  resource_group_name = azurerm_resource_group.rg_app.name
+  location            = azurerm_resource_group.rg_app.location
+  os_type             = "Linux"
+  sku_name            = "F1"
+}
+
+resource "azurerm_linux_web_app" "web" {
+  name                = var.web_app_name
+  resource_group_name = azurerm_resource_group.rg_app.name
+  location            = azurerm_resource_group.rg_app.location
+  service_plan_id     = azurerm_service_plan.plan_web.id
+  https_only          = true
+
+  site_config {
+    always_on        = false
+    app_command_line = "npm start"
+
+    application_stack {
+      node_version = "20-lts"
+    }
+  }
+
+  app_settings = {
+    "SCM_DO_BUILD_DURING_DEPLOYMENT" = "false"
+  }
+
+  logs {
+    application_logs {
+      file_system_level = "Information"
+    }
+  }
+
+  tags = {
+    azome-apps = "sample"
+  }
+}
+
+resource "azurerm_monitor_diagnostic_setting" "web_diag" {
+  name                       = "diag-${var.web_app_name}"
+  target_resource_id         = azurerm_linux_web_app.web.id
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.law.id
+
+  enabled_log {
+    category = "AppServiceConsoleLogs"
+  }
 }

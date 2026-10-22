@@ -18,6 +18,12 @@ variable "sa_name" {
 
 variable "func_name" {
   description = "Name of the function app"
-  type = string
-  default = "azome-test-func-app-2026"
+  type        = string
+  default     = "azome-test-func-app-2026"
+}
+
+variable "web_app_name" {
+  description = "Globally unique name of the Linux Web App used for log streaming tests"
+  type        = string
+  default     = "azome-test-web-app-2026"
 }

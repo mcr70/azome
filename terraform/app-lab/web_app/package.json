@@ -1,0 +1,8 @@
+{
+  "name": "azome-app-service-log-test",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node index.js"
+  }
+}
