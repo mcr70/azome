@@ -1,0 +1,85 @@
+<!-- This view contains only App Service plan control-plane configuration. -->
+<section class="app-service-plan-detail" aria-labelledby="app-service-plan-title">
+  <h3 id="app-service-plan-title" class="resource-detail-heading">App Service Plan</h3>
+
+  @if (!properties) {
+    <div class="resource-detail-empty">
+      No App Service plan details are available.
+    </div>
+  } @else {
+    <div class="resource-detail-table-wrapper">
+      <table class="resource-detail-table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>SKU</strong></td>
+            <td>{{ sku?.name || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Tier</strong></td>
+            <td>{{ sku?.tier || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Capacity</strong></td>
+            <td>{{ sku?.capacity ?? '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Provisioning State</strong></td>
+            <td>{{ properties.provisioningState || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Plan Status</strong></td>
+            <td>{{ properties.status || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Workers</strong></td>
+            <td>{{ properties.numberOfWorkers ?? '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Worker Size</strong></td>
+            <td>{{ properties.workerSize || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Operating System</strong></td>
+            <td>
+              @if (properties.reserved !== undefined) {
+                {{ properties.reserved ? 'Linux' : 'Windows' }}
+              } @else {
+                -
+              }
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Per-site Scaling</strong></td>
+            <td>{{ properties.perSiteScaling === undefined
+              ? '-'
+              : properties.perSiteScaling ? 'Enabled' : 'Disabled' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Elastic Scale</strong></td>
+            <td>{{ properties.elasticScaleEnabled === undefined
+              ? '-'
+              : properties.elasticScaleEnabled ? 'Enabled' : 'Disabled' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Maximum Elastic Workers</strong></td>
+            <td>{{ properties.maximumElasticWorkerCount ?? '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Zone Redundant</strong></td>
+            <td>{{ properties.zoneRedundant ? 'Yes' : 'No or unspecified' }}</td>
+          </tr>
+          <tr>
+            <td><strong>App Service Environment</strong></td>
+            <td>{{ properties.hostingEnvironmentProfile?.name || '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

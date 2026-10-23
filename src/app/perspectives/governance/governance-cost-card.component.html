@@ -1,7 +1,9 @@
 <!-- Cost card pairs the current month total with the forecast through month end. -->
 <app-governance-domain-card
   title="Cost & FinOps"
-  subtitle="Accessible subscriptions · Month to date">
+  subtitle="Accessible subscriptions · Month to date"
+  [loading]="loading"
+  [loaded]="loaded">
   <div class="metric-pair">
     <div>
       <span class="metric-label">Cumulative cost</span>

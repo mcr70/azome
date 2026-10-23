@@ -2,7 +2,9 @@
 <app-governance-domain-card
   title="Resource Locks"
   subtitle="Production resources protected by CanNotDelete or ReadOnly locks"
-  [tone]="resources.locks.length > 0 ? 'warning' : 'default'">
+  [tone]="resources.locks.length > 0 ? 'warning' : 'default'"
+  [loading]="loading"
+  [loaded]="loaded">
   <p class="summary-count">{{ resources.locks.length }} protected resources reported</p>
   <ul class="data-list compact-list">
     @for (lock of resources.locks.slice(0, 12); track lock.resourceId + lock.name) {

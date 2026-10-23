@@ -82,6 +82,16 @@ const server = http.createServer((request, response) => {
       response.end('Only GET and POST requests are allowed for governance routes.');
       return;
     }
+    if (!request.headers.authorization?.startsWith('Bearer ')) {
+      response.writeHead(401, corsHeaders(request, { 'content-type': 'application/json' }));
+      response.end(JSON.stringify({
+        error: {
+          code: 'AuthorizationRequired',
+          message: 'Sign in through Azome and retry this governance request.'
+        }
+      }));
+      return;
+    }
 
     const headers = { ...request.headers };
     delete headers.host;

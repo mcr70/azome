@@ -1,17 +1,36 @@
 /** Provides subscription governance data from Azure Resource Manager APIs. */
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, forkJoin, of } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { Observable, forkJoin, from, merge, of, throwError, timer } from 'rxjs';
+import {
+  catchError,
+  concatMap,
+  finalize,
+  map,
+  retry,
+  scan,
+  shareReplay,
+  startWith,
+  switchMap,
+  tap,
+  toArray
+} from 'rxjs/operators';
 import { environment } from '@environments/environment';
 
 const GOVERNANCE_ENDPOINT = '/governance-proxy';
 const RESOURCE_GRAPH_API_VERSION = '2021-03-01';
+const SNAPSHOT_CACHE_TTL_MS = 5 * 60 * 1000;
+const COST_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
+
+type GovernanceSection = 'costs' | 'quotas' | 'policy' | 'resources';
+type GovernanceSnapshotUpdater = (snapshot: GovernanceSnapshot) => GovernanceSnapshot;
 
 export interface GovernanceSubscription {
   subscriptionId: string;
   displayName: string;
   state: string;
+  tenantId?: string;
+  authorizationSource?: string;
 }
 
 export interface GovernanceCostSummary {
@@ -31,7 +50,15 @@ export interface GovernanceQuota {
 export interface GovernancePolicySummary {
   compliant: number;
   nonCompliant: number;
-  violations: Array<{ resource: string; policy: string; state: string }>;
+  violations: Array<{
+    resource: string;
+    policy: string;
+    state: string;
+    policyDefinitionId?: string;
+    policyAssignmentName?: string;
+    policyAssignmentId?: string;
+    timestamp?: string;
+  }>;
 }
 
 export interface GovernanceResourceSummary {
@@ -46,6 +73,8 @@ export interface GovernanceSnapshot {
   policy: GovernancePolicySummary;
   resources: GovernanceResourceSummary;
   errors: string[];
+  loadingSections: GovernanceSection[];
+  loadedSections: Array<GovernanceSection | 'subscriptions'>;
 }
 
 interface AzureList<T> {
@@ -66,10 +95,44 @@ interface ResourceGraphResponse<T> {
 /** Loads costs, quotas, policy results, tag gaps, and locks for the dashboard. */
 @Injectable({ providedIn: 'root' })
 export class GovernanceService {
+  private snapshotCache: { value: GovernanceSnapshot; expiresAt: number } | null = null;
+  private snapshotRequest: Observable<GovernanceSnapshot> | null = null;
+  private readonly actualCostCache = new Map<
+    string,
+    { value: GovernanceCostSummary; expiresAt: number }
+  >();
+  private readonly forecastCache = new Map<string, { value: number | null; expiresAt: number }>();
+
   constructor(private readonly http: HttpClient) {}
 
+  /** Returns cached data, shares in-flight loads, or loads a fresh dashboard snapshot. */
+  public getSnapshot(forceRefresh = false): Observable<GovernanceSnapshot> {
+    if (!forceRefresh && this.snapshotCache && this.snapshotCache.expiresAt > Date.now()) {
+      return of(this.snapshotCache.value);
+    }
+    if (this.snapshotRequest) {
+      return this.snapshotRequest;
+    }
+
+    this.snapshotRequest = this.loadSnapshot().pipe(
+      tap((snapshot) => {
+        if (snapshot.loadingSections.length === 0) {
+          this.snapshotCache = {
+            value: snapshot,
+            expiresAt: Date.now() + SNAPSHOT_CACHE_TTL_MS
+          };
+        }
+      }),
+      finalize(() => {
+        this.snapshotRequest = null;
+      }),
+      shareReplay({ bufferSize: 1, refCount: false })
+    );
+    return this.snapshotRequest;
+  }
+
   /** Loads the dashboard snapshot across all visible subscriptions. */
-  public getSnapshot(): Observable<GovernanceSnapshot> {
+  private loadSnapshot(): Observable<GovernanceSnapshot> {
     return this.get<AzureList<GovernanceSubscription>>('/subscriptions', {
       'api-version': '2022-12-01'
     }).pipe(
@@ -89,51 +152,92 @@ export class GovernanceService {
             })))
           )
         );
-        const queries = forkJoin({
-          costs: this.getCostSummary(subscriptionIds.length > 0 ? subscriptionIds : [activeSubscriptionId]).pipe(
-            this.withFallback<GovernanceCostSummary>(
-              { monthToDate: null, forecast: null, currency: 'USD', services: [] },
-              errors,
-              'Cost data'
-            )
-          ),
-          quotas: forkJoin(quotaRequests).pipe(
-            map((results) => results.flat()),
-            this.withFallback<GovernanceQuota[]>([], errors, 'Quota data')
-          ),
-          policy: this.getPolicySummary(subscriptionIds).pipe(
-            this.withFallback<GovernancePolicySummary>(
-              { compliant: 0, nonCompliant: 0, violations: [] },
-              errors,
-              'Policy data'
-            )
-          ),
-          resources: this.getResourceSummary(subscriptionIds).pipe(
-            this.withFallback<GovernanceResourceSummary>(
-              { missingTags: [], locks: [] },
-              errors,
-              'Resource data'
-            )
-          )
-        });
-
-        return queries.pipe(map((data) => ({
+        const previous = this.snapshotCache?.value;
+        const initial: GovernanceSnapshot = {
           subscriptions,
-          costs: data.costs,
-          quotas: data.quotas,
-          policy: data.policy,
-          resources: data.resources,
-          errors
-        })));
+          costs: previous?.costs ?? {
+            monthToDate: null,
+            forecast: null,
+            currency: 'USD',
+            services: []
+          },
+          quotas: previous?.quotas ?? [],
+          policy: previous?.policy ?? { compliant: 0, nonCompliant: 0, violations: [] },
+          resources: previous?.resources ?? { missingTags: [], locks: [] },
+          errors: [],
+          loadingSections: ['costs', 'quotas', 'policy', 'resources'],
+          loadedSections: previous?.loadedSections ?? ['subscriptions']
+        };
+        const costIds = subscriptionIds.length > 0 ? subscriptionIds : [activeSubscriptionId];
+        const updates = merge(
+          this.createSnapshotUpdate(
+            'costs',
+            this.getCostSummary(costIds),
+            initial.costs,
+            'Cost data'
+          ),
+          this.createSnapshotUpdate(
+            'quotas',
+            forkJoin(quotaRequests).pipe(map((results) => results.flat())),
+            initial.quotas,
+            'Quota data'
+          ),
+          this.createSnapshotUpdate(
+            'policy',
+            this.getPolicySummary(subscriptionIds),
+            initial.policy,
+            'Policy data'
+          ),
+          this.createSnapshotUpdate(
+            'resources',
+            this.getResourceSummary(subscriptionIds),
+            initial.resources,
+            'Resource data'
+          )
+        );
+
+        return updates.pipe(
+          scan((snapshot, update) => update(snapshot), initial),
+          startWith(initial)
+        );
       })
+    );
+  }
+
+  /** Converts one domain request into a snapshot update without blocking other cards. */
+  private createSnapshotUpdate<T>(
+    section: GovernanceSection,
+    request: Observable<T>,
+    fallback: T,
+    label: string
+  ): Observable<GovernanceSnapshotUpdater> {
+    return request.pipe(
+      map((value): GovernanceSnapshotUpdater => (snapshot) => ({
+        ...snapshot,
+        [section]: value,
+        loadingSections: snapshot.loadingSections.filter((item) => item !== section),
+        loadedSections: snapshot.loadedSections.includes(section)
+          ? snapshot.loadedSections
+          : [...snapshot.loadedSections, section]
+      })),
+      catchError((error: unknown) => of((snapshot: GovernanceSnapshot) => ({
+        ...snapshot,
+        [section]: fallback,
+        loadingSections: snapshot.loadingSections.filter((item) => item !== section),
+        loadedSections: snapshot.loadedSections.includes(section)
+          ? snapshot.loadedSections
+          : [...snapshot.loadedSections, section],
+        errors: [...snapshot.errors, `${label}: ${this.getAzureErrorMessage(error)}`]
+      })))
     );
   }
 
   /** Retrieves current month cost grouped by service and a month-end forecast. */
   private getCostSummary(subscriptionIds: string[]): Observable<GovernanceCostSummary> {
-    return forkJoin(subscriptionIds.map((subscriptionId) =>
-      this.getSubscriptionCostSummary(subscriptionId)
-    )).pipe(map((summaries) => {
+    return from(subscriptionIds).pipe(
+      concatMap((subscriptionId) => this.getSubscriptionCostSummary(subscriptionId)),
+      toArray(),
+      map((summaries) => {
       const serviceCosts = new Map<string, number>();
       for (const summary of summaries) {
         for (const service of summary.services) {
@@ -152,7 +256,8 @@ export class GovernanceService {
           .map(([name, cost]) => ({ name, cost }))
           .sort((left, right) => right.cost - left.cost)
       };
-    }));
+      })
+    );
   }
 
   /** Loads actual and forecast cost for one subscription. */
@@ -168,13 +273,53 @@ export class GovernanceService {
         grouping: [{ type: 'Dimension', name: 'ServiceName' }]
       }
     };
+    const cachedActual = this.actualCostCache.get(subscriptionId);
+    const actualCost = cachedActual && cachedActual.expiresAt > Date.now()
+      ? of(cachedActual.value)
+      : this.http.post<CostResponse>(`${GOVERNANCE_ENDPOINT}${path}`, body, { params }).pipe(
+        this.withCostManagementRetry<CostResponse>(),
+        map((response) => this.toCostSummary(response)),
+        tap((summary) => this.actualCostCache.set(subscriptionId, {
+          value: summary,
+          expiresAt: Date.now() + COST_CACHE_TTL_MS
+        }))
+      );
 
-    return this.http.post<CostResponse>(`${GOVERNANCE_ENDPOINT}${path}`, body, { params }).pipe(
-      map((response) => this.toCostSummary(response)),
-      switchMap((costs) => this.getForecast(subscriptionId).pipe(
-        map((forecast) => ({ ...costs, forecast }))
-      ))
-    );
+    return actualCost.pipe(switchMap((costs) => {
+      const cachedForecast = this.forecastCache.get(subscriptionId);
+      const forecast = cachedForecast && cachedForecast.expiresAt > Date.now()
+        ? of(cachedForecast.value)
+        : this.getForecast(subscriptionId).pipe(
+          tap((value) => this.forecastCache.set(subscriptionId, {
+            value,
+            expiresAt: Date.now() + COST_CACHE_TTL_MS
+          }))
+        );
+      return forecast.pipe(map((value) => ({ ...costs, forecast: value })));
+    }));
+  }
+
+  /** Retries Cost Management throttling responses after Azure's advised delay. */
+  private withCostManagementRetry<T>() {
+    return (source: Observable<T>): Observable<T> => source.pipe(retry({
+      count: 3,
+      delay: (error: unknown, retryCount: number) => {
+        if (!(error instanceof HttpErrorResponse) || error.status !== 429) {
+          return throwError(() => error);
+        }
+
+        const headerDelay = Number(
+          error.headers.get('x-ms-ratelimit-microsoft.consumption-retry-after')
+          ?? error.headers.get('Retry-After')
+        );
+        const backoffDelay = Math.min(30_000, 1_000 * (2 ** (retryCount - 1)));
+        const delayMs = Number.isFinite(headerDelay) && headerDelay > 0
+          ? Math.max(backoffDelay, headerDelay * 1_000)
+          : backoffDelay;
+        const jitterMs = Math.floor(Math.random() * Math.min(1_000, delayMs * 0.2));
+        return timer(delayMs + jitterMs);
+      }
+    }));
   }
 
   /** Retrieves the cost forecast for the remaining current month. */
@@ -198,6 +343,7 @@ export class GovernanceService {
     };
 
     return this.http.post<CostResponse>(`${GOVERNANCE_ENDPOINT}${path}`, body, { params }).pipe(
+      this.withCostManagementRetry<CostResponse>(),
       map((response) => this.firstNumericValue(response))
     );
   }
@@ -237,15 +383,19 @@ export class GovernanceService {
       | where type =~ 'microsoft.policyinsights/policystates'
       | where tostring(properties.complianceState) =~ 'NonCompliant'
       | project resource=tostring(properties.resourceId), policy=tostring(properties.policyDefinitionName),
-          state=tostring(properties.complianceState)
+          state=tostring(properties.complianceState),
+          policyDefinitionId=tostring(properties.policyDefinitionId),
+          policyAssignmentName=tostring(properties.policyAssignmentName),
+          policyAssignmentId=tostring(properties.policyAssignmentId),
+          timestamp=tostring(properties.timestamp)
       | take 30`;
 
     return forkJoin({
       summary: this.executeResourceGraph<{ compliant: number; nonCompliant: number }>(
-        query, subscriptionIds
+        query, subscriptionIds, 'policy compliance summary'
       ),
-      violations: this.executeResourceGraph<{ resource: string; policy: string; state: string }>(
-        violations, subscriptionIds
+      violations: this.executeResourceGraph<GovernancePolicySummary['violations'][number]>(
+        violations, subscriptionIds, 'policy violations'
       )
     }).pipe(map((response) => {
       const compliant = Number(response.summary[0]?.compliant ?? 0);
@@ -257,14 +407,14 @@ export class GovernanceService {
   /** Finds resources missing required tags and protected by subscription locks. */
   private getResourceSummary(subscriptionIds: string[]): Observable<GovernanceResourceSummary> {
     const tagsQuery = `Resources
-      | extend missing = pack_array(
+      | extend missingTag = pack_array(
           iff(isempty(tostring(tags['Environment'])), 'Environment', ''),
           iff(isempty(tostring(tags['Owner'])), 'Owner', ''),
           iff(isempty(tostring(tags['CostCenter'])), 'CostCenter', ''))
-      | mv-expand missing
-      | where tostring(missing) != ''
-      | summarize missing=make_set(tostring(missing)) by name, resourceGroup
-      | project name, resourceGroup, missing
+      | mv-expand missingTag
+      | where tostring(missingTag) != ''
+      | summarize missingTagNames=make_set(tostring(missingTag)) by name, resourceGroup
+      | project name, resourceGroup, missingTagNames
       | take 100`;
     const locksQuery = `Resources
       | where tostring(tags['Environment']) in~ ('Production', 'Prod')
@@ -286,18 +436,28 @@ export class GovernanceService {
       missingTags: this.executeResourceGraph<{
         name: string;
         resourceGroup: string;
-        missing: string[];
-      }>(tagsQuery, subscriptionIds),
+        missingTagNames: string[];
+      }>(tagsQuery, subscriptionIds, 'missing governance tags').pipe(
+        map((resources) => resources.map((resource) => ({
+          name: resource.name,
+          resourceGroup: resource.resourceGroup,
+          missing: resource.missingTagNames
+        })))
+      ),
       locks: this.executeResourceGraph<{
         name: string;
         level: string;
         resourceId: string;
-      }>(locksQuery, subscriptionIds)
+      }>(locksQuery, subscriptionIds, 'production resource locks')
     });
   }
 
   /** Runs a Resource Graph query for the supplied subscription set. */
-  private executeResourceGraph<T>(query: string, subscriptions: string[]): Observable<T[]> {
+  private executeResourceGraph<T>(
+    query: string,
+    subscriptions: string[],
+    queryName = 'resource query'
+  ): Observable<T[]> {
     if (subscriptions.length === 0) {
       return of([]);
     }
@@ -306,7 +466,27 @@ export class GovernanceService {
       `${GOVERNANCE_ENDPOINT}/providers/Microsoft.ResourceGraph/resources`,
       { subscriptions, query, options: { resultFormat: 'objectArray' } },
       { params }
-    ).pipe(map((response) => response.data ?? []));
+    ).pipe(
+      map((response) => response.data ?? []),
+      catchError((error: HttpErrorResponse) => {
+        const details = this.getAzureErrorMessage(error);
+        console.error(`Governance Resource Graph ${queryName} failed: ${details}`, {
+          status: error.status,
+          query,
+          response: error.error
+        });
+        throw error;
+      })
+    );
+  }
+
+  /** Extracts the service-provided message from an Azure HTTP error response. */
+  private getAzureErrorMessage(error: unknown): string {
+    if (!(error instanceof HttpErrorResponse)) {
+      return error instanceof Error ? error.message : 'The request failed.';
+    }
+    const azureMessage = error.error?.error?.message ?? error.error?.message;
+    return typeof azureMessage === 'string' ? azureMessage : error.message;
   }
 
   /** Sends a GET request to an allowlisted Azure management path. */
@@ -344,11 +524,4 @@ export class GovernanceService {
     return rows.reduce((sum, row) => sum + Number(row[index] ?? 0), 0);
   }
 
-  /** Records an optional data-source failure while preserving the dashboard. */
-  private withFallback<T>(fallback: T, errors: string[], label: string) {
-    return (source: Observable<T>): Observable<T> => source.pipe(catchError(() => {
-      errors.push(`${label} is unavailable for the current account or subscription.`);
-      return of(fallback);
-    }));
-  }
 }

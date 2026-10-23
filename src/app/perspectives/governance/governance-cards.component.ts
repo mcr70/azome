@@ -1,5 +1,6 @@
 /** Defines focused standalone cards for each Governance dashboard domain. */
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { AzureResourceDetail } from '@services/azure/resource-graph.service';
 import {
   GovernanceCostSummary,
   GovernancePolicySummary,
@@ -19,6 +20,8 @@ import { GovernanceDomainCardComponent } from './governance-domain-card.componen
 })
 export class GovernanceCostCardComponent {
   @Input({ required: true }) data!: GovernanceCostSummary;
+  @Input() loading = false;
+  @Input() loaded = true;
 
   /** Formats cost values with the billing currency from Cost Management. */
   public formatCost(value: number | null): string {
@@ -44,6 +47,24 @@ export class GovernanceCostCardComponent {
 export class GovernanceSubscriptionsCardComponent {
   @Input({ required: true }) subscriptions: GovernanceSubscription[] = [];
   @Input({ required: true }) quotas: GovernanceQuota[] = [];
+  @Input() quotasLoading = false;
+  @Input() quotasLoaded = true;
+  @Output() resourceSelected = new EventEmitter<AzureResourceDetail>();
+
+  /** Builds the resource detail model shown when a subscription is selected. */
+  public selectSubscription(subscription: GovernanceSubscription): void {
+    this.resourceSelected.emit({
+      id: `/subscriptions/${subscription.subscriptionId}`,
+      name: subscription.displayName,
+      type: 'microsoft.resources/subscriptions',
+      properties: {
+        subscriptionId: subscription.subscriptionId,
+        state: subscription.state,
+        tenantId: subscription.tenantId,
+        authorizationSource: subscription.authorizationSource
+      }
+    });
+  }
 }
 
 /** Summarizes policy compliance and a sample of non-compliant resources. */
@@ -56,6 +77,27 @@ export class GovernanceSubscriptionsCardComponent {
 })
 export class GovernancePolicyCardComponent {
   @Input({ required: true }) data!: GovernancePolicySummary;
+  @Input() loading = false;
+  @Input() loaded = true;
+  @Output() resourceSelected = new EventEmitter<AzureResourceDetail>();
+
+  /** Builds a policy-state detail model for the selected violation. */
+  public selectViolation(violation: GovernancePolicySummary['violations'][number]): void {
+    this.resourceSelected.emit({
+      id: violation.resource,
+      name: violation.resource.split('/').pop() || violation.resource,
+      type: 'microsoft.policyinsights/policystates',
+      properties: {
+        resourceId: violation.resource,
+        policyDefinitionName: violation.policy,
+        complianceState: violation.state,
+        policyDefinitionId: violation.policyDefinitionId,
+        policyAssignmentName: violation.policyAssignmentName,
+        policyAssignmentId: violation.policyAssignmentId,
+        timestamp: violation.timestamp
+      }
+    });
+  }
 }
 
 /** Lists resources missing one or more required governance tags. */
@@ -68,6 +110,8 @@ export class GovernancePolicyCardComponent {
 })
 export class GovernanceTagsCardComponent {
   @Input({ required: true }) resources!: GovernanceResourceSummary;
+  @Input() loading = false;
+  @Input() loaded = true;
 }
 
 /** Lists production resources protected by Azure resource locks. */
@@ -80,4 +124,6 @@ export class GovernanceTagsCardComponent {
 })
 export class GovernanceLocksCardComponent {
   @Input({ required: true }) resources!: GovernanceResourceSummary;
+  @Input() loading = false;
+  @Input() loaded = true;
 }

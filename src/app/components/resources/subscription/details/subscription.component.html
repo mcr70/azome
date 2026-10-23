@@ -1,0 +1,37 @@
+<!-- This view presents subscription-level control-plane metadata. -->
+<section class="subscription-detail" aria-labelledby="subscription-detail-title">
+  <h3 id="subscription-detail-title" class="resource-detail-heading">Subscription</h3>
+
+  <div class="resource-detail-table-wrapper">
+    <table class="resource-detail-table">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Display name</strong></td>
+          <td>{{ resource?.name || '-' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Subscription ID</strong></td>
+          <td><code>{{ properties?.subscriptionId || resource?.id || '-' }}</code></td>
+        </tr>
+        <tr>
+          <td><strong>State</strong></td>
+          <td>{{ properties?.state || '-' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Tenant ID</strong></td>
+          <td><code>{{ properties?.tenantId || '-' }}</code></td>
+        </tr>
+        <tr>
+          <td><strong>Authorization source</strong></td>
+          <td>{{ properties?.authorizationSource || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

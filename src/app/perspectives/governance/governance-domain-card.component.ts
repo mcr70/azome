@@ -12,4 +12,6 @@ export class GovernanceDomainCardComponent {
   @Input({ required: true }) title = '';
   @Input() subtitle = '';
   @Input() tone: 'default' | 'warning' | 'critical' = 'default';
+  @Input() loading = false;
+  @Input() loaded = true;
 }

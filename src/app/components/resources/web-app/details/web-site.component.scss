@@ -1,0 +1,17 @@
+/* The site detail table stays within the resource detail panel width. */
+@use '../../resource-details-shared';
+
+.web-site-detail {
+  width: 100%;
+  min-width: 0;
+}
+
+.resource-detail-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.resource-detail-table th,
+.resource-detail-table td {
+  overflow-wrap: anywhere;
+}

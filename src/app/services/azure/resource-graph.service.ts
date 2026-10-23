@@ -34,9 +34,18 @@ export interface AzureResource {
   resourceGroup?: string;
 }
 
+/** Describes the SKU metadata returned for Azure resources. */
+export interface AzureResourceSku {
+  name?: string;
+  tier?: string;
+  capacity?: number;
+}
+
 export interface AzureResourceDetail extends AzureResource {
+  kind?: string;
   tags?: { [key: string]: string };
   properties?: any;
+  sku?: AzureResourceSku;
 }
 
 interface ResourceGraphResponse {
@@ -376,7 +385,7 @@ export class ResourceGraphService {
    */
   public getResourceDetails(resourceId: string): Observable<AzureResourceDetail | null> {
     const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
-    const query = `Resources | where id =~ '${resourceId}' | project id, name, type, location, resourceGroup, tags, properties`;
+    const query = `Resources | where id =~ '${resourceId}' | project id, name, type, location, resourceGroup, kind, tags, properties, sku`;
 
     return this.http.post<{ data: AzureResourceDetail[] }>(url, {
       subscriptions: [environment.azure.subscriptionId],

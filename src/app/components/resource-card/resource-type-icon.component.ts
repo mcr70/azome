@@ -1,9 +1,11 @@
 import { Component, Input } from '@angular/core';
 import {
   LucideActivity,
+  LucideCloudCog,
   LucideDatabase,
   LucideDatabaseZap,
   LucideFolder,
+  LucideGlobe,
   LucideHardDrive,
   LucideIconData,
   LucideNetwork,
@@ -33,6 +35,12 @@ export class ResourceTypeIconComponent {
 
     if (resourceType === 'microsoft.insights/diagnosticsettings') {
       return LucideWorkflow.icon;
+    }
+    if (resourceType === 'microsoft.web/serverfarms') {
+      return LucideCloudCog.icon;
+    }
+    if (resourceType === 'microsoft.web/sites') {
+      return LucideGlobe.icon;
     }
 
     if (resourceType.includes('resourcegroups') || resourceType === 'resourcegroup') {

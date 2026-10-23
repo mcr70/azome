@@ -2,7 +2,9 @@
 <app-governance-domain-card
   title="Policy Compliance"
   subtitle="Policy state resources across accessible subscriptions"
-  [tone]="data.nonCompliant > 0 ? 'critical' : 'default'">
+  [tone]="data.nonCompliant > 0 ? 'critical' : 'default'"
+  [loading]="loading"
+  [loaded]="loaded">
   <div class="metric-pair">
     <div>
       <span class="metric-label">Compliant resources</span>
@@ -17,7 +19,12 @@
   <ul class="data-list compact-list">
     @for (violation of data.violations.slice(0, 8); track violation.resource + violation.policy) {
       <li class="stacked-item">
-        <strong>{{ violation.resource.split('/').pop() }}</strong>
+        <button
+          type="button"
+          class="resource-link"
+          (click)="selectViolation(violation)">
+          {{ violation.resource.split('/').pop() }}
+        </button>
         <span>{{ violation.policy || 'Policy definition' }}</span>
       </li>
     } @empty {

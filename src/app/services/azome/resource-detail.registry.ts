@@ -11,6 +11,18 @@ import {
 import {
   DiagnosticSettingsComponent
 } from '@components/resources/diagnostic-settings/diagnostic-settings.component';
+import {
+  AppServicePlanComponent
+} from '@components/resources/app-service-plan/details/app-service-plan.component';
+import {
+  WebSiteComponent
+} from '@components/resources/web-app/details/web-site.component';
+import {
+  SubscriptionDetailComponent
+} from '@components/resources/subscription/details/subscription.component';
+import {
+  PolicyViolationDetailComponent
+} from '@components/resources/policy-violation/details/policy-violation.component';
 
 
 export type PanelVariant = 'default' | 'wide' | 'content';
@@ -38,6 +50,10 @@ export class ResourceDetailRegistryService {
     this.register('microsoft.documentdb/databaseaccounts', CosmosDbComponent);
     this.register('microsoft.operationalinsights/workspaces', LogAnalyticsWorkspaceComponent);
     this.register('microsoft.insights/diagnosticsettings', DiagnosticSettingsComponent);
+    this.register('microsoft.web/serverfarms', AppServicePlanComponent);
+    this.register('microsoft.web/sites', WebSiteComponent);
+    this.register('microsoft.resources/subscriptions', SubscriptionDetailComponent);
+    this.register('microsoft.policyinsights/policystates', PolicyViolationDetailComponent);
   }
 
   public register(resourceType: string, component: ResourceDetailComponentType): void {

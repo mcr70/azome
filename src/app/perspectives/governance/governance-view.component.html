@@ -8,9 +8,15 @@
         Review subscription spend, policy health, required tags, quotas, and resource protection.
       </p>
     </div>
-    <button type="button" class="refresh-button" (click)="refresh()" [disabled]="loading()">
-      {{ loading() ? 'Refreshing…' : 'Refresh' }}
-    </button>
+    <div class="perspective-actions">
+      <button
+        type="button"
+        class="refresh-button"
+        (click)="refresh(true)"
+        [disabled]="loading()">
+        {{ loading() ? 'Refreshing…' : 'Refresh' }}
+      </button>
+    </div>
   </header>
 
   @if (loading() && !snapshot()) {
@@ -29,13 +35,50 @@
     }
 
     <div class="governance-grid">
-      <app-governance-cost-card [data]="data.costs"></app-governance-cost-card>
+      <app-governance-cost-card
+        [data]="data.costs"
+        [loading]="data.loadingSections.includes('costs')"
+        [loaded]="data.loadedSections.includes('costs')"></app-governance-cost-card>
       <app-governance-subscriptions-card
         [subscriptions]="data.subscriptions"
-        [quotas]="data.quotas"></app-governance-subscriptions-card>
-      <app-governance-policy-card [data]="data.policy"></app-governance-policy-card>
-      <app-governance-tags-card [resources]="data.resources"></app-governance-tags-card>
-      <app-governance-locks-card [resources]="data.resources"></app-governance-locks-card>
+        [quotas]="data.quotas"
+        [quotasLoading]="data.loadingSections.includes('quotas')"
+        [quotasLoaded]="data.loadedSections.includes('quotas')"
+        (resourceSelected)="openResourceDetails($event)"></app-governance-subscriptions-card>
+      <app-governance-policy-card
+        [data]="data.policy"
+        [loading]="data.loadingSections.includes('policy')"
+        [loaded]="data.loadedSections.includes('policy')"
+        (resourceSelected)="openResourceDetails($event)"></app-governance-policy-card>
+      <app-governance-tags-card
+        [resources]="data.resources"
+        [loading]="data.loadingSections.includes('resources')"
+        [loaded]="data.loadedSections.includes('resources')"></app-governance-tags-card>
+      <app-governance-locks-card
+        [resources]="data.resources"
+        [loading]="data.loadingSections.includes('resources')"
+        [loaded]="data.loadedSections.includes('resources')"></app-governance-locks-card>
     </div>
   }
 </section>
+
+@if (pinnedPanels().length > 0) {
+  <div class="pinned-panel-slots" aria-label="Pinned resource panels">
+    @for (panel of pinnedPanels(); track panel.id) {
+      <app-resource-detail-pane
+        [panel]="panel"
+        [pinned]="true"
+        (close)="closePanel($event)"
+        (togglePin)="togglePanelPin($event)">
+      </app-resource-detail-pane>
+    }
+  </div>
+}
+
+@if (floatingPanel(); as panel) {
+  <app-resource-detail-pane
+    [panel]="panel"
+    (close)="closePanel($event)"
+    (togglePin)="togglePanelPin($event)">
+  </app-resource-detail-pane>
+}

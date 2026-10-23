@@ -1,42 +1,73 @@
 /* Governance dashboard styles keep metrics scannable across desktop and mobile. */
+:host {
+  display: block;
+  min-width: 0;
+}
+
 .governance-view {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
   padding: 1.5rem;
+  box-sizing: border-box;
+  color: #172033;
 }
 
 .perspective-heading {
   display: flex;
-  align-items: flex-start;
+  flex-wrap: wrap;
+  align-items: flex-end;
   justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
+  gap: 24px;
+  margin-bottom: 28px;
+}
+
+.perspective-heading > :first-child {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.perspective-actions {
+  display: flex;
+  flex: 1 1 480px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  min-width: 0;
+  min-height: 50px;
 }
 
 .eyebrow {
-  color: #65758b;
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  margin: 0 0 4px;
+  color: #0f766e;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
-.perspective-heading h1 {
-  margin: 0.25rem 0;
-  color: #172b4d;
+h1 {
+  margin: 0 0 8px;
+  color: #172033;
+  font-size: 1.75rem;
 }
 
 .description {
-  max-width: 48rem;
+  max-width: 100%;
   margin: 0;
-  color: #53657d;
+  color: #475569;
+  line-height: 1.5;
 }
 
 .refresh-button {
-  padding: 0.6rem 1rem;
-  border: 1px solid #b7c3d0;
-  border-radius: 0.45rem;
+  padding: 8px 14px;
+  border: 1px solid #0f766e;
+  border-radius: 4px;
   background: #ffffff;
-  color: #172b4d;
+  color: #0f766e;
   cursor: pointer;
+  font: inherit;
+  font-weight: 600;
 }
 
 .refresh-button:disabled {
@@ -90,6 +121,13 @@
   }
 
   .perspective-heading {
+    align-items: flex-start;
     flex-direction: column;
+  }
+
+  .perspective-actions {
+    flex: 0 0 auto;
+    width: 100%;
+    justify-content: flex-start;
   }
 }

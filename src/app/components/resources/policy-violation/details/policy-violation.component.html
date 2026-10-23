@@ -1,0 +1,45 @@
+<!-- This view shows policy control-plane findings for the affected Azure resource. -->
+<section class="policy-violation-detail" aria-labelledby="policy-violation-title">
+  <h3 id="policy-violation-title" class="resource-detail-heading">Policy Violation</h3>
+
+  <div class="resource-detail-table-wrapper">
+    <table class="resource-detail-table">
+      <thead>
+        <tr>
+          <th>Property</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Compliance state</strong></td>
+          <td>{{ properties?.complianceState || 'NonCompliant' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Affected resource</strong></td>
+          <td><code>{{ properties?.resourceId || resource?.id || '-' }}</code></td>
+        </tr>
+        <tr>
+          <td><strong>Policy definition</strong></td>
+          <td>{{ properties?.policyDefinitionName || '-' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Policy definition ID</strong></td>
+          <td><code>{{ properties?.policyDefinitionId || '-' }}</code></td>
+        </tr>
+        <tr>
+          <td><strong>Policy assignment</strong></td>
+          <td>{{ properties?.policyAssignmentName || '-' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Policy assignment ID</strong></td>
+          <td><code>{{ properties?.policyAssignmentId || '-' }}</code></td>
+        </tr>
+        <tr>
+          <td><strong>Evaluation time</strong></td>
+          <td>{{ properties?.timestamp || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

@@ -1,0 +1,81 @@
+<!-- This view contains site control-plane settings without browsing site data. -->
+<section class="web-site-detail" aria-labelledby="web-site-title">
+  <h3 id="web-site-title" class="resource-detail-heading">Web App / Function App</h3>
+
+  @if (!properties) {
+    <div class="resource-detail-empty">
+      No Web App details are available.
+    </div>
+  } @else {
+    <div class="resource-detail-table-wrapper">
+      <table class="resource-detail-table">
+        <thead>
+          <tr>
+            <th>Property</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Kind</strong></td>
+            <td>{{ siteKind }}</td>
+          </tr>
+          <tr>
+            <td><strong>State</strong></td>
+            <td>{{ properties.state || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Availability</strong></td>
+            <td>{{ properties.availabilityState || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Default Hostname</strong></td>
+            <td>{{ properties.defaultHostName || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Hostnames</strong></td>
+            <td>{{ properties.hostNames?.join(', ') || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Runtime</strong></td>
+            <td>{{ runtime || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>App Service Plan</strong></td>
+            <td>
+              @if (properties.serverFarmId) {
+                <code class="resource-detail-code">{{ properties.serverFarmId }}</code>
+              } @else {
+                {{ planName || '-' }}
+              }
+            </td>
+          </tr>
+          <tr>
+            <td><strong>Enabled</strong></td>
+            <td>{{ properties.enabled ? 'Yes' : 'No or unspecified' }}</td>
+          </tr>
+          <tr>
+            <td><strong>HTTPS Only</strong></td>
+            <td>{{ properties.httpsOnly ? 'Enabled' : 'Disabled or unspecified' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Always On</strong></td>
+            <td>{{ properties.siteConfig?.alwaysOn ? 'Enabled' : 'Disabled or unspecified' }}</td>
+          </tr>
+          <tr>
+            <td><strong>Minimum TLS Version</strong></td>
+            <td>{{ properties.siteConfig?.minTlsVersion || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>FTPS State</strong></td>
+            <td>{{ properties.siteConfig?.ftpsState || '-' }}</td>
+          </tr>
+          <tr>
+            <td><strong>HTTP/2</strong></td>
+            <td>{{ properties.siteConfig?.http20Enabled ? 'Enabled' : 'Disabled or unspecified' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  }
+</section>

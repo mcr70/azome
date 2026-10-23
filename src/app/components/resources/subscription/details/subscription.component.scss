@@ -1,0 +1,17 @@
+/* The subscription detail table fits the shared resource panel layout. */
+@use '../../resource-details-shared';
+
+.subscription-detail {
+  width: 100%;
+  min-width: 0;
+}
+
+.resource-detail-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.resource-detail-table th,
+.resource-detail-table td {
+  overflow-wrap: anywhere;
+}

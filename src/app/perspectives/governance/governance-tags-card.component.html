@@ -2,7 +2,9 @@
 <app-governance-domain-card
   title="Tag Hygiene"
   subtitle="Missing Environment, Owner, or CostCenter tags"
-  [tone]="resources.missingTags.length > 0 ? 'warning' : 'default'">
+  [tone]="resources.missingTags.length > 0 ? 'warning' : 'default'"
+  [loading]="loading"
+  [loaded]="loaded">
   <p class="summary-count">{{ resources.missingTags.length }} resources reported with tag gaps</p>
   <ul class="data-list compact-list">
     @for (resource of resources.missingTags.slice(0, 12); track resource.name + resource.resourceGroup) {
