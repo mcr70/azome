@@ -18,7 +18,7 @@ import {
 import { environment } from '@environments/environment';
 
 const GOVERNANCE_ENDPOINT = '/governance-proxy';
-const RESOURCE_GRAPH_API_VERSION = '2021-03-01';
+const RESOURCE_GRAPH_API_VERSION = '2021-06-01-preview';
 const SNAPSHOT_CACHE_TTL_MS = 5 * 60 * 1000;
 const COST_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 
@@ -55,6 +55,8 @@ export interface GovernancePolicySummary {
     policy: string;
     state: string;
     policyDefinitionId?: string;
+    policySetDefinitionName?: string;
+    policySetDefinitionId?: string;
     policyAssignmentName?: string;
     policyAssignmentId?: string;
     timestamp?: string;
@@ -131,6 +133,48 @@ export class GovernanceService {
     return this.snapshotRequest;
   }
 
+  /** Fetch the complete JSON definition or initiative details of a policy by its ID. */
+  public getPolicyJson(policyId: string): Observable<any> {
+    const url = `${environment.azure.resourceManagerUrl}${policyId}`;
+    const params = new HttpParams().set('api-version', '2023-04-01');
+
+    return this.http.get<any>(url, { params });
+  }
+
+  /** Resolves display names for known policy definition IDs in one Resource Graph query. */
+  public getPolicyDefinitionDisplayNames(
+    policyDefinitionIds: string[]
+  ): Observable<Record<string, string>> {
+    const definitionIds = [...new Set(policyDefinitionIds.map((id) => id.trim().toLowerCase()))]
+      .filter(Boolean);
+    if (definitionIds.length === 0) {
+      return of({});
+    }
+
+    const idFilter = definitionIds
+      .map((id) => `'${id.replace(/'/g, "''")}'`)
+      .join(', ');
+    const query = `PolicyResources
+      | where type =~ 'microsoft.authorization/policydefinitions'
+      | where tolower(id) in~ (${idFilter})
+      | project id=tolower(id), displayName=tostring(properties.displayName)`;
+    const subscriptionIds = this.snapshotCache?.value.subscriptions
+      .map((subscription) => subscription.subscriptionId)
+      ?? [environment.azure.subscriptionId];
+
+    return this.executeResourceGraph<{ id: string; displayName: string }>(
+      query,
+      subscriptionIds,
+      'policy definition display names',
+      { authorizationScopeFilter: 'AtScopeAboveAndBelow' }
+    ).pipe(map((definitions) => Object.fromEntries(
+      definitions
+        .filter((definition) => !!definition.id && !!definition.displayName)
+        .map((definition) => [definition.id.toLowerCase(), definition.displayName])
+    )));
+  }
+
+
   /** Loads the dashboard snapshot across all visible subscriptions. */
   private loadSnapshot(): Observable<GovernanceSnapshot> {
     return this.get<AzureList<GovernanceSubscription>>('/subscriptions', {
@@ -162,7 +206,11 @@ export class GovernanceService {
             services: []
           },
           quotas: previous?.quotas ?? [],
-          policy: previous?.policy ?? { compliant: 0, nonCompliant: 0, violations: [] },
+          policy: previous?.policy ?? {
+            compliant: 0,
+            nonCompliant: 0,
+            violations: []
+          },
           resources: previous?.resources ?? { missingTags: [], locks: [] },
           errors: [],
           loadingSections: ['costs', 'quotas', 'policy', 'resources'],
@@ -238,24 +286,24 @@ export class GovernanceService {
       concatMap((subscriptionId) => this.getSubscriptionCostSummary(subscriptionId)),
       toArray(),
       map((summaries) => {
-      const serviceCosts = new Map<string, number>();
-      for (const summary of summaries) {
-        for (const service of summary.services) {
-          serviceCosts.set(service.name, (serviceCosts.get(service.name) ?? 0) + service.cost);
+        const serviceCosts = new Map<string, number>();
+        for (const summary of summaries) {
+          for (const service of summary.services) {
+            serviceCosts.set(service.name, (serviceCosts.get(service.name) ?? 0) + service.cost);
+          }
         }
-      }
-      return {
-        monthToDate: summaries.some((summary) => summary.monthToDate === null)
-          ? null
-          : summaries.reduce((sum, summary) => sum + (summary.monthToDate ?? 0), 0),
-        forecast: summaries.some((summary) => summary.forecast === null)
-          ? null
-          : summaries.reduce((sum, summary) => sum + (summary.forecast ?? 0), 0),
-        currency: summaries[0]?.currency ?? 'USD',
-        services: [...serviceCosts.entries()]
-          .map(([name, cost]) => ({ name, cost }))
-          .sort((left, right) => right.cost - left.cost)
-      };
+        return {
+          monthToDate: summaries.some((summary) => summary.monthToDate === null)
+            ? null
+            : summaries.reduce((sum, summary) => sum + (summary.monthToDate ?? 0), 0),
+          forecast: summaries.some((summary) => summary.forecast === null)
+            ? null
+            : summaries.reduce((sum, summary) => sum + (summary.forecast ?? 0), 0),
+          currency: summaries[0]?.currency ?? 'USD',
+          services: [...serviceCosts.entries()]
+            .map(([name, cost]) => ({ name, cost }))
+            .sort((left, right) => right.cost - left.cost)
+        };
       })
     );
   }
@@ -382,9 +430,27 @@ export class GovernanceService {
     const violations = `PolicyResources
       | where type =~ 'microsoft.policyinsights/policystates'
       | where tostring(properties.complianceState) =~ 'NonCompliant'
-      | project resource=tostring(properties.resourceId), policy=tostring(properties.policyDefinitionName),
+      | extend policyDefinitionId=tolower(tostring(properties.policyDefinitionId)),
+          policySetDefinitionId=tolower(tostring(properties.policySetDefinitionId))
+      | join kind=leftouter (
+          PolicyResources
+          | where type =~ 'microsoft.authorization/policydefinitions'
+          | project policyDefinitionId=tolower(id),
+              policyDefinitionDisplayName=tostring(properties.displayName)
+        ) on policyDefinitionId
+      | join kind=leftouter (
+          PolicyResources
+          | where type =~ 'microsoft.authorization/policysetdefinitions'
+          | project policySetDefinitionId=tolower(id),
+              policySetDefinitionName=tostring(properties.displayName)
+        ) on policySetDefinitionId
+      | project resource=tostring(properties.resourceId),
+          policy=coalesce(policyDefinitionDisplayName,
+            tostring(properties.policyDefinitionName), policyDefinitionId),
           state=tostring(properties.complianceState),
-          policyDefinitionId=tostring(properties.policyDefinitionId),
+          policyDefinitionId,
+          policySetDefinitionName,
+          policySetDefinitionId,
           policyAssignmentName=tostring(properties.policyAssignmentName),
           policyAssignmentId=tostring(properties.policyAssignmentId),
           timestamp=tostring(properties.timestamp)
@@ -395,12 +461,19 @@ export class GovernanceService {
         query, subscriptionIds, 'policy compliance summary'
       ),
       violations: this.executeResourceGraph<GovernancePolicySummary['violations'][number]>(
-        violations, subscriptionIds, 'policy violations'
+        violations,
+        subscriptionIds,
+        'policy violations',
+        { authorizationScopeFilter: 'AtScopeAboveAndBelow' }
       )
     }).pipe(map((response) => {
       const compliant = Number(response.summary[0]?.compliant ?? 0);
       const nonCompliant = Number(response.summary[0]?.nonCompliant ?? 0);
-      return { compliant, nonCompliant, violations: response.violations };
+      return {
+        compliant,
+        nonCompliant,
+        violations: response.violations
+      };
     }));
   }
 
@@ -456,7 +529,8 @@ export class GovernanceService {
   private executeResourceGraph<T>(
     query: string,
     subscriptions: string[],
-    queryName = 'resource query'
+    queryName = 'resource query',
+    queryOptions: { authorizationScopeFilter?: string } = {}
   ): Observable<T[]> {
     if (subscriptions.length === 0) {
       return of([]);
@@ -464,7 +538,11 @@ export class GovernanceService {
     const params = new HttpParams().set('api-version', RESOURCE_GRAPH_API_VERSION);
     return this.http.post<ResourceGraphResponse<T>>(
       `${GOVERNANCE_ENDPOINT}/providers/Microsoft.ResourceGraph/resources`,
-      { subscriptions, query, options: { resultFormat: 'objectArray' } },
+      {
+        subscriptions,
+        query,
+        options: { resultFormat: 'objectArray', ...queryOptions }
+      },
       { params }
     ).pipe(
       map((response) => response.data ?? []),

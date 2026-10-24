@@ -111,6 +111,22 @@ h3 {
   animation: governance-spinner 0.8s linear infinite;
 }
 
+/* Policy domain cards remain separate while sharing a responsive grid. */
+.policy-domain-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 1rem;
+}
+
+.policy-domain-grid app-governance-domain-card {
+  min-width: 0;
+}
+
+.policy-domain-grid .policy-violations-card {
+  grid-column: span 2;
+}
+
 @keyframes governance-spinner {
   to {
     transform: rotate(360deg);
@@ -120,5 +136,15 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
   .loading-spinner {
     animation: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .policy-domain-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .policy-domain-grid .policy-violations-card {
+    grid-column: auto;
   }
 }

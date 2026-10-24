@@ -1,0 +1,126 @@
+<!-- This shared table presents the available Azure Policy parameter schema with row expansion for raw JSON. -->
+<section class="policy-parameters" [attr.aria-label]="title">
+  <div class="section-heading">
+    <div>
+      <h3>{{ title }}</h3>
+      @if (parsedRows().length > 0) {
+        <p>
+          {{ filteredRows().length }} matching parameters of {{ parsedRows().length }} (Click a row to inspect JSON)
+        </p>
+      }
+    </div>
+    @if (parsedRows().length > 0) {
+      <label class="parameter-filter">
+        <input
+          type="search"
+          [value]="filter()"
+          (input)="updateFilter($event)"
+          placeholder="Search parameters"
+        />
+      </label>
+      @if (filter()) {
+        <button type="button" class="clear-filter-button" (click)="clearFilter()">
+          Clear search
+        </button>
+      }
+    }
+  </div>
+
+  @if (filteredRows().length > 0) {
+    <div class="parameter-table-wrapper">
+      <table class="parameter-table">
+        <colgroup>
+          <col class="param-col-name" />
+          <col class="param-col-type" />
+          <col class="param-col-default" />
+          <col class="param-col-allowed" />
+          <col class="param-col-desc" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th scope="col">Parameter</th>
+            <th scope="col">Type</th>
+            <th scope="col">Default value</th>
+            <th scope="col">Allowed values</th>
+            <th scope="col">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (parameter of visibleRows(); track parameter.name) {
+            <tr 
+              class="clickable-row" 
+              [class.expanded]="expandedParameterName() === parameter.name"
+              (click)="toggleRow(parameter.name)"
+              title="Click to toggle raw JSON view"
+            >
+              <td>
+                <div class="param-name-cell">
+                  @if (parameter.isDeprecated) {
+                    <span class="deprecated-badge">Deprecated</span>
+                  }
+                  <span class="param-title"><strong>{{ parameter.displayName }}</strong></span>
+                </div>
+              </td>
+              <td><span class="parameter-type">{{ parameter.type }}</span></td>
+              <td>
+                @if (parameter.defaultValue !== undefined && parameter.defaultValue !== null) {
+                  <code class="parameter-value">{{ formatValue(parameter.defaultValue) }}</code>
+                } @else {
+                  Not specified
+                }
+              </td>
+              <td>
+                @if (parameter.allowedValues?.length) {
+                  <ul class="allowed-values-list">
+                    @for (val of parameter.allowedValues; track val) {
+                      <li><code>{{ val }}</code></li>
+                    }
+                  </ul>
+                } @else {
+                  Not specified
+                }
+              </td>
+              <td class="parameter-description">
+                {{ parameter.description || 'Not specified' }}
+              </td>
+            </tr>
+
+            @if (expandedParameterName() === parameter.name) {
+              <tr class="json-expansion-row">
+                <td colspan="5">
+                  <div class="json-expansion-content" (click)="$event.stopPropagation()">
+                    <!-- <div class="json-expansion-header">
+                      <span>Raw Parameter JSON: <code>{{ parameter.name }}</code></span>
+                      <button type="button" class="close-json-btn" (click)="toggleRow(parameter.name)">Close</button>
+                    </div> -->
+                    <pre>{{ getRawJsonFor(parameter) }}</pre>
+                  </div>
+                </td>
+              </tr>
+            }
+          }
+        </tbody>
+      </table>
+    </div>
+
+    @if (pageCount() > 1) {
+      <nav class="pagination" aria-label="Parameter table pages">
+        <button type="button" [disabled]="page() === 0" (click)="previousPage()">
+          Previous
+        </button>
+        <span>Page {{ page() + 1 }} of {{ pageCount() }}</span>
+        <button
+          type="button"
+          [disabled]="page() >= pageCount() - 1"
+          (click)="nextPage()"
+        >
+          Next
+        </button>
+      </nav>
+    }
+  } @else {
+    <p class="state-message">
+      {{ filter() ? 'No matching parameters.' : 'No parameters are defined.' }}
+    </p>
+  }
+</section>

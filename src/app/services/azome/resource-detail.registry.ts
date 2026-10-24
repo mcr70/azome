@@ -19,10 +19,10 @@ import {
 } from '@components/resources/web-app/details/web-site.component';
 import {
   SubscriptionDetailComponent
-} from '@components/resources/subscription/details/subscription.component';
+} from '@app/components/resources/subscription/subscription.component';
 import {
   PolicyViolationDetailComponent
-} from '@components/resources/policy-violation/details/policy-violation.component';
+} from '@app/components/resources/policy/policy-violation.component';
 
 
 export type PanelVariant = 'default' | 'wide' | 'content';

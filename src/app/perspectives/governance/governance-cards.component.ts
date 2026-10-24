@@ -92,6 +92,8 @@ export class GovernancePolicyCardComponent {
         policyDefinitionName: violation.policy,
         complianceState: violation.state,
         policyDefinitionId: violation.policyDefinitionId,
+        policySetDefinitionName: violation.policySetDefinitionName,
+        policySetDefinitionId: violation.policySetDefinitionId,
         policyAssignmentName: violation.policyAssignmentName,
         policyAssignmentId: violation.policyAssignmentId,
         timestamp: violation.timestamp

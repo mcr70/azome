@@ -5,7 +5,7 @@
       <p class="eyebrow">Perspective</p>
       <h1 id="governance-title">Governance</h1>
       <p class="description">
-        Review subscription spend, policy health, required tags, quotas, and resource protection.
+        Review subscriptions, spending, compliance, policy assignments, and resource protection.
       </p>
     </div>
     <div class="perspective-actions">
@@ -34,31 +34,103 @@
       </div>
     }
 
-    <div class="governance-grid">
-      <app-governance-cost-card
-        [data]="data.costs"
-        [loading]="data.loadingSections.includes('costs')"
-        [loaded]="data.loadedSections.includes('costs')"></app-governance-cost-card>
-      <app-governance-subscriptions-card
-        [subscriptions]="data.subscriptions"
-        [quotas]="data.quotas"
-        [quotasLoading]="data.loadingSections.includes('quotas')"
-        [quotasLoaded]="data.loadedSections.includes('quotas')"
-        (resourceSelected)="openResourceDetails($event)"></app-governance-subscriptions-card>
-      <app-governance-policy-card
-        [data]="data.policy"
-        [loading]="data.loadingSections.includes('policy')"
-        [loaded]="data.loadedSections.includes('policy')"
-        (resourceSelected)="openResourceDetails($event)"></app-governance-policy-card>
-      <app-governance-tags-card
-        [resources]="data.resources"
-        [loading]="data.loadingSections.includes('resources')"
-        [loaded]="data.loadedSections.includes('resources')"></app-governance-tags-card>
-      <app-governance-locks-card
-        [resources]="data.resources"
-        [loading]="data.loadingSections.includes('resources')"
-        [loaded]="data.loadedSections.includes('resources')"></app-governance-locks-card>
+    <div class="view-tabs" role="tablist" aria-label="Governance views">
+      <button
+        #subscriptionsTab
+        id="governance-subscriptions-tab"
+        type="button"
+        role="tab"
+        aria-controls="governance-subscriptions-panel"
+        [attr.aria-selected]="activeTab() === 'subscriptions'"
+        [tabIndex]="activeTab() === 'subscriptions' ? 0 : -1"
+        (click)="selectTab('subscriptions')"
+        (keydown.arrowright)="selectTab('costs'); costsTab.focus(); $event.preventDefault()"
+        (keydown.arrowleft)="selectTab('policies'); policiesTab.focus(); $event.preventDefault()"
+        (keydown.home)="selectTab('subscriptions'); subscriptionsTab.focus(); $event.preventDefault()"
+        (keydown.end)="selectTab('policies'); policiesTab.focus(); $event.preventDefault()">
+        Subscriptions & Resources
+      </button>
+      <button
+        #costsTab
+        id="governance-costs-tab"
+        type="button"
+        role="tab"
+        aria-controls="governance-costs-panel"
+        [attr.aria-selected]="activeTab() === 'costs'"
+        [tabIndex]="activeTab() === 'costs' ? 0 : -1"
+        (click)="selectTab('costs')"
+        (keydown.arrowright)="selectTab('policies'); policiesTab.focus(); $event.preventDefault()"
+        (keydown.arrowleft)="selectTab('subscriptions'); subscriptionsTab.focus(); $event.preventDefault()"
+        (keydown.home)="selectTab('subscriptions'); subscriptionsTab.focus(); $event.preventDefault()"
+        (keydown.end)="selectTab('policies'); policiesTab.focus(); $event.preventDefault()">
+        Cost & FinOps
+      </button>
+      <button
+        #policiesTab
+        id="governance-policies-tab"
+        type="button"
+        role="tab"
+        aria-controls="governance-policies-panel"
+        [attr.aria-selected]="activeTab() === 'policies'"
+        [tabIndex]="activeTab() === 'policies' ? 0 : -1"
+        (click)="selectTab('policies')"
+        (keydown.arrowright)="selectTab('subscriptions'); subscriptionsTab.focus(); $event.preventDefault()"
+        (keydown.arrowleft)="selectTab('costs'); costsTab.focus(); $event.preventDefault()"
+        (keydown.home)="selectTab('subscriptions'); subscriptionsTab.focus(); $event.preventDefault()"
+        (keydown.end)="selectTab('policies'); policiesTab.focus(); $event.preventDefault()">
+        Policy & Compliance
+      </button>
     </div>
+
+    <section
+      id="governance-subscriptions-panel"
+      role="tabpanel"
+      aria-labelledby="governance-subscriptions-tab"
+      [hidden]="activeTab() !== 'subscriptions'">
+      <div class="governance-grid">
+        <app-governance-subscriptions-card
+          [subscriptions]="data.subscriptions"
+          [quotas]="data.quotas"
+          [quotasLoading]="data.loadingSections.includes('quotas')"
+          [quotasLoaded]="data.loadedSections.includes('quotas')"
+          (resourceSelected)="openResourceDetails($event)"></app-governance-subscriptions-card>
+        <app-governance-locks-card
+          [resources]="data.resources"
+          [loading]="data.loadingSections.includes('resources')"
+          [loaded]="data.loadedSections.includes('resources')"></app-governance-locks-card>
+        <app-governance-tags-card
+          [resources]="data.resources"
+          [loading]="data.loadingSections.includes('resources')"
+          [loaded]="data.loadedSections.includes('resources')"></app-governance-tags-card>
+      </div>
+    </section>
+
+    <section
+      id="governance-costs-panel"
+      role="tabpanel"
+      aria-labelledby="governance-costs-tab"
+      [hidden]="activeTab() !== 'costs'">
+      <div class="governance-grid single-card-grid">
+        <app-governance-cost-card
+          [data]="data.costs"
+          [loading]="data.loadingSections.includes('costs')"
+          [loaded]="data.loadedSections.includes('costs')"></app-governance-cost-card>
+      </div>
+    </section>
+
+    <section
+      id="governance-policies-panel"
+      role="tabpanel"
+      aria-labelledby="governance-policies-tab"
+      [hidden]="activeTab() !== 'policies'">
+      <div class="governance-grid single-card-grid">
+        <app-governance-policy-card
+          [data]="data.policy"
+          [loading]="data.loadingSections.includes('policy')"
+          [loaded]="data.loadedSections.includes('policy')"
+          (resourceSelected)="openResourceDetails($event)"></app-governance-policy-card>
+      </div>
+    </section>
   }
 </section>
 

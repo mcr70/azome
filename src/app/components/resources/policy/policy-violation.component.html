@@ -1,0 +1,92 @@
+<!-- This view shows policy control-plane findings for the affected Azure resource. -->
+<section class="policy-violation-detail" aria-labelledby="policy-violation-title">
+  <h3 id="policy-violation-title" class="resource-detail-heading">Policy Violation</h3>
+
+  <div class="resource-detail-table-wrapper">
+    <table class="resource-detail-table">
+      <tbody>
+        <tr>
+          <td><strong>Compliance state</strong></td>
+          <td>{{ properties?.complianceState || 'NonCompliant' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Affected resource</strong></td>
+          <td><code>{{ properties?.resourceId || resource?.id || '-' }}</code></td>
+        </tr>
+        <tr>
+          <td>
+            <button type="button" class="policy-toggle-btn" (click)="toggleDetails()">
+              <span class="toggle-icon">{{ isDetailsOpen() ? '▼' : '▶' }}</span>
+              <strong>Policy definition</strong>
+            </button>
+          </td>
+          <td>{{ properties?.policyDefinitionName || '-' }}</td>
+        </tr>
+        @if (isDetailsOpen()) {
+          <tr class="policy-details-row">
+            <td colspan="2" class="policy-details-cell">
+              <div class="policy-tabs" role="tablist" aria-label="Policy definition views">
+                <button
+                  type="button"
+                  role="tab"
+                  [attr.aria-selected]="activeTab() === 'details'"
+                  (click)="selectTab('details')">
+                  Details
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  [attr.aria-selected]="activeTab() === 'json'"
+                  (click)="selectTab('json')">
+                  JSON
+                </button>
+              </div>
+
+              <div class="policy-tab-content">
+                @if (policyJsonLoading()) {
+                  <p role="status">Loading policy definition...</p>
+                } @else if (policyJsonError()) {
+                  <p role="alert">Policy definition JSON could not be loaded.</p>
+                } @else if (policyJson(); as policy) {
+                  @if (activeTab() === 'details') {
+                    <app-policy-definition-detail [policyData]="policy" />
+                  } @else {
+                    <pre class="policy-json">{{ policy | json }}</pre>
+                  }
+                } @else {
+                  <p>Policy definition JSON is unavailable.</p>
+                }
+              </div>
+            </td>
+          </tr>
+        }
+        @if (properties?.policySetDefinitionName || properties?.policySetDefinitionId) {
+          <tr>
+            <td><strong>Policy set</strong></td>
+            <td>
+              @if (properties?.policySetDefinitionId) {
+                <button
+                  type="button"
+                  class="policy-set-link"
+                  (click)="openPolicySetDetails()"
+                >
+                  {{ properties?.policySetDefinitionName || properties?.policySetDefinitionId }}
+                </button>
+              } @else {
+                {{ properties?.policySetDefinitionName }}
+              }
+            </td>
+          </tr>
+        }
+        <tr>
+          <td><strong>Policy assignment</strong></td>
+          <td>{{ properties?.policyAssignmentName || '-' }}</td>
+        </tr>
+        <tr>
+          <td><strong>Evaluation time</strong></td>
+          <td>{{ properties?.timestamp || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>

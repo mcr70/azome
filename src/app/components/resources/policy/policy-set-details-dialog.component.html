@@ -1,0 +1,229 @@
+<!-- This application-level modal shows one Policy Set without nesting inside its source view. -->
+<dialog
+  #dialog
+  class="policy-set-dialog"
+  aria-labelledby="policy-set-dialog-title"
+  (cancel)="handleCancel($event)"
+>
+  <section class="policy-set-dialog-content">
+    <header class="policy-set-dialog-header">
+      <div>
+        <p class="eyebrow">Policy Set</p>
+        <h2 id="policy-set-dialog-title">
+          {{ policySet()?.properties?.displayName || policySet()?.name || 'Policy Set details' }}
+        </h2>
+      </div>
+      <button
+        type="button"
+        class="close-button"
+        aria-label="Close Policy Set details"
+        (click)="close()"
+      >
+        &times;
+      </button>
+    </header>
+
+    <div class="policy-set-dialog-body">
+      @if (loading()) {
+        <p class="state-message" role="status">Loading Policy Set details...</p>
+      } @else if (error()) {
+        <div class="error-state">
+          <p class="state-message error-message" role="alert">
+            Policy Set details could not be loaded. Check access to the definition and try again.
+          </p>
+          <button type="button" class="retry-button" (click)="retry()">Retry</button>
+        </div>
+      } @else if (policySet(); as definition) {
+        <section class="overview-section" aria-labelledby="policy-set-overview-title">
+          <h3 id="policy-set-overview-title">Overview</h3>
+          <dl class="overview-grid">
+            <div>
+              <dt>Display name</dt>
+              <dd>{{ definition.properties?.displayName || definition.name || 'Unavailable' }}</dd>
+            </div>
+            <div>
+              <dt>Policy type</dt>
+              <dd>{{ definition.properties?.policyType || 'Unavailable' }}</dd>
+            </div>
+            <div>
+              <dt>Version</dt>
+              <dd>{{ definition.properties?.version || 'Unavailable' }}</dd>
+            </div>
+            <div class="full-width">
+              <dt>Definition ID</dt>
+              <dd><code>{{ definition.id || selectedPolicySetId() }}</code></dd>
+            </div>
+            @if (definition.properties?.description) {
+              <div class="full-width">
+                <dt>Description</dt>
+                <dd>{{ definition.properties?.description }}</dd>
+              </div>
+            }
+          </dl>
+        </section>
+
+        <section class="definitions-section" aria-labelledby="included-definitions-title">
+          <div class="section-heading">
+            <div>
+              <h3 id="included-definitions-title">Included Policy Definitions</h3>
+              <p>
+                {{ resultCount() }} matching definitions of
+                {{ policySet()?.properties?.policyDefinitions?.length || 0 }}
+              </p>
+            </div>
+            <label class="definition-filter">
+              <span>Search definitions by name, ID, reference ID, or effect</span>
+              <input
+                type="search"
+                [value]="filter()"
+                (input)="updateFilter($event)"
+                placeholder="Search Policy Definitions"
+              />
+            </label>
+            @if (filter()) {
+              <button type="button" class="clear-filter-button" (click)="clearFilter()">
+                Clear search
+              </button>
+            }
+          </div>
+
+          @if (definitionNamesLoading()) {
+            <p class="lookup-message" role="status">Resolving Policy Definition names...</p>
+          } @else if (definitionNamesError()) {
+            <p class="lookup-message" role="status">
+              Some Policy Definition names are unavailable; their IDs are shown instead.
+            </p>
+          }
+
+          @if (visibleDefinitions().length > 0) {
+            <div class="definitions-table-wrapper">
+              <table class="definitions-table">
+                <colgroup>
+                  <col class="definition-name-column" />
+                  <col class="reference-column" />
+                  <col class="version-column" />
+                  <col class="effect-column" />
+                  <col class="configured-parameters-column" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th scope="col" [attr.aria-sort]="sortState('name')">
+                      <button type="button" class="sort-button" (click)="sortBy('name')">
+                        Policy Definition {{ sortIndicator('name') }}
+                      </button>
+                    </th>
+                    <th scope="col" [attr.aria-sort]="sortState('reference')">
+                      <button type="button" class="sort-button" (click)="sortBy('reference')">
+                        Reference ID {{ sortIndicator('reference') }}
+                      </button>
+                    </th>
+                    <th scope="col" [attr.aria-sort]="sortState('version')">
+                      <button type="button" class="sort-button" (click)="sortBy('version')">
+                        Version {{ sortIndicator('version') }}
+                      </button>
+                    </th>
+                    <th scope="col" [attr.aria-sort]="sortState('effect')">
+                      <button type="button" class="sort-button" (click)="sortBy('effect')">
+                        Effect {{ sortIndicator('effect') }}
+                      </button>
+                    </th>
+                    <th scope="col">Configured parameters</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (member of visibleDefinitions(); track member.policyDefinitionReferenceId
+                    || member.policyDefinitionId || $index) {
+                    @let refKey = member.policyDefinitionReferenceId || member.policyDefinitionId;
+                    <tr 
+                      class="clickable-row"
+                      [class.expanded]="expandedDefinitionRef() === refKey"
+                      (click)="toggleDefinitionRow(refKey)"
+                      title="Click to inspect raw policy definition JSON"
+                    >
+                      <td class="policy-definition-cell">
+                        @let info = getProcessedPolicyDisplay(member);
+                        <div class="param-name-cell">
+                          @if (info.isDeprecated) {
+                            <span class="deprecated-badge">Deprecated</span>
+                          }
+                          @if (info.isPreview) {
+                            <span class="preview-badge">Preview</span>
+                          }
+                          <span class="param-title"><strong>{{ info.displayName }}</strong></span>
+                        </div>
+                      </td>
+                      <td>{{ member.policyDefinitionReferenceId || 'Unavailable' }}</td>
+                      <td>{{ member.definitionVersion || 'Not specified' }}</td>
+                      <td>{{ effectFor(member) }}</td>
+                      <td (click)="$event.stopPropagation()">
+                        @if (member.parameters && getParameterEntries(member.parameters).length > 0) {
+                          <ul class="configured-params-list">
+                            @for (entry of getParameterEntries(member.parameters); track entry.key) {
+                              <li>
+                                <span class="param-key">{{ entry.key }}:</span>
+                                <code class="param-val">{{ formatParamValue(entry.value) }}</code>
+                              </li>
+                            }
+                          </ul>
+                        } @else {
+                          Not specified
+                        }
+                      </td>
+                    </tr>
+
+                    @if (expandedDefinitionRef() === refKey) {
+                      <tr class="json-expansion-row">
+                        <td colspan="5">
+                          <div class="json-expansion-content" (click)="$event.stopPropagation()">
+                            <!-- <div class="json-expansion-header">
+                              <span>Raw Policy Definition Member JSON: <code>{{ member.policyDefinitionId }}</code></span>
+                              <button type="button" class="close-json-btn" (click)="toggleDefinitionRow(refKey)">Close</button>
+                            </div> -->
+                            <pre>{{ getRawJsonForDefinition(member) }}</pre>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  }
+                </tbody>
+              </table>
+            </div>
+            <nav class="pagination" aria-label="Policy definitions pages">
+              <button type="button" [disabled]="page() === 0" (click)="previousPage()">
+                Previous
+              </button>
+              <span>Page {{ page() + 1 }} of {{ pageCount() }} (Click a row to inspect JSON)</span>
+              <button
+                type="button"
+                [disabled]="page() >= pageCount() - 1"
+                (click)="nextPage()"
+              >
+                Next
+              </button>
+            </nav>
+          } @else {
+            <p class="state-message">
+              {{ filter() ? 'No matching Policy Definitions.' : 'This Policy Set contains no Policy Definitions.' }}
+            </p>
+          }
+        </section>
+
+        <section class="parameters-section" aria-labelledby="policy-set-parameters-title">
+          <h3 id="policy-set-parameters-title">Policy Set parameters</h3>
+          <app-policy-parameters-table
+            [parameters]="definition.properties?.parameters"
+            title="Parameter definitions"
+          />
+          <!-- @if (definition.properties?.parameters) {
+            <details class="raw-parameters">
+              <summary>Inspect raw parameter JSON</summary>
+              <pre>{{ definition.properties?.parameters | json }}</pre>
+            </details>
+          } -->
+        </section>
+      } @else {
+        <p class="state-message" role="status">No Policy Set definition is selected.</p>
+      }
+    </div>
+  </section>
+</dialog>

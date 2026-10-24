@@ -17,6 +17,7 @@ import {
 } from './services/azure/resource-graph.service';
 import { PreferencesComponent } from './components/preferences/preferences.component';
 import { QueryEditorComponent } from './components/query-editor/query-editor.component';
+import { PolicySetDetailsDialogComponent } from './components/resources/policy/policy-set-details-dialog.component';
 import {
   collectDynamicPaths,
   kqlEditorExtensions,
@@ -84,7 +85,14 @@ function getResourceGraphErrorDetails(error: unknown): string[] {
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterOutlet, PreferencesComponent, QueryEditorComponent],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterOutlet,
+    PreferencesComponent,
+    QueryEditorComponent,
+    PolicySetDetailsDialogComponent
+  ],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })

@@ -19,6 +19,8 @@ import {
   GovernanceTagsCardComponent
 } from './governance-cards.component';
 
+type GovernanceTab = 'subscriptions' | 'costs' | 'policies';
+
 /** Presents cost, subscription, compliance, tag, and lock health in one view. */
 @Component({
   selector: 'app-governance-view',
@@ -42,6 +44,7 @@ export class GovernanceViewComponent implements OnInit {
   public readonly snapshot = signal<GovernanceSnapshot | null>(null);
   public readonly loading = signal(false);
   public readonly error = signal<string | null>(null);
+  public readonly activeTab = signal<GovernanceTab>('subscriptions');
   public readonly panels = signal<ResourcePanelConfig[]>([]);
   public readonly pinnedPanels = computed(() => this.panels().filter((panel) => panel.pinned));
   public readonly floatingPanel = computed(
@@ -91,6 +94,11 @@ export class GovernanceViewComponent implements OnInit {
           this.loading.set(false);
         }
       });
+  }
+
+  /** Selects the active governance domain tab. */
+  public selectTab(tab: GovernanceTab): void {
+    this.activeTab.set(tab);
   }
 
   /** Opens the shared resource details panel for a selected governance item. */

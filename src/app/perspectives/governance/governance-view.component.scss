@@ -85,6 +85,41 @@ h1 {
   grid-column: span 2;
 }
 
+.single-card-grid app-governance-cost-card,
+.single-card-grid app-governance-policy-card {
+  grid-column: span 2;
+}
+
+.view-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 16px 0 24px;
+  overflow-x: auto;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.view-tabs button {
+  flex: 0 0 auto;
+  padding: 10px 16px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: #475569;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
+
+.view-tabs button[aria-selected='true'] {
+  border-bottom-color: #0f766e;
+  color: #0f766e;
+}
+
+.view-tabs button:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: -2px;
+}
+
 .partial-warning,
 .error-message,
 .status-message {
@@ -116,7 +151,8 @@ h1 {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .governance-grid app-governance-cost-card {
+  .governance-grid app-governance-cost-card,
+  .single-card-grid app-governance-policy-card {
     grid-column: auto;
   }
 
