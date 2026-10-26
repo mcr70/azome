@@ -32,6 +32,7 @@ const server = http.createServer((request, response) => {
     return;
   }
 
+  // Handle Log Analytics proxy requests
   const logsMatch = requestUrl.pathname.match(
     /^\/log-analytics-proxy(\/v1\/workspaces\/[a-z0-9-]+\/(metadata|query))$/i
   );
@@ -54,9 +55,13 @@ const server = http.createServer((request, response) => {
       method: request.method,
       headers
     }, upstreamResponse => {
+      // Remove upstream CORS headers to prevent duplicate header conflicts
+      const upstreamHeaders = { ...upstreamResponse.headers };
+      delete upstreamHeaders['access-control-allow-origin'];
+
       response.writeHead(
         upstreamResponse.statusCode || 502,
-        corsHeaders(request, upstreamResponse.headers)
+        corsHeaders(request, upstreamHeaders)
       );
       upstreamResponse.pipe(response);
     });
@@ -67,11 +72,12 @@ const server = http.createServer((request, response) => {
       }
       response.end(JSON.stringify({ error: { message: error.message } }));
     });
-    response.on('close', () => upstream.destroy());
+    upstream.on('close', () => upstream.destroy());
     request.pipe(upstream);
     return;
   }
 
+  // Handle Azure Governance proxy requests
   const governanceMatch = requestUrl.pathname.match(
     /^\/governance-proxy(\/(?:subscriptions|providers)(?:\/[^?#]*)?)$/i
   );
@@ -105,9 +111,13 @@ const server = http.createServer((request, response) => {
       method: request.method,
       headers
     }, upstreamResponse => {
+      // Remove upstream CORS headers to prevent duplicate header conflicts
+      const upstreamHeaders = { ...upstreamResponse.headers };
+      delete upstreamHeaders['access-control-allow-origin'];
+
       response.writeHead(
         upstreamResponse.statusCode || 502,
-        corsHeaders(request, upstreamResponse.headers)
+        corsHeaders(request, upstreamHeaders)
       );
       upstreamResponse.pipe(response);
     });
@@ -118,11 +128,12 @@ const server = http.createServer((request, response) => {
       }
       response.end(JSON.stringify({ error: { message: error.message } }));
     });
-    response.on('close', () => upstream.destroy());
+    upstream.on('close', () => upstream.destroy());
     request.pipe(upstream);
     return;
   }
 
+  // Handle Cosmos DB data-plane proxy requests
   const cosmosMatch = requestUrl.pathname.match(/^\/cosmos-proxy\/([a-z0-9-]{3,44})(\/.*)?$/i);
   if (cosmosMatch) {
     const allowedCosmosMethods = new Set(['GET', 'POST', 'PUT', 'DELETE']);
@@ -145,9 +156,13 @@ const server = http.createServer((request, response) => {
       method: request.method,
       headers
     }, upstreamResponse => {
+      // Remove upstream CORS headers to prevent duplicate header conflicts
+      const upstreamHeaders = { ...upstreamResponse.headers };
+      delete upstreamHeaders['access-control-allow-origin'];
+
       response.writeHead(
         upstreamResponse.statusCode || 502,
-        corsHeaders(request, upstreamResponse.headers)
+        corsHeaders(request, upstreamHeaders)
       );
       upstreamResponse.pipe(response);
     });
@@ -170,6 +185,7 @@ const server = http.createServer((request, response) => {
     return;
   }
 
+  // Handle Azure Storage data-plane proxy requests
   const match = requestUrl.pathname.match(/^\/storage-proxy\/([a-z0-9]{3,24})\/(blob|file|queue|table)(\/.*)?$/i);
   if (!match || !allowedServices.has(match[2].toLowerCase())) {
     response.writeHead(404, corsHeaders(request, { 'content-type': 'text/plain; charset=utf-8' }));
@@ -194,10 +210,14 @@ const server = http.createServer((request, response) => {
     method: 'GET',
     headers
   }, upstreamResponse => {
-      response.writeHead(
-        upstreamResponse.statusCode || 502,
-        corsHeaders(request, upstreamResponse.headers)
-      );
+    // Remove upstream CORS headers to prevent duplicate header conflicts
+    const upstreamHeaders = { ...upstreamResponse.headers };
+    delete upstreamHeaders['access-control-allow-origin'];
+
+    response.writeHead(
+      upstreamResponse.statusCode || 502,
+      corsHeaders(request, upstreamHeaders)
+    );
     upstreamResponse.pipe(response);
   });
 

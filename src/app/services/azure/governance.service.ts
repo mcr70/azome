@@ -324,7 +324,9 @@ export class GovernanceService {
     const cachedActual = this.actualCostCache.get(subscriptionId);
     const actualCost = cachedActual && cachedActual.expiresAt > Date.now()
       ? of(cachedActual.value)
-      : this.http.post<CostResponse>(`${GOVERNANCE_ENDPOINT}${path}`, body, { params }).pipe(
+      : this.http.post<CostResponse>(
+        `${environment.azure.proxyUrl}${GOVERNANCE_ENDPOINT}${path}`, body, { params }
+      ).pipe(
         this.withCostManagementRetry<CostResponse>(),
         map((response) => this.toCostSummary(response)),
         tap((summary) => this.actualCostCache.set(subscriptionId, {
@@ -390,7 +392,9 @@ export class GovernanceService {
       }
     };
 
-    return this.http.post<CostResponse>(`${GOVERNANCE_ENDPOINT}${path}`, body, { params }).pipe(
+    return this.http.post<CostResponse>(
+      `${environment.azure.proxyUrl}${GOVERNANCE_ENDPOINT}${path}`, body, { params }
+    ).pipe(
       this.withCostManagementRetry<CostResponse>(),
       map((response) => this.firstNumericValue(response))
     );
@@ -537,7 +541,7 @@ export class GovernanceService {
     }
     const params = new HttpParams().set('api-version', RESOURCE_GRAPH_API_VERSION);
     return this.http.post<ResourceGraphResponse<T>>(
-      `${GOVERNANCE_ENDPOINT}/providers/Microsoft.ResourceGraph/resources`,
+      `${environment.azure.proxyUrl}${GOVERNANCE_ENDPOINT}/providers/Microsoft.ResourceGraph/resources`,
       {
         subscriptions,
         query,
@@ -569,7 +573,7 @@ export class GovernanceService {
 
   /** Sends a GET request to an allowlisted Azure management path. */
   private get<T>(path: string, query: HttpParams | Record<string, string>): Observable<T> {
-    return this.http.get<T>(`${GOVERNANCE_ENDPOINT}${path}`, { params: query });
+    return this.http.get<T>(`${environment.azure.proxyUrl}${GOVERNANCE_ENDPOINT}${path}`, { params: query });
   }
 
   /** Converts a Cost Management table response into service totals. */

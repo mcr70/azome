@@ -35,9 +35,12 @@ service endpoints; this deployment does not provide access to resources that
 are reachable only through private endpoints. VNet integration requires a
 separately designed and appropriately priced App Service plan and subnet.
 
-After applying Terraform, build the Angular application with `proxyUrl` set to
-the `storage_proxy_url` Terraform output. Deploy the proxy and static website
-using the commands in [README.md](README.md). The proxy package consists of
+The UI can be published first without deploying the proxy. When the proxy is
+ready, set `azure.proxyUrl` in `config/azure/app-config.json` to the
+`storage_proxy_url` Terraform output. Publish this JSON as `/app-config.json`
+using the configuration-only upload command in [README.md](README.md).
+The UI reads it on startup; no TypeScript changes or Angular rebuild are needed.
+The proxy package consists of
 `scripts/storage-proxy.mjs`; App Service starts it with Node.js and supplies the
 listening port. Check `https://<proxy-host>/health` after deployment.
 
@@ -82,6 +85,7 @@ the `https://api.loganalytics.io/Data.Read` scope. No secrets or API keys are us
 Restart `npm start` after updating proxy routes or the proxy script. Published
 installations must deploy the updated proxy script as well as the frontend,
 using the existing `environment.azure.proxyUrl` setting.
+The setting comes from the runtime JSON, not a TypeScript environment file.
 
 API reference: https://learn.microsoft.com/en-us/azure/azure-monitor/logs/api/access-api
 

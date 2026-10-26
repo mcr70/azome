@@ -3,8 +3,10 @@ dist/
 out-tsc/
 .angular/
 .vscode/
-src/environments/environment.ts
+config/local/app-config.json
+config/azure/app-config.json
 .DS_Store
+.copilot-azure/
 
 # Terraform
 .terraform/

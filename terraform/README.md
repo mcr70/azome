@@ -40,7 +40,15 @@ Admin consent for these delegated permissions is granted automatically during te
 The application operates using the signed-in user's identity. By default, ensure that users (or Entra ID groups) are granted at least the `Reader` role for read-only access, or the `Contributor` role if they need to manage resources. Roles can be assigned at the Resource Group or Subscription level via the Azure Portal or Azure CLI.
 
 ## Local Configuration
-Create a configuration file at `src/environments/environment.ts` to manage your environment-specific settings. Terraform will print needed values. This ensures the application knows which subscription to target.
+Copy `config/local/app-config.example.json` to `config/local/app-config.json`
+and `config/azure/app-config.example.json` to `config/azure/app-config.json`.
+Use the Azure identifiers printed by Terraform in those files. Local development
+and production builds serve their respective file as `/app-config.json`, which
+the UI reads before startup. Do not edit TypeScript environment files.
+
+For an existing website, follow the UI-only deployment instructions in
+[README.md](../README.md). Applying this Terraform configuration also provisions
+the proxy, so it is not necessary for a UI-only release.
 
 
 

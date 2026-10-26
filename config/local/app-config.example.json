@@ -1,0 +1,11 @@
+{
+  "production": false,
+  "azure": {
+    "clientId": "YOUR_ENTRA_APPLICATION_CLIENT_ID",
+    "subscriptionId": "YOUR_SUBSCRIPTION_ID",
+    "tenantId": "YOUR_TENANT_ID",
+    "resourceManagerUrl": "https://management.azure.com",
+    "proxyUrl": "",
+    "apiVersion": "2021-04-01"
+  }
+}

@@ -40,9 +40,9 @@ export function MSALInstanceFactory() {
   const msalInstance = new PublicClientApplication({
     auth: {
       clientId: environment.azure.clientId,
-      authority: `https://login.microsoftonline.com/${environment.azure.tenantId}/oauth2/v2.0/token`,
-      redirectUri: 'http://localhost:4100/',
-      postLogoutRedirectUri: 'http://localhost:4100/'
+      authority: `https://login.microsoftonline.com/${environment.azure.tenantId}`,
+      redirectUri: `${window.location.origin}/`,
+      postLogoutRedirectUri: `${window.location.origin}/`
     },
     cache: {
       cacheLocation: 'localStorage'

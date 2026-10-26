@@ -50,7 +50,14 @@ or use an existing one, following [terraform/README.md](terraform/README.md). Th
 backend settings in `terraform/main.tf` must match the account and container you
 use.
 
-### 2. Provision Azure resources
+### 2. Use the existing UI hosting
+
+The UI can be deployed independently of the data proxy. For the existing
+`saazome` Storage static website in `rg-azome`, **skip Terraform apply** and
+continue below. The current Terraform configuration also provisions the proxy;
+do not apply it for a UI-only release.
+
+If resources do not exist yet, review the resources and costs before running:
 
 ```bash
 terraform -chdir=terraform init
@@ -67,60 +74,123 @@ Terraform grants admin consent for the configured delegated permissions. This
 requires suitable Entra ID privileges. Users also need Azure RBAC access to the
 subscription or resource groups they want to view.
 
-### 3. Configure and build the Angular app
+### 3. Configure the UI at runtime
 
-Set the `proxyUrl` property in `src/environments/environment.ts` to the value
-printed by:
+Create the two environment-specific configuration files once:
 
 ```bash
-terraform -chdir=terraform output -raw storage_proxy_url
+cp config/local/app-config.example.json config/local/app-config.json
+cp config/azure/app-config.example.json config/azure/app-config.json
 ```
 
-The other Azure settings are printed by `terraform -chdir=terraform output
-environment`. Use those values for `clientId`, `subscriptionId`, and `tenantId`.
-Then build the production bundle:
+Fill in the Entra application `clientId`, `subscriptionId`, and `tenantId` in
+each JSON file. These files are ignored by Git. Keep `production: false` for
+local development and `production: true` for Azure. No secrets belong in these
+files: the deployed JSON is publicly readable.
+
+- `npm start` serves `config/local/app-config.json` as `/app-config.json`.
+- `npm run build` copies `config/azure/app-config.json` to the production output
+  as `/app-config.json`.
+- Angular loads and validates this file before bootstrapping MSAL or services.
+  Missing or invalid configuration stops startup with a visible error.
+- `src/environments/environment.ts` is only a compatibility export. Do not edit
+  it or switch TypeScript environments between local development and Azure.
+
+Restart `npm start` after changing asset settings in `angular.json`. An already
+running development server can hot-reload the application code without picking
+up new asset settings, causing `/app-config.json` to return HTTP 404.
+
+Locally, leave `azure.proxyUrl` empty: Angular's `proxy.conf.json` forwards
+data-plane requests to the local Node.js proxy. In Azure, set it to the proxy's
+HTTPS origin when the proxy is ready. An empty Azure proxy URL is allowed for
+the initial UI-only release, but Storage, Cosmos DB and Log Analytics browsing
+will not work until a proxy is configured. ARM and Graph requests go directly
+to Azure and do not need the proxy.
+
+Sign-in and sign-out return to the current website origin. Register
+`http://localhost:4100/` and the production website URL, including its trailing
+slash, as **SPA** redirect URIs in the Entra app registration.
+
+### 4. Build and deploy only the UI
+
+If using a separate Azure CLI profile, use it consistently for every Azure
+command (including login and subscription selection):
 
 ```bash
+export AZURE_CONFIG_DIR="$HOME/.azure-personal"
+az account show --query '{name:name,id:id,tenantId:tenantId}'
+```
+
+Build the production bundle:
+
+```bash
+# On a clean checkout, install dependencies first:
 npm ci
 npm run build
 ```
 
 The static website files are written to `dist/azome/browser`.
 
-### 4. Deploy the proxy and website
-
-Package and deploy the Node.js proxy:
-
-```bash
-zip -j /tmp/azome-proxy.zip scripts/storage-proxy.mjs
-az webapp deploy \
-  --resource-group rg-azome \
-  --name "$(terraform -chdir=terraform output -raw storage_proxy_app_name)" \
-  --src-path /tmp/azome-proxy.zip \
-  --type zip
-```
-
-Publish the Angular files to the Storage static website:
+Publish to the existing Storage static website:
 
 ```bash
 az storage blob upload-batch \
   --auth-mode login \
-  --account-name "$(terraform -chdir=terraform output -raw storage_account_name)" \
+  --account-name saazome \
   --destination '$web' \
   --source dist/azome/browser \
+  --overwrite \
+  --content-cache-control 'no-cache'
+```
+
+The signed-in Azure identity needs the **Storage Blob Data Contributor** role on. This can be created with
+```bash
+az role assignment create \
+  --assignee-object-id 5028a327-c03a-494d-82ea-a8dc67f8f83a \
+  --assignee-principal-type User \
+  --role "Storage Blob Data Contributor" \
+  --scope "/subscriptions/219cc4c2-643f-4f88-a942-2977631c1616/resourceGroups/rg-azome/providers/Microsoft.Storage/storageAccounts/saazome"
+
+az role assignment list \
+  --assignee-object-id 5028a327-c03a-494d-82ea-a8dc67f8f83a \
+  --all \
+  --query "[?roleDefinitionName=='Storage Blob Data Contributor'].{Role:roleDefinitionName,Scope:scope}" \
+  -o table
+```
+
+the website Storage account to upload the site. Check the current website URL:
+
+```bash
+az storage account show \
+  --resource-group rg-azome \
+  --name saazome \
+  --query primaryEndpoints.web -o tsv
+```
+
+Verify that `/` and `/app-config.json` are available, then test sign-in and
+resource listing in the browser.
+
+### 5. Configure the proxy later without rebuilding the UI
+
+After deploying the proxy separately, update `azure.proxyUrl` in
+`config/azure/app-config.json` to its HTTPS origin, without a path. Upload only
+the configuration file:
+
+```bash
+az storage blob upload \
+  --auth-mode login \
+  --account-name saazome \
+  --container-name '$web' \
+  --name app-config.json \
+  --file config/azure/app-config.json \
+  --content-type application/json \
+  --content-cache-control 'no-store' \
   --overwrite
 ```
 
-The signed-in Azure identity needs the **Storage Blob Data Contributor** role on
-the website Storage account to upload the site. Terraform outputs the public
-website URL as `angular_website_url`:
-
-```bash
-terraform -chdir=terraform output -raw angular_website_url
-```
-
-The proxy only accepts browser requests from that configured website origin.
-Its `/health` endpoint can be used to check that the deployed process is running.
+Reload the UI to load the updated settings. No Angular rebuild is needed.
+Keep the local file's empty proxy URL unchanged. Set the proxy's
+`ALLOWED_ORIGIN` to the UI origin, and check the proxy's `/health` endpoint.
 
 For proxy behavior, supported routes, local development, and current network
 limitations, see [README-proxy.md](README-proxy.md).
