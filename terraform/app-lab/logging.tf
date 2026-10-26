@@ -5,6 +5,8 @@ resource "azurerm_log_analytics_workspace" "law" {
   location            = azurerm_resource_group.rg_app.location
   sku                 = "PerGB2018"
   retention_in_days   = 30
+
+  daily_quota_gb      = 0.1 // Stays withing the free 5 GB / Month free log quota
 }
 
 # Diagnostic setting to send Function App logs to Log Analytics Workspace
