@@ -1,6 +1,6 @@
 /** Provides subscription governance data from Azure Resource Manager APIs. */
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
+import { HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, forkJoin, from, merge, of, throwError, timer } from 'rxjs';
 import {
   catchError,
@@ -16,8 +16,9 @@ import {
   toArray
 } from 'rxjs/operators';
 import { environment } from '@environments/environment';
+import { ArmApiService } from './arm-api.service';
+import { ResourceGraphApiService } from './resource-graph-api.service';
 
-const GOVERNANCE_ENDPOINT = '/governance-proxy';
 const RESOURCE_GRAPH_API_VERSION = '2021-06-01-preview';
 const SNAPSHOT_CACHE_TTL_MS = 5 * 60 * 1000;
 const COST_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
@@ -105,7 +106,10 @@ export class GovernanceService {
   >();
   private readonly forecastCache = new Map<string, { value: number | null; expiresAt: number }>();
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly armApi: ArmApiService,
+    private readonly resourceGraphApi: ResourceGraphApiService
+  ) {}
 
   /** Returns cached data, shares in-flight loads, or loads a fresh dashboard snapshot. */
   public getSnapshot(forceRefresh = false): Observable<GovernanceSnapshot> {
@@ -135,10 +139,9 @@ export class GovernanceService {
 
   /** Fetch the complete JSON definition or initiative details of a policy by its ID. */
   public getPolicyJson(policyId: string): Observable<any> {
-    const url = `${environment.azure.resourceManagerUrl}${policyId}`;
     const params = new HttpParams().set('api-version', '2023-04-01');
 
-    return this.http.get<any>(url, { params });
+    return this.armApi.get<any>(policyId, { params });
   }
 
   /** Resolves display names for known policy definition IDs in one Resource Graph query. */
@@ -324,9 +327,7 @@ export class GovernanceService {
     const cachedActual = this.actualCostCache.get(subscriptionId);
     const actualCost = cachedActual && cachedActual.expiresAt > Date.now()
       ? of(cachedActual.value)
-      : this.http.post<CostResponse>(
-        `${environment.azure.proxyUrl}${GOVERNANCE_ENDPOINT}${path}`, body, { params }
-      ).pipe(
+      : this.armApi.postViaProxy<CostResponse>(path, body, { params }).pipe(
         this.withCostManagementRetry<CostResponse>(),
         map((response) => this.toCostSummary(response)),
         tap((summary) => this.actualCostCache.set(subscriptionId, {
@@ -392,9 +393,7 @@ export class GovernanceService {
       }
     };
 
-    return this.http.post<CostResponse>(
-      `${environment.azure.proxyUrl}${GOVERNANCE_ENDPOINT}${path}`, body, { params }
-    ).pipe(
+    return this.armApi.postViaProxy<CostResponse>(path, body, { params }).pipe(
       this.withCostManagementRetry<CostResponse>(),
       map((response) => this.firstNumericValue(response))
     );
@@ -539,16 +538,14 @@ export class GovernanceService {
     if (subscriptions.length === 0) {
       return of([]);
     }
-    const params = new HttpParams().set('api-version', RESOURCE_GRAPH_API_VERSION);
-    return this.http.post<ResourceGraphResponse<T>>(
-      `${environment.azure.proxyUrl}${GOVERNANCE_ENDPOINT}/providers/Microsoft.ResourceGraph/resources`,
-      {
+    return this.resourceGraphApi.query<ResourceGraphResponse<T>>({
         subscriptions,
         query,
         options: { resultFormat: 'objectArray', ...queryOptions }
-      },
-      { params }
-    ).pipe(
+      }, {
+        apiVersion: RESOURCE_GRAPH_API_VERSION,
+        viaProxy: true
+      }).pipe(
       map((response) => response.data ?? []),
       catchError((error: HttpErrorResponse) => {
         const details = this.getAzureErrorMessage(error);
@@ -573,7 +570,7 @@ export class GovernanceService {
 
   /** Sends a GET request to an allowlisted Azure management path. */
   private get<T>(path: string, query: HttpParams | Record<string, string>): Observable<T> {
-    return this.http.get<T>(`${environment.azure.proxyUrl}${GOVERNANCE_ENDPOINT}${path}`, { params: query });
+    return this.armApi.getViaProxy<T>(path, { params: query });
   }
 
   /** Converts a Cost Management table response into service totals. */

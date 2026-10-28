@@ -1,7 +1,9 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { EMPTY, Observable, catchError, expand, from, map, mergeMap, of, reduce, switchMap } from 'rxjs';
 import { environment } from '@environments/environment';
+import { ArmApiService } from './arm-api.service';
+import { ResourceGraphApiService } from './resource-graph-api.service';
 import { AzureResource } from './resource-graph.service';
 import {
   DiagnosticSetting,
@@ -31,7 +33,10 @@ const unsupportedDiagnosticSourceTypes = new Set([
 
 @Injectable({ providedIn: 'root' })
 export class DiagnosticSettingsService {
-  constructor(private readonly http: HttpClient) {
+  constructor(
+    private readonly armApi: ArmApiService,
+    private readonly resourceGraphApi: ResourceGraphApiService
+  ) {
   }
 
   public getDiagnosticSettings(): Observable<DiagnosticSettingsResult> {
@@ -55,9 +60,7 @@ export class DiagnosticSettingsService {
 
   private getSources(): Observable<AzureResource[]> {
     const fetchPage = (skipToken?: string): Observable<ResourcePage> => {
-      const url = `${environment.azure.resourceManagerUrl}`
-        + '/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01';
-      return this.http.post<ResourcePage>(url, {
+      return this.resourceGraphApi.query<ResourcePage>({
         subscriptions: [environment.azure.subscriptionId],
         query: `
           Resources
@@ -114,9 +117,10 @@ export class DiagnosticSettingsService {
   }
 
   private getForSource(source: AzureResource): Observable<DiagnosticSettingsResult> {
-    const url = `${environment.azure.resourceManagerUrl}${source.id}`
-      + '/providers/Microsoft.Insights/diagnosticSettings?api-version=2021-05-01-preview';
-    return this.http.get<DiagnosticSettingsResponse>(url).pipe(
+    const path = `${source.id}/providers/Microsoft.Insights/diagnosticSettings`;
+    return this.armApi.get<DiagnosticSettingsResponse>(path, {
+      params: { 'api-version': '2021-05-01-preview' }
+    }).pipe(
       map((response) => ({
         settings: response.value.map((setting): DiagnosticSetting => ({
           ...setting,

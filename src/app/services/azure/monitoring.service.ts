@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from '@environments/environment';
+import { ArmApiService } from './arm-api.service';
+import { ResourceGraphApiService } from './resource-graph-api.service';
 
 export interface LogAnalyticsWorkspace {
   id: string;
@@ -51,11 +52,12 @@ export interface ActivityLogEvent {
 
 @Injectable({ providedIn: 'root' })
 export class MonitoringService {
-  constructor(private http: HttpClient) {}
+  constructor(
+    private readonly armApi: ArmApiService,
+    private readonly resourceGraphApi: ResourceGraphApiService
+  ) {}
 
   getMonitoringResources(): Observable<MonitoringResource[]> {
-    const url = `${environment.azure.resourceManagerUrl}`
-      + '/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01';
     const query = `
       Resources
       | where type in~ (
@@ -107,7 +109,7 @@ export class MonitoringService {
       | order by category asc, type asc, name asc
     `;
 
-    return this.http.post<{ data?: MonitoringResource[] }>(url, {
+    return this.resourceGraphApi.query<{ data?: MonitoringResource[] }>({
       subscriptions: [environment.azure.subscriptionId],
       query,
       options: { resultFormat: 'objectArray' }
@@ -118,14 +120,15 @@ export class MonitoringService {
     const end = new Date();
     const start = new Date(end.getTime() - 7 * 24 * 60 * 60 * 1000);
     const filter = `eventTimestamp ge '${start.toISOString()}' and eventTimestamp le '${end.toISOString()}'`;
-    const url = `${environment.azure.resourceManagerUrl}`
-      + `/subscriptions/${environment.azure.subscriptionId}`
+    const path = `/subscriptions/${environment.azure.subscriptionId}`
       + '/providers/Microsoft.Insights/eventtypes/management/values';
-    const params = new HttpParams()
-      .set('api-version', '2015-04-01')
-      .set('$filter', filter);
 
-    return this.http.get<{ value?: ActivityLogEvent[] }>(url, { params })
+    return this.armApi.get<{ value?: ActivityLogEvent[] }>(path, {
+      params: {
+        'api-version': '2015-04-01',
+        '$filter': filter
+      }
+    })
       .pipe(map((response) => response.value ?? []));
   }
 }

@@ -3,11 +3,11 @@
 //
 
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { Observable, from } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 import { environment } from '@environments/environment';
+import { ArmApiService } from './arm-api.service';
 
 export interface ResourceGroup {
   id: string;
@@ -24,12 +24,14 @@ interface AzureResponse<T> {
 
 @Injectable({ providedIn: 'root' })
 export class ResourceGroupService {
-  constructor(private http: HttpClient) {}
+  constructor(private readonly armApi: ArmApiService) {}
 
 public getResourceGroups(): Observable<ResourceGroup[]> {
-    const url = `${environment.azure.resourceManagerUrl}/subscriptions/${environment.azure.subscriptionId}/resourcegroups?api-version=${environment.azure.apiVersion}`;
+    const path = `/subscriptions/${environment.azure.subscriptionId}/resourcegroups`;
 
-    return this.http.get<AzureResponse<ResourceGroup>>(url).pipe(
+    return this.armApi.get<AzureResponse<ResourceGroup>>(path, {
+      params: { 'api-version': environment.azure.apiVersion }
+    }).pipe(
       map(response => response.value)
     );
   }

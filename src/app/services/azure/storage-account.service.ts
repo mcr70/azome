@@ -1,6 +1,7 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { environment } from '@environments/environment';
+import { ArmApiService } from './arm-api.service';
+import { StorageDataApiService } from './storage-data-api.service';
 import { Observable, map, switchMap } from 'rxjs';
 
 export interface BlobContainerItem {
@@ -59,9 +60,10 @@ interface ArmList<T> {
 
 @Injectable({ providedIn: 'root' })
 export class StorageAccountService {
-  private readonly apiVersion = '2023-01-01';
-
-  constructor(private readonly http: HttpClient) {}
+  constructor(
+    private readonly armApi: ArmApiService,
+    private readonly storageDataApi: StorageDataApiService
+  ) {}
 
   /** Lists blob containers for a Storage Account. */
   public listContainers(id: string): Observable<BlobContainerItem[]> {
@@ -103,7 +105,7 @@ export class StorageAccountService {
     container: string,
     prefix = ''
   ): Observable<BlobBrowserItem[]> {
-    return this.sas(id, 'blob', container).pipe(
+    return this.storageDataApi.getServiceSas(id, 'blob', container).pipe(
       switchMap((sas) => {
         let params = new HttpParams({ fromString: sas })
           .set('restype', 'container')
@@ -115,8 +117,9 @@ export class StorageAccountService {
           params = params.set('prefix', prefix);
         }
 
-        const url = this.dataUrl(id, 'blob') + '/' + encodeURIComponent(container);
-        return this.xml(url, params, 'blob').pipe(
+        const account = this.accountName(id);
+        const path = '/' + encodeURIComponent(container);
+          return this.xml(account, 'blob', path, params).pipe(
           map((xml) => {
             const folders = this.descendants(xml, 'BlobPrefix').map((folder) => {
               const path = this.text(folder, 'Name');
@@ -148,16 +151,13 @@ export class StorageAccountService {
 
   /** Downloads a blob using a short-lived service SAS token. */
   public downloadBlob(id: string, container: string, blobPath: string): Observable<Blob> {
-    return this.sas(id, 'blob', container).pipe(
-      switchMap((sas) => this.http.get(
-        this.dataUrl(id, 'blob')
-          + '/' + encodeURIComponent(container)
-          + '/' + this.encodePath(blobPath),
-        {
-          params: new HttpParams({ fromString: sas }),
-          responseType: 'blob',
-          headers: { 'x-ms-version': '2023-11-03' }
-        }
+    return this.storageDataApi.getServiceSas(id, 'blob', container).pipe(
+      switchMap((sas) => this.storageDataApi.getBlob(
+        this.accountName(id),
+        'blob',
+        '/' + encodeURIComponent(container) + '/' + this.encodePath(blobPath),
+        new HttpParams({ fromString: sas }),
+        { 'x-ms-version': '2023-11-03' }
       ))
     );
   }
@@ -168,7 +168,7 @@ export class StorageAccountService {
     share: string,
     directory = ''
   ): Observable<FileBrowserItem[]> {
-    return this.sas(id, 'file', share).pipe(
+    return this.storageDataApi.getServiceSas(id, 'file', share).pipe(
       switchMap((sas) => {
         const path = [share, ...directory.split('/').filter(Boolean)]
           .map((part) => encodeURIComponent(part))
@@ -177,7 +177,7 @@ export class StorageAccountService {
           .set('restype', 'directory')
           .set('comp', 'list');
 
-        return this.xml(this.dataUrl(id, 'file') + '/' + path, params, 'file').pipe(
+          return this.xml(this.accountName(id), 'file', '/' + path, params).pipe(
           map((xml) => {
             const folders = this.descendants(xml, 'Directory').map((item) => {
               const name = this.text(item, 'Name');
@@ -209,33 +209,33 @@ export class StorageAccountService {
 
   /** Downloads a file using a short-lived service SAS token. */
   public downloadFile(id: string, share: string, filePath: string): Observable<Blob> {
-    return this.sas(id, 'file', share).pipe(
+    return this.storageDataApi.getServiceSas(id, 'file', share).pipe(
       switchMap((sas) => {
         const path = [share, ...filePath.split('/').filter(Boolean)]
           .map((part) => encodeURIComponent(part))
           .join('/');
-        return this.http.get(this.dataUrl(id, 'file') + '/' + path, {
-          params: new HttpParams({ fromString: sas }),
-          responseType: 'blob',
-          headers: { 'x-ms-version': '2024-11-04' }
-        });
+        return this.storageDataApi.getBlob(
+          this.accountName(id),
+          'file',
+          '/' + path,
+          new HttpParams({ fromString: sas }),
+          { 'x-ms-version': '2024-11-04' }
+        );
       })
     );
   }
 
   /** Returns the approximate number of messages in a queue. */
   public getQueueMessageCount(id: string, queue: string): Observable<number> {
-    return this.sas(id, 'queue').pipe(
+    return this.storageDataApi.getAccountSas(id, 'queue').pipe(
       switchMap((sas) => {
         const params = new HttpParams({ fromString: sas }).set('comp', 'metadata');
-        return this.http.get(
-          this.dataUrl(id, 'queue') + '/' + encodeURIComponent(queue),
-          {
-            params,
-            observe: 'response',
-            responseType: 'text',
-            headers: { 'x-ms-version': '2023-11-03' }
-          }
+        return this.storageDataApi.getTextResponse(
+          this.accountName(id),
+          'queue',
+          '/' + encodeURIComponent(queue),
+          params,
+          { 'x-ms-version': '2023-11-03' }
         ).pipe(
           map((response) => Number(
             response.headers.get('x-ms-approximate-messages-count')
@@ -251,17 +251,15 @@ export class StorageAccountService {
     queue: string,
     count = 10
   ): Observable<QueueMessage[]> {
-    return this.sas(id, 'queue').pipe(
+    return this.storageDataApi.getAccountSas(id, 'queue').pipe(
       switchMap((sas) => {
         const boundedCount = Math.min(Math.max(count, 1), 32);
         const params = new HttpParams({ fromString: sas })
           .set('peekonly', 'true')
           .set('numofmessages', String(boundedCount));
-        const url = this.dataUrl(id, 'queue')
-          + '/' + encodeURIComponent(queue)
-          + '/messages';
+        const path = '/' + encodeURIComponent(queue) + '/messages';
 
-        return this.xml(url, params, 'queue').pipe(
+          return this.xml(this.accountName(id), 'queue', path, params).pipe(
           map((xml) => this.descendants(xml, 'QueueMessage').map((message) => ({
             id: this.text(message, 'MessageId'),
             insertionTime: this.text(message, 'InsertionTime') || undefined,
@@ -280,106 +278,43 @@ export class StorageAccountService {
     table: string,
     filter = ''
   ): Observable<TableEntity[]> {
-    return this.sas(id, 'table').pipe(
+    return this.storageDataApi.getAccountSas(id, 'table').pipe(
       switchMap((sas) => {
         let params = new HttpParams({ fromString: sas });
         if (filter.trim()) {
           params = params.set('$filter', filter.trim());
         }
 
-        const url = this.dataUrl(id, 'table') + '/' + encodeURIComponent(table) + '()';
-        return this.http.get<ArmList<TableEntity>>(url, {
+        const path = '/' + encodeURIComponent(table) + '()';
+        return this.storageDataApi.getJson<ArmList<TableEntity>>(
+          this.accountName(id),
+          'table',
+          path,
           params,
-          headers: {
+          {
             Accept: 'application/json;odata=nometadata',
             'x-ms-version': '2019-02-02'
           }
-        }).pipe(map((response) => response.value ?? []));
+        ).pipe(map((response) => response.value ?? []));
       })
     );
   }
 
   private listArm<T>(id: string, path: string): Observable<T[]> {
-    const url = this.armUrl(id) + '/' + path + '?api-version=' + this.apiVersion;
-    return this.http.get<ArmList<T>>(url).pipe(map((response) => response.value ?? []));
-  }
-
-  private sas(
-    id: string,
-    service: 'blob' | 'file' | 'queue' | 'table',
-    resourceName?: string
-  ): Observable<string> {
-    const account = id.split('/').pop();
-    if (!account) {
-      throw new Error('Could not determine the Storage Account name from its ARM resource ID.');
-    }
-
-    const signedExpiry = new Date(Date.now() + 5 * 60_000).toISOString();
-    if ((service === 'blob' || service === 'file') && resourceName) {
-      const signedResource = service === 'blob' ? 'c' : 's';
-      const canonicalizedResource = '/' + service + '/' + account + '/' + resourceName;
-      const url = this.armUrl(id) + '/listServiceSas?api-version=' + this.apiVersion;
-      return this.http.post<{ serviceSasToken?: string }>(url, {
-        canonicalizedResource,
-        signedResource,
-        signedPermission: 'rl',
-        signedProtocol: 'https',
-        signedExpiry
-      }).pipe(
-        map((response) => {
-          if (!response.serviceSasToken) {
-            throw new Error('Azure Resource Manager did not return a Storage service SAS token.');
-          }
-          return response.serviceSasToken.replace(/^\?/, '');
-        })
-      );
-    }
-
-    const signedServices = service === 'queue' ? 'q' : 't';
-    const url = this.armUrl(id) + '/listAccountSas?api-version=' + this.apiVersion;
-    return this.http.post<{ accountSasToken?: string }>(url, {
-      signedServices,
-      signedResourceTypes: 'sco',
-      signedPermission: 'r',
-      signedProtocol: 'https',
-      signedStart: new Date(Date.now() - 300_000).toISOString(),
-      signedExpiry,
-      keyToSign: 'key1'
-    }).pipe(
-      map((response) => {
-        if (!response.accountSasToken) {
-          throw new Error('Azure Resource Manager did not return a Storage account SAS token.');
-        }
-        return response.accountSasToken.replace(/^\?/, '');
-      })
-    );
-  }
-
-  private armUrl(id: string): string {
-    if (!id?.startsWith('/subscriptions/')) {
-      throw new Error('The Storage Account ARM resource ID is missing or invalid.');
-    }
-    return 'https://management.azure.com' + id.replace(/\/$/, '');
-  }
-
-  private dataUrl(id: string, service: 'blob' | 'file' | 'queue' | 'table'): string {
-    const account = id.split('/').pop();
-    if (!account) {
-      throw new Error('Could not determine the Storage Account name from its ARM resource ID.');
-    }
-    return environment.azure.proxyUrl + '/storage-proxy/' + account + '/' + service;
+    return this.armApi.get<ArmList<T>>(`${id}/${path}`, {
+      params: { 'api-version': '2023-01-01' }
+    }).pipe(map((response) => response.value ?? []));
   }
 
   private xml(
-    url: string,
-    params: HttpParams,
-    service: 'blob' | 'file' | 'queue'
+    account: string,
+    service: 'blob' | 'file' | 'queue',
+    path: string,
+    params: HttpParams
   ): Observable<XMLDocument> {
     const version = service === 'file' ? '2024-11-04' : '2023-11-03';
-    return this.http.get(url, {
-      params,
-      responseType: 'text',
-      headers: { 'x-ms-version': version }
+    return this.storageDataApi.getText(account, service, path, params, {
+      'x-ms-version': version
     }).pipe(
       map((body) => {
         const xml = new DOMParser().parseFromString(body, 'application/xml');
@@ -412,5 +347,13 @@ export class StorageAccountService {
       .filter(Boolean)
       .map((part) => encodeURIComponent(part))
       .join('/');
+  }
+
+  private accountName(id: string): string {
+    const account = id.split('/').filter(Boolean).at(-1);
+    if (!account) {
+      throw new Error('Could not determine the Storage Account name from its ARM resource ID.');
+    }
+    return account;
   }
 }

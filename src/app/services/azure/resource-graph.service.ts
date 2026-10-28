@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { EMPTY, Observable, of } from 'rxjs';
 import { expand, map, reduce } from 'rxjs/operators';
 import { environment } from '@environments/environment';
 import { AzureDataResource } from './data.model';
+import { ResourceGraphApiService } from './resource-graph-api.service';
 
 export type AppResourceCategory =
   | 'Serverless'
@@ -198,7 +198,7 @@ export interface SubnetRoutingDetail {
 
 @Injectable({ providedIn: 'root' })
 export class ResourceGraphService {
-  constructor(private http: HttpClient) {}
+  constructor(private readonly resourceGraphApi: ResourceGraphApiService) {}
 
   /**
    * Get all network topologies in the Azure subscription.
@@ -206,10 +206,9 @@ export class ResourceGraphService {
    * @returns An observable that emits an array of network topologies.
    */
   public getNetworkTopologies(): Observable<NetworkTopology[]> {
-    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
     const query = "Resources | where type =~ 'microsoft.network/virtualnetworks' | project id, name, type, resourceGroup, location, properties";
 
-    return this.http.post<ResourceGraphResponse>(url, {
+    return this.resourceGraphApi.query<ResourceGraphResponse>({
       subscriptions: [environment.azure.subscriptionId],
       query,
       options: {
@@ -221,9 +220,7 @@ export class ResourceGraphService {
   }
 
   public executeQuery(query: string): Observable<ResourceGraphQueryResult> {
-    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
-
-    return this.http.post<ResourceGraphTableResponse>(url, {
+    return this.resourceGraphApi.query<ResourceGraphTableResponse>({
       subscriptions: [environment.azure.subscriptionId],
       query,
       options: {
@@ -249,10 +246,9 @@ export class ResourceGraphService {
    * @returns An observable that emits an array of Azure resources within the specified resource group.
    */
   public getResourcesByResourceGroup(resourceGroupName: string): Observable<AzureResource[]> {
-    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
     const query = `Resources | where resourceGroup =~ '${resourceGroupName}' | project id, name, type, location, resourceGroup | order by name asc`;
 
-    return this.http.post<{ data: AzureResource[] }>(url, {
+    return this.resourceGraphApi.query<{ data: AzureResource[] }>({
       subscriptions: [environment.azure.subscriptionId],
       query,
       options: {
@@ -265,8 +261,6 @@ export class ResourceGraphService {
 
 
   public getDataResources(): Observable<AzureDataResource[]> {
-    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
-
     const query = `
       resources
       | where type in~ (
@@ -299,7 +293,7 @@ export class ResourceGraphService {
       | order by category asc, name asc
     `;
 
-    return this.http.post<{ data: AzureDataResource[] }>(url, {
+    return this.resourceGraphApi.query<{ data: AzureDataResource[] }>({
       subscriptions: [environment.azure.subscriptionId],
       query,
       options: { resultFormat: 'objectArray' }
@@ -309,8 +303,6 @@ export class ResourceGraphService {
   }
 
   public getApplicationResources(): Observable<AzureAppResource[]> {
-    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
-
     const query = `
       resources
       | where type in~ (
@@ -334,7 +326,7 @@ export class ResourceGraphService {
       | order by category asc, name asc
     `;
 
-    return this.http.post<{ data: AzureAppResource[] }>(url, {
+    return this.resourceGraphApi.query<{ data: AzureAppResource[] }>({
       subscriptions: [environment.azure.subscriptionId],
       query,
       options: { resultFormat: 'objectArray' }
@@ -344,7 +336,6 @@ export class ResourceGraphService {
   }
 
   public getTaggedApplicationResources(): Observable<AzureTaggedAppResource[]> {
-    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
     const query = `
       Resources
       | where isnotempty(tags['azome-apps'])
@@ -357,7 +348,7 @@ export class ResourceGraphService {
     }
 
     const fetchPage = (skipToken?: string): Observable<TaggedResourceResponse> => {
-      return this.http.post<TaggedResourceResponse>(url, {
+      return this.resourceGraphApi.query<TaggedResourceResponse>({
         subscriptions: [environment.azure.subscriptionId],
         query,
         options: {
@@ -384,10 +375,9 @@ export class ResourceGraphService {
    * @returns An observable that emits the details of the Azure resource, or null if not found.
    */
   public getResourceDetails(resourceId: string): Observable<AzureResourceDetail | null> {
-    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
     const query = `Resources | where id =~ '${resourceId}' | project id, name, type, location, resourceGroup, kind, tags, properties, sku`;
 
-    return this.http.post<{ data: AzureResourceDetail[] }>(url, {
+    return this.resourceGraphApi.query<{ data: AzureResourceDetail[] }>({
       subscriptions: [environment.azure.subscriptionId],
       query,
       options: {
@@ -427,10 +417,9 @@ export class ResourceGraphService {
       .map((id) => `id =~ '${id}'`)
       .join(' or ');
 
-    const url = `${environment.azure.resourceManagerUrl}/providers/Microsoft.ResourceGraph/resources?api-version=2021-03-01`;
     const query = `Resources | where ${filters} | project id, name, type, properties`;
 
-    return this.http.post<{ data: AzureSecurityResource[] }>(url, {
+    return this.resourceGraphApi.query<{ data: AzureSecurityResource[] }>({
       subscriptions: [environment.azure.subscriptionId],
       query,
       options: {
