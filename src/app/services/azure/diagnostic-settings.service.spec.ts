@@ -75,7 +75,7 @@ describe('DiagnosticSettingsService', () => {
     expect(requests.length).toBe(6);
     for (const child of ['blobServices', 'fileServices', 'queueServices', 'tableServices']) {
       expect(requests.some((request) =>
-        request.request.url === diagnosticUrl(`${storage.id}/${child}/default`)
+        request.request.urlWithParams === diagnosticUrl(`${storage.id}/${child}/default`)
       )).toBeTrue();
     }
     requests.forEach((request) => request.flush({ value: [] }));
@@ -104,7 +104,7 @@ describe('DiagnosticSettingsService', () => {
       ]
     });
     const requests = http.match((request) => request.method === 'GET');
-    expect(requests.map((request) => request.request.url)).toEqual([
+    expect(requests.map((request) => request.request.urlWithParams)).toEqual([
       diagnosticUrl(source.id),
       diagnosticUrl(subscriptionId)
     ]);

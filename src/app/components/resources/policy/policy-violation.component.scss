@@ -16,18 +16,143 @@
   overflow-wrap: anywhere;
 }
 
-.policy-toggle-btn {
-  all: unset;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  color: #0f766e;
+.policy-violation-list {
+  margin-bottom: 1rem;
+}
+
+.policy-violation-list h4 {
+  margin: 0 0 0.4rem;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.policy-violation-list ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.policy-violation-item {
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.policy-violation-toggle {
+  display: grid;
+  grid-template-columns: 0.75rem minmax(0, 1fr);
+  align-items: start;
+  width: 100%;
+  gap: 0.55rem;
+  padding: 0.55rem 0.7rem;
+  border: 0;
+  background: #ffffff;
+  color: #334155;
   cursor: pointer;
   font: inherit;
+  text-align: left;
+}
 
-  &:hover {
-    text-decoration: underline;
-  }
+.policy-violation-toggle.selected {
+  background: #f0fdfa;
+}
+
+.policy-violation-title-text {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.policy-violation-title-text > span {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.policy-violation-title-text small {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.policy-violation-title-text small.policy-insights-warning {
+  color: #a34a12;
+  font-weight: 600;
+}
+
+.policy-violation-title-text strong {
+  color: #172b4d;
+}
+
+.policy-violation-toggle:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
+}
+
+.policy-violation-chevron {
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-top: 0.3rem;
+  border-right: 1.5px solid #64748b;
+  border-bottom: 1.5px solid #64748b;
+  transform: rotate(-45deg);
+}
+
+.policy-violation-toggle[aria-expanded='true'] .policy-violation-chevron {
+  margin-top: 0.15rem;
+  transform: rotate(45deg);
+}
+
+.policy-violation-expanded {
+  padding: 0.4rem 0.75rem 0.75rem 1.95rem;
+  background: #f8fafc;
+}
+
+.policy-violation-expanded h5 {
+  margin: 0.85rem 0 0;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.policy-assessment-status {
+  margin-top: 0.85rem;
+  padding: 0.65rem 0.75rem;
+  border-left: 3px solid #94a3b8;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 0.85rem;
+}
+
+.policy-assessment-status h5 {
+  margin: 0 0 0.35rem;
+}
+
+.policy-assessment-status p {
+  margin: 0;
+}
+
+.policy-assessment-status .assessment-read-error {
+  color: #9a3412;
+  font-weight: 600;
+}
+
+.assessment-explanation {
+  margin-top: 0.55rem;
+  color: #475569;
+  font-size: 0.8rem;
+}
+
+.assessment-explanation h6 {
+  margin: 0 0 0.3rem;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.assessment-explanation p {
+  margin: 0;
+}
+
+.policy-assessment-status .assessment-mismatch {
+  margin-top: 0.45rem;
+  color: #9a3412;
+  font-weight: 600;
 }
 
 .policy-set-link {
@@ -40,17 +165,6 @@
   text-align: left;
   text-decoration: underline;
   overflow-wrap: anywhere;
-}
-
-.toggle-icon {
-  font-size: 0.65rem;
-  color: #6b7280;
-  flex-shrink: 0;
-}
-
-.policy-details-cell {
-  padding: 0 !important;
-  background: #f8fafc;
 }
 
 .policy-tabs {

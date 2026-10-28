@@ -13,18 +13,126 @@
           <td><strong>Affected resource</strong></td>
           <td><code>{{ properties?.resourceId || resource?.id || '-' }}</code></td>
         </tr>
-        <tr>
-          <td>
-            <button type="button" class="policy-toggle-btn" (click)="toggleDetails()">
-              <span class="toggle-icon">{{ isDetailsOpen() ? '▼' : '▶' }}</span>
-              <strong>Policy definition</strong>
-            </button>
-          </td>
-          <td>{{ properties?.policyDefinitionName || '-' }}</td>
-        </tr>
-        @if (isDetailsOpen()) {
-          <tr class="policy-details-row">
-            <td colspan="2" class="policy-details-cell">
+      </tbody>
+    </table>
+  </div>
+
+  <section class="policy-violation-list" aria-label="Policy violations for this resource">
+    <h4>Violations ({{ violations.length }})</h4>
+    <ul>
+      @for (violation of violations; track violation.policyDefinitionId ?? $index; let index = $index) {
+        <li class="policy-violation-item">
+          <button
+            type="button"
+            class="policy-violation-toggle"
+            [class.selected]="index === selectedViolationIndex()"
+            [attr.aria-expanded]="index === selectedViolationIndex()"
+            (click)="selectPolicyViolation(index)">
+            <span class="policy-violation-chevron" aria-hidden="true"></span>
+            <span class="policy-violation-title-text">
+              @if (violation.policySetDefinitionName) {
+                <span>{{ violation.policySetDefinitionName }}:</span>
+              }
+              <strong>{{ violation.policyDefinitionName || 'Policy definition' }}</strong>
+              @if (violation.complianceReasonCode) {
+                <small
+                  [class.policy-insights-warning]="violation.complianceState?.toLowerCase() === 'noncompliant'">
+                  Policy Insights: {{ violation.complianceState || 'NonCompliant' }}
+                  · {{ violation.complianceReasonCode }}
+                </small>
+              }
+            </span>
+          </button>
+
+          @if (index === selectedViolationIndex()) {
+            <div class="policy-violation-expanded">
+              <table class="resource-detail-table">
+                <tbody>
+                  @if (violation.policySetDefinitionName || violation.policySetDefinitionId) {
+                    <tr>
+                      <td><strong>Policy set</strong></td>
+                      <td>
+                        @if (violation.policySetDefinitionId) {
+                          <button
+                            type="button"
+                            class="policy-set-link"
+                            (click)="openPolicySetDetails()">
+                            {{ violation.policySetDefinitionName || violation.policySetDefinitionId }}
+                          </button>
+                        } @else {
+                          {{ violation.policySetDefinitionName }}
+                        }
+                      </td>
+                    </tr>
+                  }
+                  <tr>
+                    <td><strong>Policy evaluation reason</strong></td>
+                    <td>
+                      {{ violation.complianceState || 'NonCompliant' }}
+                      @if (violation.complianceReasonCode) {
+                        · {{ violation.complianceReasonCode }}
+                      }
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Policy assignment</strong></td>
+                    <td>{{ violation.policyAssignmentName || '-' }}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Evaluation time</strong></td>
+                    <td>{{ violation.timestamp || '-' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              @if (violation.policyDefinitionAction?.toLowerCase() === 'auditifnotexists') {
+                <section class="policy-assessment-status" aria-live="polite">
+                  <h5>Current assessment</h5>
+                  @if (assessmentLoading()) {
+                    <p role="status">Checking the current assessment...</p>
+                  } @else if (assessmentError()) {
+                    <p class="assessment-read-error" role="alert">
+                      The referenced Microsoft Security assessment could not be read
+                      @if (assessmentErrorStatus(); as status) {
+                        (HTTP {{ status }})
+                      }.
+                    </p>
+                    <p>
+                      Policy Insights still reports the evaluation result above, but this page
+                      could not compare it with the assessment's current status.
+                    </p>
+                    <p>
+                      Check read access to Microsoft.Security/assessments and retry.
+                    </p>
+                  } @else if (assessmentState(); as assessment) {
+                    <p>
+                      Status: <strong>{{ assessment.code }}</strong>
+                      @if (assessment.statusChangeDate) {
+                        <span> (last changed {{ assessment.statusChangeDate }})</span>
+                      }
+                    </p>
+                    @if (assessment.mismatch) {
+                      <p class="assessment-mismatch" role="alert">
+                        The current assessment satisfies this policy's existence condition,
+                        while Policy Insights still reports NonCompliant.
+                      </p>
+                    }
+                  } @else {
+                    <p>No matching assessment status was returned.</p>
+                  }
+                  <div class="assessment-explanation">
+                    <h6>How to interpret these results</h6>
+                    <p>
+                      Policy Insights is Azure Policy's recorded evaluation at the time above.
+                      The assessment status is read separately from Microsoft Security and may
+                      change later. A difference is shown for investigation; it does not replace
+                      or suppress the Policy Insights result.
+                    </p>
+                  </div>
+                </section>
+              }
+
+              <h5>Policy definition</h5>
               <div class="policy-tabs" role="tablist" aria-label="Policy definition views">
                 <button
                   type="button"
@@ -57,36 +165,10 @@
                   <p>Policy definition JSON is unavailable.</p>
                 }
               </div>
-            </td>
-          </tr>
-        }
-        @if (properties?.policySetDefinitionName || properties?.policySetDefinitionId) {
-          <tr>
-            <td><strong>Policy set</strong></td>
-            <td>
-              @if (properties?.policySetDefinitionId) {
-                <button
-                  type="button"
-                  class="policy-set-link"
-                  (click)="openPolicySetDetails()"
-                >
-                  {{ properties?.policySetDefinitionName || properties?.policySetDefinitionId }}
-                </button>
-              } @else {
-                {{ properties?.policySetDefinitionName }}
-              }
-            </td>
-          </tr>
-        }
-        <tr>
-          <td><strong>Policy assignment</strong></td>
-          <td>{{ properties?.policyAssignmentName || '-' }}</td>
-        </tr>
-        <tr>
-          <td><strong>Evaluation time</strong></td>
-          <td>{{ properties?.timestamp || '-' }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  </section>
 </section>

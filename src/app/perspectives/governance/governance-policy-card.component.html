@@ -25,20 +25,123 @@
     [tone]="data.violations.length > 0 ? 'critical' : 'default'"
     [loading]="loading"
     [loaded]="loaded">
+    <div class="policy-violation-controls">
+      <div class="segmented-control" role="group" aria-label="Group violations by">
+        <button
+          type="button"
+          [class.active]="grouping() === 'resource'"
+          [attr.aria-pressed]="grouping() === 'resource'"
+          (click)="setGrouping('resource')">
+          Resource
+        </button>
+        <button
+          type="button"
+          [class.active]="grouping() === 'violation'"
+          [attr.aria-pressed]="grouping() === 'violation'"
+          (click)="setGrouping('violation')">
+          Violation
+        </button>
+      </div>
+      <label class="policy-set-filter">
+        <span>Policy set</span>
+        <select
+          [value]="selectedPolicySetId"
+          [disabled]="pageLoading"
+          (change)="changePolicySet($event)">
+          <option value="">All policy sets</option>
+          @for (policySet of policySets; track policySet.id) {
+            <option [value]="policySet.id">{{ policySet.name }}</option>
+          }
+        </select>
+      </label>
+      <label class="policy-search-filter">
+        <span>Search</span>
+        <input
+          type="search"
+          [value]="searchText"
+          [disabled]="pageLoading"
+          (input)="changeSearch($event)"
+          (keydown.enter)="applyFilters(); $event.preventDefault()">
+      </label>
+      <button
+        type="button"
+        class="apply-policy-filters"
+        [disabled]="pageLoading"
+        (click)="applyFilters()">
+        Apply
+      </button>
+      <label class="page-size-control">
+        <span>Rows per page</span>
+        <select [value]="pageSize" (change)="changePageSize($event)">
+          @for (size of pageSizes; track size) {
+            <option [value]="size">{{ size }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
     <ul class="data-list compact-list">
-      @for (violation of data.violations.slice(0, 12); track violation.resource + violation.policy) {
+      @for (group of groupedViolations; track group.key) {
         <li class="stacked-item">
-          <button
-            type="button"
-            class="resource-link"
-            (click)="selectViolation(violation)">
-            {{ violation.resource.split('/').pop() }}
-          </button>
-          <span>{{ violation.policy || 'Policy definition' }}</span>
+          @if (grouping() === 'resource') {
+            <button
+              type="button"
+              class="resource-link"
+              (click)="selectResourceViolations(group.violations)">
+              {{ group.label }}
+            </button>
+            @for (violation of group.violations; track $index) {
+              <span>{{ violation.policy || 'Policy definition' }}</span>
+              @if (violation.complianceReasonCode) {
+                <small>Policy Insights reason: {{ violation.complianceReasonCode }}</small>
+              }
+            }
+          } @else {
+            <strong class="violation-heading">
+              @if (group.policySetName) {
+                {{ group.policySetName }}:
+              }
+              {{ group.label }}
+            </strong>
+            @if (group.violations[0].complianceReasonCode) {
+              <small>Policy Insights reason: {{ group.violations[0].complianceReasonCode }}</small>
+            }
+            @for (violation of group.violations; track $index) {
+              <button
+                type="button"
+                class="resource-link"
+                (click)="selectViolation(violation)">
+                {{ violation.resource.split('/').pop() || violation.resource }}
+              </button>
+            }
+          }
         </li>
       } @empty {
         <li class="empty-state">No policy violations were returned.</li>
       }
     </ul>
+    <div class="policy-pagination">
+      <button
+        type="button"
+        [disabled]="pageIndex === 0 || pageLoading"
+        (click)="requestPage('previous')">
+        Previous
+      </button>
+      <span aria-live="polite">
+        Page {{ pageIndex + 1 }}
+        @if (data.totalRecords !== undefined) {
+          of {{ data.totalRecords }} violations
+        }
+        @if (pageLoading) {
+          Loading…
+        }
+      </span>
+      <button
+        type="button"
+        [disabled]="!data.nextToken || pageLoading"
+        (click)="requestPage('next')">
+        Next
+      </button>
+    </div>
   </app-governance-domain-card>
 </div>

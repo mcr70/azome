@@ -8,7 +8,6 @@ import {
   finalize,
   map,
   retry,
-  scan,
   shareReplay,
   startWith,
   switchMap,
@@ -24,6 +23,7 @@ const SNAPSHOT_CACHE_TTL_MS = 5 * 60 * 1000;
 const COST_CACHE_TTL_MS = 4 * 60 * 60 * 1000;
 
 type GovernanceSection = 'costs' | 'quotas' | 'policy' | 'resources';
+export type GovernanceTab = 'subscriptions' | 'costs' | 'policies';
 type GovernanceSnapshotUpdater = (snapshot: GovernanceSnapshot) => GovernanceSnapshot;
 
 export interface GovernanceSubscription {
@@ -51,17 +51,43 @@ export interface GovernanceQuota {
 export interface GovernancePolicySummary {
   compliant: number;
   nonCompliant: number;
-  violations: Array<{
-    resource: string;
-    policy: string;
-    state: string;
-    policyDefinitionId?: string;
-    policySetDefinitionName?: string;
-    policySetDefinitionId?: string;
-    policyAssignmentName?: string;
-    policyAssignmentId?: string;
-    timestamp?: string;
-  }>;
+  violations: GovernancePolicyViolation[];
+  policySets: GovernancePolicySet[];
+  pageIndex: number;
+  pageSize: number;
+  filters: GovernancePolicyFilters;
+  nextToken?: string;
+  totalRecords?: number;
+}
+
+export interface GovernancePolicySet {
+  id: string;
+  name: string;
+}
+
+export interface GovernancePolicyFilters {
+  policySetId?: string;
+  search?: string;
+}
+
+export interface GovernancePolicyViolation {
+  resource: string;
+  policy: string;
+  state: string;
+  complianceReasonCode?: string;
+  policyDefinitionAction?: string;
+  policyDefinitionId?: string;
+  policySetDefinitionName?: string;
+  policySetDefinitionId?: string;
+  policyAssignmentName?: string;
+  policyAssignmentId?: string;
+  timestamp?: string;
+}
+
+export interface GovernancePolicyViolationPage {
+  violations: GovernancePolicyViolation[];
+  nextToken?: string;
+  totalRecords?: number;
 }
 
 export interface GovernanceResourceSummary {
@@ -93,13 +119,16 @@ interface CostResponse {
 
 interface ResourceGraphResponse<T> {
   data: T[];
+  $skipToken?: string;
+  totalRecords?: number;
 }
 
 /** Loads costs, quotas, policy results, tag gaps, and locks for the dashboard. */
 @Injectable({ providedIn: 'root' })
 export class GovernanceService {
   private snapshotCache: { value: GovernanceSnapshot; expiresAt: number } | null = null;
-  private snapshotRequest: Observable<GovernanceSnapshot> | null = null;
+  private readonly snapshotRequests = new Map<string, Observable<GovernanceSnapshot>>();
+  private subscriptionsRequest: Observable<GovernanceSubscription[]> | null = null;
   private readonly actualCostCache = new Map<
     string,
     { value: GovernanceCostSummary; expiresAt: number }
@@ -111,30 +140,43 @@ export class GovernanceService {
     private readonly resourceGraphApi: ResourceGraphApiService
   ) {}
 
-  /** Returns cached data, shares in-flight loads, or loads a fresh dashboard snapshot. */
-  public getSnapshot(forceRefresh = false): Observable<GovernanceSnapshot> {
-    if (!forceRefresh && this.snapshotCache && this.snapshotCache.expiresAt > Date.now()) {
-      return of(this.snapshotCache.value);
+  public getSnapshot(
+    tab: GovernanceTab = 'subscriptions',
+    forceRefresh = false,
+    policyPageSize = 30,
+    policyFilters: GovernancePolicyFilters = {}
+  ): Observable<GovernanceSnapshot> {
+    const cached = this.getValidSnapshot();
+    if (!forceRefresh && cached && this.isTabLoaded(cached.value, tab, policyFilters)) {
+      return of(cached.value);
     }
-    if (this.snapshotRequest) {
-      return this.snapshotRequest;
+    const requestKey = this.snapshotRequestKey(tab, policyPageSize, policyFilters);
+    const currentRequest = this.snapshotRequests.get(requestKey);
+    if (currentRequest) {
+      return currentRequest;
     }
 
-    this.snapshotRequest = this.loadSnapshot().pipe(
-      tap((snapshot) => {
-        if (snapshot.loadingSections.length === 0) {
-          this.snapshotCache = {
-            value: snapshot,
-            expiresAt: Date.now() + SNAPSHOT_CACHE_TTL_MS
-          };
-        }
-      }),
-      finalize(() => {
-        this.snapshotRequest = null;
-      }),
+    const request = this.loadSnapshot(tab, forceRefresh, policyPageSize, policyFilters).pipe(
+      finalize(() => this.snapshotRequests.delete(requestKey)),
       shareReplay({ bufferSize: 1, refCount: false })
     );
-    return this.snapshotRequest;
+    this.snapshotRequests.set(requestKey, request);
+    return request;
+  }
+
+  public getPolicyViolationsPage(
+    pageSize: number,
+    skipToken?: string,
+    filters: GovernancePolicyFilters = {}
+  ): Observable<GovernancePolicyViolationPage> {
+    return this.getSubscriptions(false).pipe(
+      switchMap((subscriptions) => this.queryPolicyViolations(
+        subscriptions.map((subscription) => subscription.subscriptionId),
+        pageSize,
+        skipToken,
+        filters
+      ))
+    );
   }
 
   /** Fetch the complete JSON definition or initiative details of a policy by its ID. */
@@ -142,6 +184,18 @@ export class GovernanceService {
     const params = new HttpParams().set('api-version', '2023-04-01');
 
     return this.armApi.get<any>(policyId, { params });
+  }
+
+  public getSecurityAssessment(resourceId: string, assessmentName: string): Observable<any> {
+    if (!resourceId?.startsWith('/subscriptions/') || !assessmentName) {
+      throw new Error('The Security assessment resource ID or name is invalid.');
+    }
+
+    const path = `${resourceId.replace(/\/$/, '')}/providers/Microsoft.Security/assessments/`
+      + encodeURIComponent(assessmentName);
+    return this.armApi.get<any>(path, {
+      params: { 'api-version': '2021-06-01' }
+    });
   }
 
   /** Resolves display names for known policy definition IDs in one Resource Graph query. */
@@ -179,18 +233,40 @@ export class GovernanceService {
 
 
   /** Loads the dashboard snapshot across all visible subscriptions. */
-  private loadSnapshot(): Observable<GovernanceSnapshot> {
-    return this.get<AzureList<GovernanceSubscription>>('/subscriptions', {
-      'api-version': '2022-12-01'
-    }).pipe(
-      map((response) => response.value ?? []),
-      switchMap((subscriptions) => {
-        const subscriptionIds = subscriptions.map((item) => item.subscriptionId);
-        const activeSubscriptionId = environment.azure.subscriptionId;
-        const errors: string[] = [];
-        const quotaSubscriptions = subscriptions.length > 0
-          ? subscriptions
-          : [{ subscriptionId: activeSubscriptionId, displayName: 'Configured subscription', state: 'Unknown' }];
+  private loadSnapshot(
+    tab: GovernanceTab,
+    forceRefresh: boolean,
+    policyPageSize: number,
+    policyFilters: GovernancePolicyFilters
+  ): Observable<GovernanceSnapshot> {
+    const initial = this.beginSnapshot(tab);
+    const subscriptions = this.getSubscriptions(forceRefresh).pipe(shareReplay({
+      bufferSize: 1,
+      refCount: false
+    }));
+    const subscriptionUpdate = subscriptions.pipe(
+      map((value): GovernanceSnapshotUpdater => (snapshot) => ({
+        ...snapshot,
+        subscriptions: value,
+        errors: snapshot.errors.filter((error) => !error.startsWith('Subscriptions:')),
+        loadedSections: snapshot.loadedSections.includes('subscriptions')
+          ? snapshot.loadedSections
+          : [...snapshot.loadedSections, 'subscriptions']
+      }))
+    );
+    const sectionUpdates = subscriptions.pipe(switchMap((value) => {
+      const subscriptionIds = value.map((item) => item.subscriptionId);
+      const activeSubscriptionId = environment.azure.subscriptionId;
+      const requests: Observable<GovernanceSnapshotUpdater>[] = [];
+
+      if (tab === 'subscriptions') {
+        const quotaSubscriptions = value.length > 0
+          ? value
+          : [{
+            subscriptionId: activeSubscriptionId,
+            displayName: 'Configured subscription',
+            state: 'Unknown'
+          }];
         const quotaRequests = quotaSubscriptions.map((subscription) =>
           this.getQuotas(subscription.subscriptionId).pipe(
             map((quotas) => quotas.map((quota) => ({
@@ -199,60 +275,168 @@ export class GovernanceService {
             })))
           )
         );
-        const previous = this.snapshotCache?.value;
-        const initial: GovernanceSnapshot = {
-          subscriptions,
-          costs: previous?.costs ?? {
-            monthToDate: null,
-            forecast: null,
-            currency: 'USD',
-            services: []
-          },
-          quotas: previous?.quotas ?? [],
-          policy: previous?.policy ?? {
-            compliant: 0,
-            nonCompliant: 0,
-            violations: []
-          },
-          resources: previous?.resources ?? { missingTags: [], locks: [] },
-          errors: [],
-          loadingSections: ['costs', 'quotas', 'policy', 'resources'],
-          loadedSections: previous?.loadedSections ?? ['subscriptions']
-        };
-        const costIds = subscriptionIds.length > 0 ? subscriptionIds : [activeSubscriptionId];
-        const updates = merge(
-          this.createSnapshotUpdate(
-            'costs',
-            this.getCostSummary(costIds),
-            initial.costs,
-            'Cost data'
-          ),
-          this.createSnapshotUpdate(
-            'quotas',
-            forkJoin(quotaRequests).pipe(map((results) => results.flat())),
-            initial.quotas,
-            'Quota data'
-          ),
-          this.createSnapshotUpdate(
-            'policy',
-            this.getPolicySummary(subscriptionIds),
-            initial.policy,
-            'Policy data'
-          ),
-          this.createSnapshotUpdate(
-            'resources',
-            this.getResourceSummary(subscriptionIds),
-            initial.resources,
-            'Resource data'
-          )
-        );
+        requests.push(this.createSnapshotUpdate(
+          'quotas',
+          forkJoin(quotaRequests).pipe(map((results) => results.flat())),
+          initial.quotas,
+          'Quota data'
+        ));
+        requests.push(this.createSnapshotUpdate(
+          'resources',
+          this.getResourceSummary(subscriptionIds),
+          initial.resources,
+          'Resource data'
+        ));
+      } else if (tab === 'costs') {
+        const costIds = subscriptionIds.length > 0
+          ? subscriptionIds
+          : [activeSubscriptionId];
+        requests.push(this.createSnapshotUpdate(
+          'costs',
+          this.getCostSummary(costIds, forceRefresh),
+          initial.costs,
+          'Cost data'
+        ));
+      } else {
+        requests.push(this.createSnapshotUpdate(
+          'policy',
+          this.getPolicySummary(subscriptionIds, policyPageSize, policyFilters),
+          initial.policy,
+          'Policy data'
+        ));
+      }
 
-        return updates.pipe(
-          scan((snapshot, update) => update(snapshot), initial),
-          startWith(initial)
-        );
+      return merge(...requests);
+    }));
+
+    return merge(subscriptionUpdate, sectionUpdates).pipe(
+      map((update) => this.applySnapshotUpdate(update)),
+      startWith(initial),
+      catchError((error: unknown) => {
+        this.applySnapshotUpdate((snapshot) => ({
+          ...snapshot,
+          loadingSections: snapshot.loadingSections.filter(
+            (section) => !this.sectionsForTab(tab).includes(section)
+          )
+        }));
+        return throwError(() => error);
       })
     );
+  }
+
+  private getSubscriptions(forceRefresh: boolean): Observable<GovernanceSubscription[]> {
+    const cached = this.getValidSnapshot();
+    if (!forceRefresh && cached?.value.loadedSections.includes('subscriptions')) {
+      return of(cached.value.subscriptions);
+    }
+    if (this.subscriptionsRequest) {
+      return this.subscriptionsRequest;
+    }
+
+    const request = this.get<AzureList<GovernanceSubscription>>('/subscriptions', {
+      'api-version': '2022-12-01'
+    }).pipe(
+      map((response) => response.value ?? []),
+      finalize(() => this.subscriptionsRequest = null),
+      shareReplay({ bufferSize: 1, refCount: false })
+    );
+    this.subscriptionsRequest = request;
+    return request;
+  }
+
+  private beginSnapshot(tab: GovernanceTab): GovernanceSnapshot {
+    const initial = this.getValidSnapshot()?.value ?? this.emptySnapshot();
+    const snapshot = {
+      ...initial,
+      loadingSections: [...new Set([
+        ...initial.loadingSections,
+        ...this.sectionsForTab(tab)
+      ])]
+    };
+    this.snapshotCache = {
+      value: snapshot,
+      expiresAt: Date.now() + SNAPSHOT_CACHE_TTL_MS
+    };
+    return snapshot;
+  }
+
+  private applySnapshotUpdate(update: GovernanceSnapshotUpdater): GovernanceSnapshot {
+    const current = this.snapshotCache?.value ?? this.emptySnapshot();
+    const snapshot = update(current);
+    this.snapshotCache = {
+      value: snapshot,
+      expiresAt: Date.now() + SNAPSHOT_CACHE_TTL_MS
+    };
+    return snapshot;
+  }
+
+  private getValidSnapshot(): { value: GovernanceSnapshot; expiresAt: number } | null {
+    return this.snapshotCache && this.snapshotCache.expiresAt > Date.now()
+      ? this.snapshotCache
+      : null;
+  }
+
+  private isTabLoaded(
+    snapshot: GovernanceSnapshot,
+    tab: GovernanceTab,
+    filters: GovernancePolicyFilters
+  ): boolean {
+    const requiredSections: Array<GovernanceSection | 'subscriptions'> = tab === 'subscriptions'
+      ? ['subscriptions', 'quotas', 'resources']
+      : tab === 'costs'
+        ? ['subscriptions', 'costs']
+        : ['subscriptions', 'policy'];
+    const requiredLoaded = requiredSections.every((section) =>
+      snapshot.loadedSections.includes(section)
+    );
+    return requiredLoaded && (tab !== 'policies'
+      || this.samePolicyFilters(snapshot.policy.filters, filters));
+  }
+
+  private snapshotRequestKey(
+    tab: GovernanceTab,
+    pageSize: number,
+    filters: GovernancePolicyFilters
+  ): string {
+    return [tab, pageSize, filters.policySetId?.toLowerCase() ?? '', filters.search?.trim() ?? '']
+      .join(':');
+  }
+
+  private samePolicyFilters(
+    first: GovernancePolicyFilters,
+    second: GovernancePolicyFilters
+  ): boolean {
+    return (first.policySetId ?? '').toLowerCase() === (second.policySetId ?? '').toLowerCase()
+      && (first.search ?? '').trim() === (second.search ?? '').trim();
+  }
+
+  private sectionsForTab(tab: GovernanceTab): GovernanceSection[] {
+    return tab === 'subscriptions'
+      ? ['quotas', 'resources']
+      : tab === 'costs'
+        ? ['costs']
+        : ['policy'];
+  }
+
+  private emptySnapshot(): GovernanceSnapshot {
+    return {
+      subscriptions: [],
+      costs: { monthToDate: null, forecast: null, currency: 'USD', services: [] },
+      quotas: [],
+      policy: {
+        compliant: 0,
+        nonCompliant: 0,
+        violations: [],
+        policySets: [],
+        pageIndex: 0,
+        pageSize: 30,
+        filters: {}
+      },
+      resources: { missingTags: [], locks: [] },
+      errors: [],
+      loadingSections: [],
+      loadedSections: []
+    };
   }
 
   /** Converts one domain request into a snapshot update without blocking other cards. */
@@ -266,6 +450,7 @@ export class GovernanceService {
       map((value): GovernanceSnapshotUpdater => (snapshot) => ({
         ...snapshot,
         [section]: value,
+        errors: snapshot.errors.filter((error) => !error.startsWith(`${label}:`)),
         loadingSections: snapshot.loadingSections.filter((item) => item !== section),
         loadedSections: snapshot.loadedSections.includes(section)
           ? snapshot.loadedSections
@@ -278,15 +463,21 @@ export class GovernanceService {
         loadedSections: snapshot.loadedSections.includes(section)
           ? snapshot.loadedSections
           : [...snapshot.loadedSections, section],
-        errors: [...snapshot.errors, `${label}: ${this.getAzureErrorMessage(error)}`]
+        errors: [
+          ...snapshot.errors.filter((item) => !item.startsWith(`${label}:`)),
+          `${label}: ${this.getAzureErrorMessage(error)}`
+        ]
       })))
     );
   }
 
   /** Retrieves current month cost grouped by service and a month-end forecast. */
-  private getCostSummary(subscriptionIds: string[]): Observable<GovernanceCostSummary> {
+  private getCostSummary(
+    subscriptionIds: string[],
+    forceRefresh = false
+  ): Observable<GovernanceCostSummary> {
     return from(subscriptionIds).pipe(
-      concatMap((subscriptionId) => this.getSubscriptionCostSummary(subscriptionId)),
+      concatMap((subscriptionId) => this.getSubscriptionCostSummary(subscriptionId, forceRefresh)),
       toArray(),
       map((summaries) => {
         const serviceCosts = new Map<string, number>();
@@ -312,7 +503,10 @@ export class GovernanceService {
   }
 
   /** Loads actual and forecast cost for one subscription. */
-  private getSubscriptionCostSummary(subscriptionId: string): Observable<GovernanceCostSummary> {
+  private getSubscriptionCostSummary(
+    subscriptionId: string,
+    forceRefresh: boolean
+  ): Observable<GovernanceCostSummary> {
     const path = `/subscriptions/${subscriptionId}/providers/Microsoft.CostManagement/query`;
     const params = new HttpParams().set('api-version', '2023-03-01');
     const body = {
@@ -325,7 +519,7 @@ export class GovernanceService {
       }
     };
     const cachedActual = this.actualCostCache.get(subscriptionId);
-    const actualCost = cachedActual && cachedActual.expiresAt > Date.now()
+    const actualCost = !forceRefresh && cachedActual && cachedActual.expiresAt > Date.now()
       ? of(cachedActual.value)
       : this.armApi.postViaProxy<CostResponse>(path, body, { params }).pipe(
         this.withCostManagementRetry<CostResponse>(),
@@ -338,7 +532,7 @@ export class GovernanceService {
 
     return actualCost.pipe(switchMap((costs) => {
       const cachedForecast = this.forecastCache.get(subscriptionId);
-      const forecast = cachedForecast && cachedForecast.expiresAt > Date.now()
+      const forecast = !forceRefresh && cachedForecast && cachedForecast.expiresAt > Date.now()
         ? of(cachedForecast.value)
         : this.getForecast(subscriptionId).pipe(
           tap((value) => this.forecastCache.set(subscriptionId, {
@@ -421,7 +615,11 @@ export class GovernanceService {
   }
 
   /** Summarizes policy compliance and returns a sample of non-compliant resources. */
-  private getPolicySummary(subscriptionIds: string[]): Observable<GovernancePolicySummary> {
+  private getPolicySummary(
+    subscriptionIds: string[],
+    pageSize: number,
+    filters: GovernancePolicyFilters
+  ): Observable<GovernancePolicySummary> {
     const query = `PolicyResources
       | where type =~ 'microsoft.policyinsights/policystates'
       | extend resourceId=tolower(tostring(properties.resourceId)),
@@ -430,7 +628,50 @@ export class GovernanceService {
       | summarize hasNonCompliant=countif(state =~ 'NonCompliant') > 0 by resourceId
       | summarize compliant=countif(hasNonCompliant == false),
           nonCompliant=countif(hasNonCompliant == true)`;
-    const violations = `PolicyResources
+    return forkJoin({
+      summary: this.executeResourceGraph<{ compliant: number; nonCompliant: number }>(
+        query, subscriptionIds, 'policy compliance summary'
+      ),
+      violations: this.queryPolicyViolations(subscriptionIds, pageSize, undefined, filters),
+      policySets: this.getPolicySets(subscriptionIds)
+    }).pipe(map((response) => {
+      const compliant = Number(response.summary[0]?.compliant ?? 0);
+      const nonCompliant = Number(response.summary[0]?.nonCompliant ?? 0);
+      return {
+        compliant,
+        nonCompliant,
+        violations: response.violations.violations,
+        policySets: response.policySets,
+        pageIndex: 0,
+        pageSize,
+        filters,
+        nextToken: response.violations.nextToken,
+        totalRecords: response.violations.totalRecords
+      };
+    }));
+  }
+
+  private queryPolicyViolations(
+    subscriptions: string[],
+    pageSize: number,
+    skipToken?: string,
+    filters: GovernancePolicyFilters = {}
+  ): Observable<GovernancePolicyViolationPage> {
+    if (subscriptions.length === 0) {
+      return of({ violations: [] });
+    }
+
+    const boundedPageSize = Math.min(Math.max(Math.floor(pageSize), 1), 1000);
+    const policySetId = filters.policySetId?.trim().toLowerCase();
+    const search = filters.search?.trim().replace(/'/g, "''");
+    const policySetFilter = policySetId
+      ? `| where policySetDefinitionId =~ '${policySetId.replace(/'/g, "''")}'`
+      : '';
+    const searchFilter = search
+      ? `| where resource contains '${search}' or policy contains '${search}'`
+        + ` or tostring(policySetDefinitionName) contains '${search}'`
+      : '';
+    const query = `PolicyResources
       | where type =~ 'microsoft.policyinsights/policystates'
       | where tostring(properties.complianceState) =~ 'NonCompliant'
       | extend policyDefinitionId=tolower(tostring(properties.policyDefinitionId)),
@@ -451,33 +692,70 @@ export class GovernanceService {
           policy=coalesce(policyDefinitionDisplayName,
             tostring(properties.policyDefinitionName), policyDefinitionId),
           state=tostring(properties.complianceState),
+          complianceReasonCode=tostring(properties.complianceReasonCode),
+          policyDefinitionAction=tostring(properties.policyDefinitionAction),
           policyDefinitionId,
           policySetDefinitionName,
           policySetDefinitionId,
           policyAssignmentName=tostring(properties.policyAssignmentName),
           policyAssignmentId=tostring(properties.policyAssignmentId),
           timestamp=tostring(properties.timestamp)
-      | take 30`;
+          ${policySetFilter}
+          ${searchFilter}
+      | order by resource asc, policy asc, policyDefinitionId asc`;
+    return this.resourceGraphApi.query<ResourceGraphResponse<GovernancePolicyViolation>>({
+      subscriptions,
+      query,
+      options: {
+        resultFormat: 'objectArray',
+        $top: boundedPageSize,
+        ...(skipToken ? { $skipToken: skipToken } : {}),
+        authorizationScopeFilter: 'AtScopeAboveAndBelow'
+      }
+    }, {
+      apiVersion: RESOURCE_GRAPH_API_VERSION,
+      viaProxy: true
+    }).pipe(map((response) => ({
+      violations: response.data ?? [],
+      nextToken: response.$skipToken,
+      totalRecords: response.totalRecords,
+      filters
+    })));
+  }
 
-    return forkJoin({
-      summary: this.executeResourceGraph<{ compliant: number; nonCompliant: number }>(
-        query, subscriptionIds, 'policy compliance summary'
-      ),
-      violations: this.executeResourceGraph<GovernancePolicySummary['violations'][number]>(
-        violations,
-        subscriptionIds,
-        'policy violations',
-        { authorizationScopeFilter: 'AtScopeAboveAndBelow' }
-      )
-    }).pipe(map((response) => {
-      const compliant = Number(response.summary[0]?.compliant ?? 0);
-      const nonCompliant = Number(response.summary[0]?.nonCompliant ?? 0);
-      return {
-        compliant,
-        nonCompliant,
-        violations: response.violations
-      };
-    }));
+  private getPolicySets(subscriptionIds: string[]): Observable<GovernancePolicySet[]> {
+    if (subscriptionIds.length === 0) {
+      return of([]);
+    }
+
+    const query = `PolicyResources
+      | where type =~ 'microsoft.policyinsights/policystates'
+      | where tostring(properties.complianceState) =~ 'NonCompliant'
+      | extend policySetDefinitionId=tolower(tostring(properties.policySetDefinitionId))
+      | where isnotempty(policySetDefinitionId)
+      | summarize by policySetDefinitionId
+      | join kind=leftouter (
+          PolicyResources
+          | where type =~ 'microsoft.authorization/policysetdefinitions'
+          | project policySetDefinitionId=tolower(id),
+              policySetDefinitionName=tostring(properties.displayName)
+        ) on policySetDefinitionId
+      | project id=policySetDefinitionId,
+          name=coalesce(policySetDefinitionName, policySetDefinitionId)
+      | order by name asc`;
+
+    return this.resourceGraphApi.query<ResourceGraphResponse<GovernancePolicySet>>({
+      subscriptions: subscriptionIds,
+      query,
+      options: {
+        resultFormat: 'objectArray',
+        $top: 1000,
+        authorizationScopeFilter: 'AtScopeAboveAndBelow'
+      }
+    }, {
+      apiVersion: RESOURCE_GRAPH_API_VERSION,
+      viaProxy: true
+    }).pipe(map((response) => response.data ?? []));
   }
 
   /** Finds resources missing required tags and protected by subscription locks. */

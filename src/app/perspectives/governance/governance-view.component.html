@@ -13,7 +13,7 @@
         type="button"
         class="refresh-button"
         (click)="refresh(true)"
-        [disabled]="loading()">
+        [disabled]="loading() || policyPageLoading()">
         {{ loading() ? 'Refreshing…' : 'Refresh' }}
       </button>
     </div>
@@ -51,21 +51,6 @@
         Subscriptions & Resources
       </button>
       <button
-        #costsTab
-        id="governance-costs-tab"
-        type="button"
-        role="tab"
-        aria-controls="governance-costs-panel"
-        [attr.aria-selected]="activeTab() === 'costs'"
-        [tabIndex]="activeTab() === 'costs' ? 0 : -1"
-        (click)="selectTab('costs')"
-        (keydown.arrowright)="selectTab('policies'); policiesTab.focus(); $event.preventDefault()"
-        (keydown.arrowleft)="selectTab('subscriptions'); subscriptionsTab.focus(); $event.preventDefault()"
-        (keydown.home)="selectTab('subscriptions'); subscriptionsTab.focus(); $event.preventDefault()"
-        (keydown.end)="selectTab('policies'); policiesTab.focus(); $event.preventDefault()">
-        Cost & FinOps
-      </button>
-      <button
         #policiesTab
         id="governance-policies-tab"
         type="button"
@@ -79,6 +64,21 @@
         (keydown.home)="selectTab('subscriptions'); subscriptionsTab.focus(); $event.preventDefault()"
         (keydown.end)="selectTab('policies'); policiesTab.focus(); $event.preventDefault()">
         Policy & Compliance
+      </button>
+      <button
+        #costsTab
+        id="governance-costs-tab"
+        type="button"
+        role="tab"
+        aria-controls="governance-costs-panel"
+        [attr.aria-selected]="activeTab() === 'costs'"
+        [tabIndex]="activeTab() === 'costs' ? 0 : -1"
+        (click)="selectTab('costs')"
+        (keydown.arrowright)="selectTab('policies'); policiesTab.focus(); $event.preventDefault()"
+        (keydown.arrowleft)="selectTab('subscriptions'); subscriptionsTab.focus(); $event.preventDefault()"
+        (keydown.home)="selectTab('subscriptions'); subscriptionsTab.focus(); $event.preventDefault()"
+        (keydown.end)="selectTab('policies'); policiesTab.focus(); $event.preventDefault()">
+        Costs
       </button>
     </div>
 
@@ -128,6 +128,13 @@
           [data]="data.policy"
           [loading]="data.loadingSections.includes('policy')"
           [loaded]="data.loadedSections.includes('policy')"
+          [pageLoading]="policyPageLoading()"
+          [pageIndex]="policyPageIndex()"
+          [pageSize]="policyPageSize()"
+          [policySets]="data.policy.policySets"
+          [filters]="policyFilters()"
+          (pageChange)="changePolicyPage($event)"
+          (filtersChanged)="applyPolicyFilters($event)"
           (resourceSelected)="openResourceDetails($event)"></app-governance-policy-card>
       </div>
     </section>

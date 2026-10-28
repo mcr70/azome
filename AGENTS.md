@@ -1,6 +1,13 @@
 # Coding
 When creating code, if comments are added use always English as a language.
 
+## Testing
+If Chrome is unavailable on macOS, run Angular tests with Microsoft Edge:
+
+```bash
+CHROME_BIN='/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge' npx ng test --watch=false --browsers=ChromeHeadless
+```
+
 Agents and code generators working on this repository MUST strictly follow standard Angular and TypeScript code formatting rules. Code legibility and clean structure are critical. Never output dense, single-line collapsed code.
 
 ## 1. HTML Templates (Angular)
