@@ -64,19 +64,6 @@ requests proxied through Angular's development server are same-origin.
 
 ## Log Analytics queries
 
-The workspace details magnifying-glass action opens the KQL dialog. Queries use
-the selected workspace's customer ID, not the ARM resource ID. The dialog loads
-schema metadata and runs one `Usage` query on open to list tables that received
-data in the last 30 days, including non-billable data. This is an ingestion-based
-approximation, not a row-existence check: older data and very recent ingestion
-may be absent. Choose **All tables** to see the full schema without another
-request. If activity discovery fails or returns partial results, the full schema
-remains available with an error message.
-
-Select a table name to load its default query without executing it. The table's
-columns can be expanded separately below the editor. Content queries run only when
-submitted, using the selected time range (24 hours by default).
-
 The Entra app needs the Log Analytics API delegated `Data.Read` permission and
 user or administrator consent. The signed-in user also needs permission to query
 the workspace, for example through the Log Analytics Reader role. The client uses
@@ -90,3 +77,26 @@ The setting comes from the runtime JSON, not a TypeScript environment file.
 API reference: https://learn.microsoft.com/en-us/azure/azure-monitor/logs/api/access-api
 
 Usage reference: https://learn.microsoft.com/en-us/azure/azure-monitor/reference/tables/usage
+
+
+## Configure the proxy later without rebuilding the UI
+
+After deploying the proxy separately, update `azure.proxyUrl` in
+`config/azure/app-config.json` to its HTTPS origin, without a path. Upload only
+the configuration file:
+
+```bash
+az storage blob upload \
+  --auth-mode login \
+  --account-name saazome \
+  --container-name '$web' \
+  --name app-config.json \
+  --file config/azure/app-config.json \
+  --content-type application/json \
+  --content-cache-control 'no-store' \
+  --overwrite
+```
+
+Reload the UI to load the updated settings. No Angular rebuild is needed.
+Keep the local file's empty proxy URL unchanged. Set the proxy's
+`ALLOWED_ORIGIN` to the UI origin, and check the proxy's `/health` endpoint.

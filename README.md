@@ -113,13 +113,29 @@ slash, as **SPA** redirect URIs in the Entra app registration.
 
 ### 4. Build and deploy only the UI
 
-If using a separate Azure CLI profile, use it consistently for every Azure
-command (including login and subscription selection):
+If using a separate Azure CLI profile, use it consistently for every Azure command (including login and subscription selection):
 
 ```bash
 export AZURE_CONFIG_DIR="$HOME/.azure-personal"
 az account show --query '{name:name,id:id,tenantId:tenantId}'
 ```
+
+The signed-in Azure identity needs the **Storage Blob Data Contributor** role on. This can be created with
+```bash
+az role assignment create \
+  --assignee-object-id 5028a327-c03a-494d-82ea-a8dc67f8f83a \
+  --assignee-principal-type User \
+  --role "Storage Blob Data Contributor" \
+  --scope "/subscriptions/219cc4c2-643f-4f88-a942-2977631c1616/resourceGroups/rg-azome/providers/Microsoft.Storage/storageAccounts/saazome"
+
+az role assignment list \
+  --assignee-object-id 5028a327-c03a-494d-82ea-a8dc67f8f83a \
+  --all \
+  --query "[?roleDefinitionName=='Storage Blob Data Contributor'].{Role:roleDefinitionName,Scope:scope}" \
+  -o table
+```
+
+
 
 Build the production bundle:
 
@@ -143,54 +159,7 @@ az storage blob upload-batch \
   --content-cache-control 'no-cache'
 ```
 
-The signed-in Azure identity needs the **Storage Blob Data Contributor** role on. This can be created with
-```bash
-az role assignment create \
-  --assignee-object-id 5028a327-c03a-494d-82ea-a8dc67f8f83a \
-  --assignee-principal-type User \
-  --role "Storage Blob Data Contributor" \
-  --scope "/subscriptions/219cc4c2-643f-4f88-a942-2977631c1616/resourceGroups/rg-azome/providers/Microsoft.Storage/storageAccounts/saazome"
-
-az role assignment list \
-  --assignee-object-id 5028a327-c03a-494d-82ea-a8dc67f8f83a \
-  --all \
-  --query "[?roleDefinitionName=='Storage Blob Data Contributor'].{Role:roleDefinitionName,Scope:scope}" \
-  -o table
-```
-
-the website Storage account to upload the site. Check the current website URL:
-
-```bash
-az storage account show \
-  --resource-group rg-azome \
-  --name saazome \
-  --query primaryEndpoints.web -o tsv
-```
-
-Verify that `/` and `/app-config.json` are available, then test sign-in and
-resource listing in the browser.
-
-### 5. Configure the proxy later without rebuilding the UI
-
-After deploying the proxy separately, update `azure.proxyUrl` in
-`config/azure/app-config.json` to its HTTPS origin, without a path. Upload only
-the configuration file:
-
-```bash
-az storage blob upload \
-  --auth-mode login \
-  --account-name saazome \
-  --container-name '$web' \
-  --name app-config.json \
-  --file config/azure/app-config.json \
-  --content-type application/json \
-  --content-cache-control 'no-store' \
-  --overwrite
-```
-
-Reload the UI to load the updated settings. No Angular rebuild is needed.
-Keep the local file's empty proxy URL unchanged. Set the proxy's
-`ALLOWED_ORIGIN` to the UI origin, and check the proxy's `/health` endpoint.
+### 5. Proxy
 
 For proxy behavior, supported routes, local development, and current network
 limitations, see [README-proxy.md](README-proxy.md).
