@@ -172,6 +172,37 @@ describe('MetricsComponent', () => {
     expect(metrics.getMetric).not.toHaveBeenCalled();
   });
 
+  it('changes only the Explorer query selection without changing shared resources', () => {
+    resourceSelection.select(firstResource);
+    resourceSelection.select(secondResource);
+    fixture.componentRef.setInput('resources', [firstResource, secondResource]);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.querySelector<HTMLButtonElement>('#metric-explorer-tab')?.click();
+    fixture.detectChanges();
+
+    const resourceCheckboxes = element.querySelectorAll<HTMLInputElement>(
+      '.resource-picker input[type="checkbox"]'
+    );
+    resourceCheckboxes[0].checked = false;
+    resourceCheckboxes[0].dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedExplorerResourceIds).toEqual([secondResource.id]);
+    expect(resourceSelection.selectedResources).toEqual([firstResource, secondResource]);
+
+    resourceCheckboxes[0].checked = true;
+    resourceCheckboxes[0].dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedExplorerResourceIds).toEqual([
+      firstResource.id,
+      secondResource.id
+    ]);
+    expect(resourceSelection.selectedResources).toEqual([firstResource, secondResource]);
+  });
+
   it('opens the shared Resource Graph tool from Metric Explorer', () => {
     const requestOpen = spyOn(TestBed.inject(ResourceGraphDialogService), 'requestOpen');
     fixture.detectChanges();

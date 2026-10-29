@@ -301,16 +301,10 @@ export class MetricsComponent implements OnChanges, OnDestroy {
       if (normalizedId === this.initialResource?.id.toLocaleLowerCase()) {
         this.excludedInitialResourceId = null;
       }
-      if (!this.resourceSelection.isSelected(resource.id)) {
-        this.resourceSelection.select(resource);
-      }
     } else {
       selectedIds.delete(normalizedId);
       if (normalizedId === this.initialResource?.id.toLocaleLowerCase()) {
         this.excludedInitialResourceId = normalizedId;
-      }
-      if (this.resourceSelection.isSelected(resource.id)) {
-        this.resourceSelection.deselect(resource.id);
       }
     }
 
