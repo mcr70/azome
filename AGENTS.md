@@ -25,12 +25,17 @@ Property Declarations: Declare each property on a separate line. Never stack mul
 
 Method Formatting: Every method body MUST be formatted across multiple lines with proper indentation (2 spaces). Never write inline single-line methods. Write comment in following format:
 ```
-  /** 
-   * Selects a queue and loads its message count and first peek results. 
-   * @param name Name of the queue
+  /**
+   * Selects a queue and loads its message count and first peek results. Returns no value.
+   *
+   * @param name Name of the queue.
    */
   selectQueue(name: string): void {
 ```
+
+Document each method's purpose, parameters, and return value so callers can understand how to use it. Add a blank JSDoc line between the summary and the first `@param` tag. Use `@returns` when the method returns a value. Omit `@returns Nothing` for `void` methods, and include useful behavior in the summary when needed.
+
+Use concise single-line comments inside long or complex methods to explain non-obvious decisions or processing steps. Add blank lines within method bodies to separate logical steps, but use them moderately. Keep consecutive `const` declarations together without blank lines between them; use blank lines to separate the declaration group from surrounding logic when helpful.
 
 Line Length & Whitespace: Keep maximum line length around 100–120 characters. Leave blank lines between class properties and methods.
 

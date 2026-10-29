@@ -139,6 +139,11 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     private readonly resourceSelection: ResourceSelectionService
   ) {}
 
+  /**
+   * Reacts to input changes and refreshes the resource or metric selections.
+   *
+   * @param changes Angular input changes for this component.
+   */
   public ngOnChanges(changes: SimpleChanges): void {
     let linkedResourceChanged = false;
 
@@ -180,11 +185,18 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
   }
 
+  /**
+   * Cancels active subscriptions when the component is destroyed.
+   */
   public ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
+  /**
+   * Returns unique resources from the shared selection and linked-resource input.
+   * @returns The available resources, deduplicated by resource ID.
+   */
   public get availableResources(): SelectedAzureResource[] {
     const resources = new Map<string, SelectedAzureResource>();
 
@@ -195,15 +207,25 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     return Array.from(resources.values());
   }
 
+  /**
+   * Returns available resources currently selected for metric exploration.
+   * @returns The selected Explorer resources.
+   */
   public get explorerResources(): SelectedAzureResource[] {
     const selectedIds = new Set(this.selectedExplorerResourceIds.map((id) => id.toLocaleLowerCase()));
+
     return this.availableResources.filter((resource) =>
       selectedIds.has(resource.id.toLocaleLowerCase())
     );
   }
 
+  /**
+   * Checks whether every supported Explorer resource is selected.
+   * @returns True when at least one selectable resource exists and all are selected.
+   */
   public get allExplorerResourcesSelected(): boolean {
     const selectableResources = this.selectableExplorerResources;
+
     return selectableResources.length > 0
       && selectableResources.every((resource) =>
         this.selectedExplorerResourceIds.some((id) =>
@@ -212,6 +234,10 @@ export class MetricsComponent implements OnChanges, OnDestroy {
       );
   }
 
+  /**
+   * Checks whether some, but not all, supported Explorer resources are selected.
+   * @returns True when the selection is partial.
+   */
   public get someExplorerResourcesSelected(): boolean {
     return this.selectableExplorerResources.some((resource) =>
       this.selectedExplorerResourceIds.some((id) =>
@@ -220,18 +246,29 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     ) && !this.allExplorerResourcesSelected;
   }
 
+  /**
+   * Returns resources that have not been identified as unsupported for metrics.
+   * @returns Resources that can be selected in the Explorer.
+   */
   public get selectableExplorerResources(): SelectedAzureResource[] {
     return this.availableResources.filter((resource) =>
       !this.unsupportedMetricResourceErrors.has(resource.id.toLocaleLowerCase())
     );
   }
 
+  /**
+   * Finds the recorded unsupported-resource message for a resource.
+   *
+   * @param resourceId Azure resource ID to look up.
+   * @returns The error message, or null when no unsupported-resource error is recorded.
+   */
   public unsupportedResourceError(resourceId: string): string | null {
     return this.unsupportedMetricResourceErrors.get(resourceId.toLocaleLowerCase()) ?? null;
   }
 
   /**
-   * Tells whether the Auto-Metrics error notice should be shown.
+   * Determines whether the Auto-Metrics error notice should be shown.
+   * @returns True when an automatic metrics error exists and has not been dismissed.
    */
   public get showAutomaticErrors(): boolean {
     return !this.automaticErrorsDismissed
@@ -245,6 +282,12 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     this.automaticErrorsDismissed = true;
   }
 
+  /**
+   * Groups metric charts by their resource ID while preserving input order.
+   *
+   * @param metrics Charts to group.
+   * @returns One resource group per resource, containing its charts.
+   */
   public groupMetrics(metrics: MetricChart[]): ResourceMetricGroup[] {
     const groups = new Map<string, ResourceMetricGroup>();
 
@@ -258,6 +301,10 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     return Array.from(groups.values());
   }
 
+  /**
+   * Returns metric definitions supported by every supported selected resource.
+   * @returns Common metric definitions, or an empty array when none are available.
+   */
   public get explorerMetricOptions(): AzureMetricDefinition[] {
     if (this.explorerResourceDefinitions.length === 0) {
       return [];
@@ -265,10 +312,12 @@ export class MetricsComponent implements OnChanges, OnDestroy {
 
     const supportedDefinitions = this.explorerResourceDefinitions
       .filter((resource) => !resource.unsupported);
+
     if (supportedDefinitions.length === 0) {
       return [];
     }
 
+    // Keep only metrics present on every supported resource.
     const definitions = supportedDefinitions[0].definitions;
     const commonNames = new Set(
       definitions.map((definition) => definition.name.value.toLocaleLowerCase())
@@ -291,6 +340,10 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     );
   }
 
+  /**
+   * Finds aggregations supported by all metrics selected in the Explorer.
+   * @returns Common supported aggregations, or an empty array for an invalid selection.
+   */
   public get explorerAggregationOptions(): MetricAggregation[] {
     const definitions = this.selectedExplorerMetricNames.map((name) =>
       this.explorerMetricOptions.find((metric) => metric.name.value === name)
@@ -301,10 +354,12 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
 
     const firstDefinition = definitions[0];
+
     if (!firstDefinition) {
       return [];
     }
 
+    // Offer only aggregations shared by every selected metric.
     return this.supportedAggregations(firstDefinition).filter((aggregation) =>
       definitions.every((definition) =>
         definition !== undefined && this.supportedAggregations(definition).includes(aggregation)
@@ -312,6 +367,11 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     );
   }
 
+  /**
+   * Changes the active metric view and loads automatic metrics when needed.
+   *
+   * @param view View to activate.
+   */
   public selectMetricView(view: (typeof this.metricViews)[number]): void {
     this.metricView = view;
 
@@ -320,6 +380,9 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
   }
 
+  /**
+   * Reloads automatic metrics or reruns the current Explorer query.
+   */
   public refreshMetrics(): void {
     if (this.metricView === 'auto') {
       this.loadAutomaticMetrics();
@@ -328,12 +391,21 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
   }
 
+  /**
+   * Opens the resource graph query dialog.
+   */
   public openResourceGraph(): void {
     this.resourceGraphDialog.requestOpen();
   }
 
+  /**
+   * Selects a supported time range and reloads the active metrics view. Ignores unsupported values.
+   *
+   * @param value Time-range option value.
+   */
   public setTimeRange(value: string): void {
     const range = TIME_RANGES.find((option) => option.value === value);
+
     if (!range) {
       return;
     }
@@ -347,6 +419,12 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
   }
 
+  /**
+   * Adds or removes one resource from the Explorer selection. Ignores unknown or unsupported ones.
+   *
+   * @param resourceId ID of the resource to toggle.
+   * @param event Change event from the resource checkbox.
+   */
   public toggleExplorerResource(resourceId: string, event: Event): void {
     const input = event.target as HTMLInputElement;
     const resource = this.availableResources.find((item) =>
@@ -358,6 +436,7 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
 
     const normalizedId = resource.id.toLocaleLowerCase();
+
     if (this.unsupportedResourceError(resource.id)) {
       return;
     }
@@ -384,8 +463,14 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     this.loadExplorerDefinitions();
   }
 
+  /**
+   * Selects or clears all resources currently supported by the Explorer.
+   *
+   * @param event Change event from the select-all checkbox.
+   */
   public toggleAllExplorerResources(event: Event): void {
     const input = event.target as HTMLInputElement;
+
     this.selectedExplorerResourceIds = input.checked
       ? this.selectableExplorerResources.map((resource) => resource.id)
       : [];
@@ -400,12 +485,22 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     this.loadExplorerDefinitions();
   }
 
+  /**
+   * Stores the selected metric names and updates the compatible aggregation.
+   *
+   * @param select Metric selector element containing the selected options.
+   */
   public selectExplorerMetrics(select: HTMLSelectElement): void {
     this.selectedExplorerMetricNames = Array.from(select.selectedOptions)
       .map((option) => option.value);
+
     this.ensureExplorerAggregation();
   }
 
+  /**
+   * Keeps the selected Explorer aggregation valid, falling back to the first compatible option
+   * or Average when needed.
+   */
   private ensureExplorerAggregation(): void {
     const aggregations = this.explorerAggregationOptions;
 
@@ -414,6 +509,11 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
   }
 
+  /**
+   * Selects an aggregation only when all selected metrics support it. Ignores unsupported values.
+   *
+   * @param value Aggregation name to select.
+   */
   public selectExplorerAggregation(value: string): void {
     const aggregation = AGGREGATIONS.find((option) => option === value);
 
@@ -422,6 +522,9 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
   }
 
+  /**
+   * Queries selected metrics for selected resources and stores results or errors on the component.
+   */
   public queryExplorer(): void {
     this.explorerQueryRequest?.unsubscribe();
     this.explorerError = null;
@@ -450,6 +553,8 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     const range = this.selectedTimeRange();
     const end = new Date();
     const start = new Date(end.getTime() - range.durationMs);
+
+    // Run each selected metric for every selected resource with the shared aggregation.
     const queries = resources.flatMap((resource) =>
       definitions.map((definition) => ({
         resource,
@@ -475,6 +580,12 @@ export class MetricsComponent implements OnChanges, OnDestroy {
       });
   }
 
+  /**
+   * Orders the aggregations supported by a metric, preferring its primary type.
+   *
+   * @param definition Metric definition to inspect.
+   * @returns Supported aggregation names in preferred display order.
+   */
   public supportedAggregations(definition: AzureMetricDefinition): MetricAggregation[] {
     const supported = new Set(
       (definition.supportedAggregationTypes ?? [])
@@ -488,6 +599,7 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
 
     const ordered = AGGREGATIONS.filter((aggregation) => supported.has(aggregation));
+
     if (primary && ordered.includes(primary)) {
       return [primary, ...ordered.filter((aggregation) => aggregation !== primary)];
     }
@@ -495,6 +607,13 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     return ordered;
   }
 
+  /**
+   * Reads the value corresponding to an aggregation from a metric data point.
+   *
+   * @param point Data point to read.
+   * @param aggregation Aggregation whose value is requested.
+   * @returns The aggregation value, or zero when that value is absent.
+   */
   public metricValue(point: AzureMetricDataPoint, aggregation: MetricAggregation): number {
     switch (aggregation) {
       case 'Maximum':
@@ -508,6 +627,13 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
   }
 
+  /**
+   * Scales a metric point to a percentage of the chart's maximum value.
+   *
+   * @param chart Chart containing the point and comparison values.
+   * @param point Point whose bar height is requested.
+   * @returns Bar height as a percentage, with a 4% minimum for visible zero values.
+   */
   public barHeight(chart: MetricChart, point: AzureMetricDataPoint): number {
     const maximum = Math.max(
       ...chart.points.map((item) => this.metricValue(item, chart.aggregation)),
@@ -524,10 +650,19 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     );
   }
 
+  /**
+   * Formats a metric value using the current locale and at most two decimals.
+   *
+   * @param value Numeric metric value.
+   * @returns Locale-formatted value.
+   */
   public formatMetricValue(value: number): string {
     return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(value);
   }
 
+  /**
+   * Rebuilds the Explorer resource selection and loads its definitions and metrics.
+   */
   private updateResourceSelection(): void {
     this.selectedExplorerResourceIds = [
       ...this.resources.map((resource) => resource.id),
@@ -546,6 +681,10 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     this.loadExplorerDefinitions();
   }
 
+  /**
+   * Loads default metric charts for every available resource and stores progress, results, and
+   * failures on the component.
+   */
   private loadAutomaticMetrics(): void {
     this.automaticRequest?.unsubscribe();
     this.automaticMetrics = [];
@@ -554,6 +693,7 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     this.automaticErrorsDismissed = false;
 
     const resources = this.availableResources;
+
     if (resources.length === 0) {
       this.loadingAutomaticMetrics = false;
       return;
@@ -587,13 +727,16 @@ export class MetricsComponent implements OnChanges, OnDestroy {
         ),
         catchError((error: unknown) => {
           console.error(`Failed to load metric definitions for ${resource.id}:`, error);
+
           const errorMessage = this.errorMessage(error, 'Metric definitions could not be loaded.');
+
           if (this.isUnsupportedMetricResourceError(errorMessage, resource.type)) {
             this.unsupportedMetricResourceErrors.set(
               resource.id.toLocaleLowerCase(),
               errorMessage
             );
           }
+
           this.automaticFailedResources = [...this.automaticFailedResources, resource];
           return of([] as MetricChart[]);
         })
@@ -627,6 +770,9 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     });
   }
 
+  /**
+   * Loads metric definitions for selected Explorer resources and stores definitions and errors.
+   */
   private loadExplorerDefinitions(): void {
     this.explorerDefinitionsRequest?.unsubscribe();
     this.explorerResourceDefinitions = [];
@@ -634,17 +780,20 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     this.explorerError = null;
 
     const resources = this.explorerResources;
+
     if (resources.length === 0) {
       this.loadingExplorerDefinitions = false;
       return;
     }
 
     this.loadingExplorerDefinitions = true;
+
     const requests: Observable<ResourceMetricDefinitions>[] = resources.map((resource) => {
       return this.metrics.getMetricDefinitions(resource.id).pipe(
         map((definitions): ResourceMetricDefinitions => ({ resource, definitions })),
         catchError((error: unknown): Observable<ResourceMetricDefinitions> => {
           console.error(`Failed to load metric definitions for ${resource.id}:`, error);
+
           const errorMessage = this.errorMessage(
             error,
             'Metric definitions could not be loaded.'
@@ -671,14 +820,18 @@ export class MetricsComponent implements OnChanges, OnDestroy {
       .subscribe({
         next: (results) => {
           this.explorerResourceDefinitions = results;
+
           const unsupportedIds = new Set(
             results
               .filter((result) => result.unsupported)
               .map((result) => result.resource.id.toLocaleLowerCase())
           );
+
+          // Remove unsupported resources before deriving the common metric choices.
           this.selectedExplorerResourceIds = this.selectedExplorerResourceIds.filter(
             (id) => !unsupportedIds.has(id.toLocaleLowerCase())
           );
+
           const availableNames = new Set(
             this.explorerMetricOptions.map((metric) => metric.name.value)
           );
@@ -698,6 +851,15 @@ export class MetricsComponent implements OnChanges, OnDestroy {
       });
   }
 
+  /**
+   * Runs metric queries and converts successes or individual failures into charts.
+   *
+   * @param queries Resource, metric, and aggregation combinations to query.
+   * @param start Inclusive beginning of the requested time range.
+   * @param end End of the requested time range.
+   * @param interval Preferred Azure Monitor time grain.
+   * @returns An observable that emits one chart per query.
+   */
   private queryMetrics(
     queries: MetricQuery[],
     start: Date,
@@ -738,6 +900,13 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     ));
   }
 
+  /**
+   * Chooses preferred metrics for a resource, then fills remaining slots from its definitions.
+   *
+   * @param resource Resource whose metric profile is used.
+   * @param definitions Definitions available for that resource.
+   * @returns Up to five supported metric and aggregation pairs.
+   */
   private selectDefaultMetrics(
     resource: SelectedAzureResource,
     definitions: AzureMetricDefinition[]
@@ -747,6 +916,8 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     const available = new Map(
       definitions.map((definition) => [definition.name.value.toLocaleLowerCase(), definition])
     );
+
+    // Prioritize metrics named by the resource profile before filling remaining slots.
     const preferred = (profile ?? [])
       .map((name) => available.get(name.toLocaleLowerCase()))
       .filter((definition): definition is AzureMetricDefinition => definition !== undefined);
@@ -761,14 +932,26 @@ export class MetricsComponent implements OnChanges, OnDestroy {
 
     return candidates.flatMap((definition) => {
       const aggregation = this.supportedAggregations(definition)[0];
+
       return aggregation ? [{ definition, aggregation }] : [];
     });
   }
 
+  /**
+   * Resolves the selected time-range configuration.
+   * @returns The matching range, or the 24-hour range if the selection is invalid.
+   */
   private selectedTimeRange(): MetricTimeRangeOption {
     return TIME_RANGES.find((range) => range.value === this.timeRange) ?? TIME_RANGES[2];
   }
 
+  /**
+   * Chooses a time grain supported by a metric, using the requested grain when possible.
+   *
+   * @param definition Metric whose available time grains are inspected.
+   * @param preferred Requested time grain.
+   * @returns A supported time grain, or the requested grain when availability is unknown.
+   */
   private intervalFor(definition: AzureMetricDefinition, preferred: string): string {
     const available = (definition.metricAvailabilities ?? [])
       .map((availability) => availability.timeGrain)
@@ -784,12 +967,21 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
 
     const preferredDuration = this.timeGrainDuration(preferred);
+
+    // Prefer a grain at least as long as requested, then fall back to the coarsest available grain.
     return available.find((entry) => entry.duration >= (preferredDuration ?? 0))?.timeGrain
       ?? available[available.length - 1].timeGrain;
   }
 
+  /**
+   * Converts an ISO 8601 duration time grain to milliseconds.
+   *
+   * @param timeGrain Duration string to parse.
+   * @returns Duration in milliseconds, or null when the string is invalid or zero.
+   */
   private timeGrainDuration(timeGrain: string): number | null {
     const parts = /^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/i.exec(timeGrain);
+
     if (!parts) {
       return null;
     }
@@ -799,23 +991,40 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     const minutes = Number(parts[3] ?? 0);
     const seconds = Number(parts[4] ?? 0);
     const duration = (((days * 24 + hours) * 60 + minutes) * 60 + seconds) * 1000;
+
     return duration > 0 ? duration : null;
   }
 
+  /**
+   * Resolves a case-insensitive value to a supported metric aggregation.
+   *
+   * @param value Aggregation value to resolve.
+   * @returns The supported aggregation, or null when it is unknown.
+   */
   private toAggregation(value?: string): MetricAggregation | null {
     return AGGREGATIONS.find((aggregation) => aggregation.toLowerCase() === value?.toLowerCase())
       ?? null;
   }
 
+  /**
+   * Extracts a useful message from an HTTP or JavaScript error.
+   *
+   * @param error Error value to inspect.
+   * @param fallback Message to use when the error has no readable detail.
+   * @returns The extracted message or fallback text.
+   */
   private errorMessage(error: unknown, fallback: string): string {
     if (error instanceof HttpErrorResponse) {
       const responseError: unknown = error.error;
+
       if (responseError && typeof responseError === 'object') {
+        // HTTP error payloads may wrap the actual message in an `error` object.
         const nestedError = 'error' in responseError
           && responseError.error
           && typeof responseError.error === 'object'
           ? responseError.error
           : responseError;
+
         if ('message' in nestedError && typeof nestedError.message === 'string') {
           return nestedError.message;
         }
@@ -825,8 +1034,16 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     return error instanceof Error && error.message ? error.message : fallback;
   }
 
+  /**
+   * Checks whether an error specifically reports an unsupported resource type.
+   *
+   * @param errorMessage Message returned by Azure Monitor.
+   * @param resourceType Azure resource type to match.
+   * @returns True when the message names the type and reports it as unsupported.
+   */
   private isUnsupportedMetricResourceError(errorMessage: string, resourceType: string): boolean {
     const normalizedMessage = errorMessage.toLocaleLowerCase();
+
     return normalizedMessage.includes(resourceType.toLocaleLowerCase())
       && /\bnot a supported\b|\bis not supported\b/.test(normalizedMessage);
   }
