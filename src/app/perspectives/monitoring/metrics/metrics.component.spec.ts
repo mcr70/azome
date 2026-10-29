@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { HttpErrorResponse } from '@angular/common/http';
+import { of, Subject, throwError } from 'rxjs';
 import {
   AzureMetricDefinition,
   AzureMetricsService
@@ -182,9 +183,7 @@ describe('MetricsComponent', () => {
     element.querySelector<HTMLButtonElement>('#metric-explorer-tab')?.click();
     fixture.detectChanges();
 
-    const resourceCheckboxes = element.querySelectorAll<HTMLInputElement>(
-      '.resource-picker input[type="checkbox"]'
-    );
+    const resourceCheckboxes = element.querySelectorAll<HTMLInputElement>('.resource-option input');
     resourceCheckboxes[0].checked = false;
     resourceCheckboxes[0].dispatchEvent(new Event('change'));
     fixture.detectChanges();
@@ -192,8 +191,9 @@ describe('MetricsComponent', () => {
     expect(fixture.componentInstance.selectedExplorerResourceIds).toEqual([secondResource.id]);
     expect(resourceSelection.selectedResources).toEqual([firstResource, secondResource]);
 
-    resourceCheckboxes[0].checked = true;
-    resourceCheckboxes[0].dispatchEvent(new Event('change'));
+    const firstResourceCheckbox = element.querySelector<HTMLInputElement>('.resource-option input')!;
+    firstResourceCheckbox.checked = true;
+    firstResourceCheckbox.dispatchEvent(new Event('change'));
     fixture.detectChanges();
 
     expect(fixture.componentInstance.selectedExplorerResourceIds).toEqual([
@@ -203,28 +203,136 @@ describe('MetricsComponent', () => {
     expect(resourceSelection.selectedResources).toEqual([firstResource, secondResource]);
   });
 
-  it('opens the shared Resource Graph tool from Metric Explorer', () => {
-    const requestOpen = spyOn(TestBed.inject(ResourceGraphDialogService), 'requestOpen');
+  it('selects and clears all Explorer resources without changing shared resources', () => {
+    resourceSelection.select(firstResource);
+    resourceSelection.select(secondResource);
+    fixture.componentRef.setInput('resources', [firstResource, secondResource]);
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
     element.querySelector<HTMLButtonElement>('#metric-explorer-tab')?.click();
     fixture.detectChanges();
-    element.querySelector<HTMLButtonElement>('.resource-graph-open-button')?.click();
 
-    expect(requestOpen).toHaveBeenCalledOnceWith();
+    const selectAll = element.querySelector<HTMLInputElement>('.resource-select-all input')!;
+    const resourceCheckboxes = element.querySelectorAll<HTMLInputElement>('.resource-option input');
+    expect(selectAll.checked).toBeTrue();
+
+    resourceCheckboxes[0].checked = false;
+    resourceCheckboxes[0].dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(selectAll.indeterminate).toBeTrue();
+
+    selectAll.checked = false;
+    selectAll.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.selectedExplorerResourceIds).toEqual([]);
+    expect(resourceSelection.selectedResources).toEqual([firstResource, secondResource]);
+    expect(selectAll.checked).toBeFalse();
+    expect(selectAll.indeterminate).toBeFalse();
+
+    selectAll.checked = true;
+    selectAll.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(fixture.componentInstance.selectedExplorerResourceIds).toEqual([
+      firstResource.id,
+      secondResource.id
+    ]);
+    expect(resourceSelection.selectedResources).toEqual([firstResource, secondResource]);
+    expect(selectAll.checked).toBeTrue();
   });
 
-  it('offers Resource Graph from the empty resource selection message', () => {
-    const requestOpen = spyOn(TestBed.inject(ResourceGraphDialogService), 'requestOpen');
+  it('renders Auto-Metrics cards progressively while other resources load', () => {
+    const pendingDefinitions = new Subject<AzureMetricDefinition[]>();
+    metrics.getMetricDefinitions.and.callFake((resourceId) =>
+      resourceId === secondResource.id ? pendingDefinitions : of(definitions)
+    );
+    fixture.componentRef.setInput('resources', [firstResource, secondResource]);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('.metrics-loading .loading-spinner')).not.toBeNull();
+    expect(element.querySelector('.metrics-loading')?.textContent).toContain('1 /');
+    expect(element.querySelectorAll('.resource-metrics-card').length).toBe(1);
+
+    pendingDefinitions.next(definitions);
+    pendingDefinitions.complete();
+    fixture.detectChanges();
+
+    expect(element.querySelector('.metrics-loading')).toBeNull();
+    expect(element.querySelectorAll('.resource-metrics-card').length).toBe(2);
+  });
+
+  it('shows unsupported resources with a warning icon instead of a checkbox', () => {
+    const unsupportedResource: SelectedAzureResource = {
+      id: '/subscriptions/sub/resourceGroups/network/providers/Microsoft.Network/routeTables/rt-data',
+      name: 'rt-data',
+      type: 'Microsoft.Network/routeTables',
+      resourceGroup: 'network'
+    };
+    const azureMessage = 'Microsoft.Network/routeTables is not a supported resource type.';
+    spyOn(console, 'error');
+    metrics.getMetricDefinitions.and.callFake((resourceId) =>
+      resourceId === unsupportedResource.id
+        ? throwError(() => new HttpErrorResponse({
+          status: 400,
+          statusText: 'Bad Request',
+          error: { code: 'BadRequest', message: azureMessage }
+        }))
+        : of(definitions)
+    );
+    resourceSelection.select(unsupportedResource);
+    fixture.componentRef.setInput('resources', [unsupportedResource]);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.selectedExplorerResourceIds).toEqual([]);
+    expect(resourceSelection.selectedResources).toEqual([unsupportedResource]);
+    expect(fixture.componentInstance.unsupportedResourceError(unsupportedResource.id))
+      .toBe(azureMessage);
+
+    const element = fixture.nativeElement as HTMLElement;
+    const notice = element.querySelector('.metrics-error-notice');
+    expect(notice?.textContent).toContain('Following metrics could not be loaded:');
+    expect(notice?.textContent).toContain('rt-data');
+    expect(notice?.textContent).not.toContain(azureMessage);
+
+    element.querySelector<HTMLButtonElement>('.metrics-error-notice-close')?.click();
+    fixture.detectChanges();
+    expect(element.querySelector('.metrics-error-notice')).toBeNull();
+
+    element.querySelector<HTMLButtonElement>('#metric-explorer-tab')?.click();
+    fixture.detectChanges();
+
+    expect(element.querySelector('.resource-option input')).toBeNull();
+    const icon = element.querySelector<HTMLElement>('.unsupported-metric-icon')!;
+    expect(icon.textContent).toContain('⚠');
+    expect(icon.getAttribute('title')).toBe('Unsupported: could not read metric definitions');
+    expect(element.querySelector('.resource-option')?.textContent).not.toContain(azureMessage);
+    expect(resourceSelection.selectedResources).toEqual([unsupportedResource]);
+  });
+
+  it('explains where to find resources when Auto-Metrics has no selection', () => {
     fixture.detectChanges();
 
     const element = fixture.nativeElement as HTMLElement;
     expect(element.querySelector('.metrics-empty-selection')?.textContent)
-      .toContain('Select resources in the Resources perspective, or');
-    element.querySelector<HTMLButtonElement>(
-      '.metrics-empty-selection .resource-graph-open-button'
-    )?.click();
+      .toContain('Select resources in the Resources perspective, or use Find resources above.');
+  });
+
+  it('places Find resources beside Refresh metrics in the Metrics toolbar', () => {
+    const requestOpen = spyOn(TestBed.inject(ResourceGraphDialogService), 'requestOpen');
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    const buttons = Array.from(
+      element.querySelectorAll<HTMLButtonElement>('.metrics-controls button')
+    );
+    const findResources = buttons.find((button) => button.textContent?.trim() === 'Find resources');
+    const refreshMetrics = buttons.find((button) => button.textContent?.trim() === 'Refresh metrics');
+
+    expect(findResources).toBeDefined();
+    expect(refreshMetrics).toBeDefined();
+    expect(buttons.indexOf(findResources!)).toBe(buttons.indexOf(refreshMetrics!) - 1);
+    findResources!.click();
 
     expect(requestOpen).toHaveBeenCalledOnceWith();
   });
@@ -238,9 +346,7 @@ describe('MetricsComponent', () => {
     element.querySelector<HTMLButtonElement>('#metric-explorer-tab')?.click();
     fixture.detectChanges();
 
-    const resourceCheckboxes = element.querySelectorAll<HTMLInputElement>(
-      '.resource-picker input[type="checkbox"]'
-    );
+    const resourceCheckboxes = element.querySelectorAll<HTMLInputElement>('.resource-option input');
     expect(resourceCheckboxes.length).toBe(2);
     expect(resourceCheckboxes[0].checked).toBeTrue();
     resourceCheckboxes[1].checked = true;

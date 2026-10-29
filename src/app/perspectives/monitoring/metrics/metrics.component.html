@@ -44,6 +44,12 @@
       <button
         class="metrics-refresh"
         type="button"
+        (click)="openResourceGraph()">
+        Find resources
+      </button>
+      <button
+        class="metrics-refresh"
+        type="button"
         [disabled]="metricView === 'auto' ? loadingAutomaticMetrics : queryingExplorer"
         (click)="refreshMetrics()">
         Refresh metrics
@@ -72,13 +78,7 @@
 
   @if (metricView === 'auto' && availableResources.length === 0 && !initialResourceLoading) {
     <div class="empty-state metrics-empty-selection">
-      <span>Select resources in the Resources perspective, or</span>
-      <button
-        class="resource-graph-open-button"
-        type="button"
-        (click)="openResourceGraph()">
-        Find resources
-      </button>
+      Select resources in the Resources perspective, or use Find resources above.
     </div>
   }
 
@@ -90,14 +90,48 @@
     [hidden]="metricView !== 'auto'">
     @if (metricView === 'auto') {
       @if (loadingAutomaticMetrics) {
-        <p class="status-message" role="status">Loading resource metrics...</p>
+        <p
+          class="status-message metrics-loading"
+          role="status">
+          <span
+            class="loading-spinner"
+            aria-hidden="true">
+          </span>
+          Loading resource metrics... {{ automaticLoadedResourceCount }} /
+          {{ automaticTotalResourceCount }}
+        </p>
       }
 
-      @for (error of automaticErrors; track error) {
-        <p class="error-message" role="alert">{{ error }}</p>
+      @if (showAutomaticErrors) {
+        <div class="metrics-error-notice" role="alert">
+          <div class="metrics-error-notice-body">
+            @if (automaticFailedResources.length > 0) {
+              <strong>Following metrics could not be loaded:</strong>
+              <ul>
+                @for (resource of automaticFailedResources; track resource.id) {
+                  <li>
+                    {{ resource.name }}
+                    <small>{{ resource.type }}</small>
+                  </li>
+                }
+              </ul>
+            }
+            @if (automaticQueryError) {
+              <p>{{ automaticQueryError }}</p>
+            }
+          </div>
+          <button
+            type="button"
+            class="metrics-error-notice-close"
+            aria-label="Dismiss metric errors"
+            title="Dismiss"
+            (click)="dismissAutomaticErrors()">
+            ✕
+          </button>
+        </div>
       }
 
-      @if (!loadingAutomaticMetrics && automaticMetrics.length > 0) {
+      @if (automaticMetrics.length > 0) {
         <div class="resource-metrics-list">
           @for (group of groupMetrics(automaticMetrics); track group.resource.id) {
             <article class="resource-metrics-card">
@@ -148,7 +182,12 @@
             </article>
           }
         </div>
-      } @else if (!loadingAutomaticMetrics && availableResources.length > 0 && automaticErrors.length === 0) {
+      } @else if (
+        !loadingAutomaticMetrics
+        && availableResources.length > 0
+        && automaticFailedResources.length === 0
+        && !automaticQueryError
+      ) {
         <p class="empty-state">
           No metrics are available for the selected resources.
         </p>
@@ -164,26 +203,46 @@
     [hidden]="metricView !== 'explorer'">
     @if (metricView === 'explorer') {
       <div class="explorer-builder">
-        <fieldset class="resource-picker">
-          <legend class="resource-picker-heading">Resources</legend>
-          <button
-            class="resource-graph-open-button"
-            type="button"
-            (click)="openResourceGraph()">
-            Find resources
-          </button>
-          @for (resource of availableResources; track resource.id) {
-            <label class="resource-option">
+        <fieldset class="resource-picker" aria-label="Resources">
+          @if (availableResources.length > 0) {
+            <label class="resource-select-all">
               <input
                 type="checkbox"
-                [checked]="selectedExplorerResourceIds.includes(resource.id)"
-                (change)="toggleExplorerResource(resource.id, $event)">
-              <span>
-                <strong>{{ resource.name }}</strong>
-                <small>{{ resource.type }}</small>
-              </span>
+                [checked]="allExplorerResourcesSelected"
+                [indeterminate]="someExplorerResourcesSelected"
+                [disabled]="selectableExplorerResources.length === 0"
+                aria-label="Select all resources for the metrics query"
+                (change)="toggleAllExplorerResources($event)">
+              <span>Select all resources</span>
             </label>
-          } @empty {
+            <div class="resource-options">
+              @for (resource of availableResources; track resource.id) {
+                @let unsupported = !!unsupportedResourceError(resource.id);
+                <label
+                  class="resource-option"
+                  [class.unsupported]="unsupported">
+                  @if (unsupported) {
+                    <span
+                      class="unsupported-metric-icon"
+                      role="img"
+                      aria-label="Unsupported: could not read metric definitions"
+                      title="Unsupported: could not read metric definitions">
+                      ⚠
+                    </span>
+                  } @else {
+                    <input
+                      type="checkbox"
+                      [checked]="selectedExplorerResourceIds.includes(resource.id)"
+                      (change)="toggleExplorerResource(resource.id, $event)">
+                  }
+                  <span class="resource-option-text">
+                    <strong>{{ resource.name }}</strong>
+                    <small>{{ resource.type }}</small>
+                  </span>
+                </label>
+              }
+            </div>
+          } @else {
             <p class="empty-state">
               No resources are selected. Find resources in Resource Graph to add them to your
               global selection.
@@ -222,7 +281,8 @@
               }
             </select>
           </label>
-
+        </div>
+        <div class="query-actions">
           <button
             class="query-button"
             type="button"

@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
-import { forkJoin, Observable, of, Subject, Subscription } from 'rxjs';
-import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
+import { forkJoin, from, Observable, of, Subject, Subscription } from 'rxjs';
+import { catchError, map, mergeMap, switchMap, takeUntil } from 'rxjs/operators';
 import {
   AzureMetricDataPoint,
   AzureMetricDefinition,
@@ -41,6 +42,7 @@ interface ResourceMetricDefinitions {
   resource: SelectedAzureResource;
   definitions: AzureMetricDefinition[];
   error?: string;
+  unsupported?: boolean;
 }
 
 interface MetricQuery {
@@ -88,6 +90,8 @@ const METRIC_PROFILES: Record<string, string[]> = {
 
 const AGGREGATIONS: MetricAggregation[] = ['Average', 'Maximum', 'Total', 'Count'];
 
+const AUTOMATIC_METRICS_CONCURRENCY = 8;
+
 @Component({
   selector: 'app-monitoring-metrics',
   standalone: true,
@@ -111,9 +115,13 @@ export class MetricsComponent implements OnChanges, OnDestroy {
   public automaticMetrics: MetricChart[] = [];
   public explorerMetrics: MetricChart[] = [];
   public explorerResourceDefinitions: ResourceMetricDefinitions[] = [];
-  public automaticErrors: string[] = [];
+  public automaticFailedResources: SelectedAzureResource[] = [];
+  public automaticQueryError: string | null = null;
+  public automaticErrorsDismissed = false;
   public explorerError: string | null = null;
   public loadingAutomaticMetrics = false;
+  public automaticLoadedResourceCount = 0;
+  public automaticTotalResourceCount = 0;
   public loadingExplorerDefinitions = false;
   public queryingExplorer = false;
 
@@ -123,6 +131,7 @@ export class MetricsComponent implements OnChanges, OnDestroy {
   private explorerQueryRequest?: Subscription;
   private lastInitialResourceId: string | null = null;
   private excludedInitialResourceId: string | null = null;
+  private readonly unsupportedMetricResourceErrors = new Map<string, string>();
 
   constructor(
     private readonly metrics: AzureMetricsService,
@@ -134,6 +143,7 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     let linkedResourceChanged = false;
 
     if (changes['initialResource']) {
+      this.unsupportedMetricResourceErrors.clear();
       const currentResourceId = this.initialResource?.id.toLocaleLowerCase() ?? null;
 
       if (this.initialResource && currentResourceId !== this.lastInitialResourceId) {
@@ -152,6 +162,9 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
 
     if (changes['resources'] || changes['initialResource']) {
+      if (changes['resources']) {
+        this.unsupportedMetricResourceErrors.clear();
+      }
       if (linkedResourceChanged && this.initialResource) {
         this.selectedExplorerResourceIds = [this.initialResource.id];
         this.automaticMetrics = [];
@@ -189,6 +202,49 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     );
   }
 
+  public get allExplorerResourcesSelected(): boolean {
+    const selectableResources = this.selectableExplorerResources;
+    return selectableResources.length > 0
+      && selectableResources.every((resource) =>
+        this.selectedExplorerResourceIds.some((id) =>
+          id.toLocaleLowerCase() === resource.id.toLocaleLowerCase()
+        )
+      );
+  }
+
+  public get someExplorerResourcesSelected(): boolean {
+    return this.selectableExplorerResources.some((resource) =>
+      this.selectedExplorerResourceIds.some((id) =>
+        id.toLocaleLowerCase() === resource.id.toLocaleLowerCase()
+      )
+    ) && !this.allExplorerResourcesSelected;
+  }
+
+  public get selectableExplorerResources(): SelectedAzureResource[] {
+    return this.availableResources.filter((resource) =>
+      !this.unsupportedMetricResourceErrors.has(resource.id.toLocaleLowerCase())
+    );
+  }
+
+  public unsupportedResourceError(resourceId: string): string | null {
+    return this.unsupportedMetricResourceErrors.get(resourceId.toLocaleLowerCase()) ?? null;
+  }
+
+  /**
+   * Tells whether the Auto-Metrics error notice should be shown.
+   */
+  public get showAutomaticErrors(): boolean {
+    return !this.automaticErrorsDismissed
+      && (this.automaticFailedResources.length > 0 || !!this.automaticQueryError);
+  }
+
+  /**
+   * Hides the Auto-Metrics error notice until metrics are loaded again.
+   */
+  public dismissAutomaticErrors(): void {
+    this.automaticErrorsDismissed = true;
+  }
+
   public groupMetrics(metrics: MetricChart[]): ResourceMetricGroup[] {
     const groups = new Map<string, ResourceMetricGroup>();
 
@@ -207,12 +263,18 @@ export class MetricsComponent implements OnChanges, OnDestroy {
       return [];
     }
 
-    const definitions = this.explorerResourceDefinitions[0].definitions;
+    const supportedDefinitions = this.explorerResourceDefinitions
+      .filter((resource) => !resource.unsupported);
+    if (supportedDefinitions.length === 0) {
+      return [];
+    }
+
+    const definitions = supportedDefinitions[0].definitions;
     const commonNames = new Set(
       definitions.map((definition) => definition.name.value.toLocaleLowerCase())
     );
 
-    for (const resource of this.explorerResourceDefinitions.slice(1)) {
+    for (const resource of supportedDefinitions.slice(1)) {
       const resourceNames = new Set(
         resource.definitions.map((definition) => definition.name.value.toLocaleLowerCase())
       );
@@ -266,6 +328,10 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
   }
 
+  public openResourceGraph(): void {
+    this.resourceGraphDialog.requestOpen();
+  }
+
   public setTimeRange(value: string): void {
     const range = TIME_RANGES.find((option) => option.value === value);
     if (!range) {
@@ -292,6 +358,10 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
 
     const normalizedId = resource.id.toLocaleLowerCase();
+    if (this.unsupportedResourceError(resource.id)) {
+      return;
+    }
+
     const selectedIds = new Set(
       this.selectedExplorerResourceIds.map((id) => id.toLocaleLowerCase())
     );
@@ -314,8 +384,20 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     this.loadExplorerDefinitions();
   }
 
-  public openResourceGraph(): void {
-    this.resourceGraphDialog.requestOpen();
+  public toggleAllExplorerResources(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedExplorerResourceIds = input.checked
+      ? this.selectableExplorerResources.map((resource) => resource.id)
+      : [];
+
+    if (this.initialResource && !input.checked) {
+      this.excludedInitialResourceId = this.initialResource.id.toLocaleLowerCase();
+    } else if (this.initialResource && input.checked
+      && !this.unsupportedResourceError(this.initialResource.id)) {
+      this.excludedInitialResourceId = null;
+    }
+
+    this.loadExplorerDefinitions();
   }
 
   public selectExplorerMetrics(select: HTMLSelectElement): void {
@@ -467,7 +549,9 @@ export class MetricsComponent implements OnChanges, OnDestroy {
   private loadAutomaticMetrics(): void {
     this.automaticRequest?.unsubscribe();
     this.automaticMetrics = [];
-    this.automaticErrors = [];
+    this.automaticFailedResources = [];
+    this.automaticQueryError = null;
+    this.automaticErrorsDismissed = false;
 
     const resources = this.availableResources;
     if (resources.length === 0) {
@@ -476,46 +560,68 @@ export class MetricsComponent implements OnChanges, OnDestroy {
     }
 
     this.loadingAutomaticMetrics = true;
-    const definitions = resources.map((resource) =>
+    this.automaticLoadedResourceCount = 0;
+    this.automaticTotalResourceCount = resources.length;
+
+    const range = this.selectedTimeRange();
+    const end = new Date();
+    const start = new Date(end.getTime() - range.durationMs);
+    const resourceOrder = new Map(
+      resources.map((resource, index) => [resource.id.toLocaleLowerCase(), index])
+    );
+
+    // Each resource loads its definitions and metrics independently so cards render progressively.
+    const resourceRequests = resources.map((resource) =>
       this.metrics.getMetricDefinitions(resource.id).pipe(
-        map((metrics) => ({
-          resource,
-          metrics: this.selectDefaultMetrics(resource, metrics)
-        })),
+        map((metrics) =>
+          this.selectDefaultMetrics(resource, metrics).map(({ definition, aggregation }) => ({
+            resource,
+            definition,
+            aggregation
+          }))
+        ),
+        switchMap((queries) =>
+          queries.length > 0
+            ? this.queryMetrics(queries, start, end, range.interval)
+            : of([])
+        ),
         catchError((error: unknown) => {
           console.error(`Failed to load metric definitions for ${resource.id}:`, error);
-          this.automaticErrors.push(
-            `${resource.name}: ${this.errorMessage(error, 'Metric definitions could not be loaded.')}`
-          );
-          return of({ resource, metrics: [] });
+          const errorMessage = this.errorMessage(error, 'Metric definitions could not be loaded.');
+          if (this.isUnsupportedMetricResourceError(errorMessage, resource.type)) {
+            this.unsupportedMetricResourceErrors.set(
+              resource.id.toLocaleLowerCase(),
+              errorMessage
+            );
+          }
+          this.automaticFailedResources = [...this.automaticFailedResources, resource];
+          return of([] as MetricChart[]);
         })
       )
     );
 
-    this.automaticRequest = forkJoin(definitions).pipe(
-      switchMap((groups) => {
-        const range = this.selectedTimeRange();
-        const end = new Date();
-        const start = new Date(end.getTime() - range.durationMs);
-        const queries = groups.flatMap(({ resource, metrics }) =>
-          metrics.map(({ definition, aggregation }) => ({ resource, definition, aggregation }))
-        );
-
-        return queries.length > 0
-          ? this.queryMetrics(queries, start, end, range.interval)
-          : of([]);
-      }),
+    this.automaticRequest = from(resourceRequests).pipe(
+      mergeMap((request) => request, AUTOMATIC_METRICS_CONCURRENCY),
       takeUntil(this.destroy$)
     ).subscribe({
       next: (results) => {
-        this.automaticMetrics = results;
+        this.automaticLoadedResourceCount++;
+        if (results.length > 0) {
+          this.automaticMetrics = [...this.automaticMetrics, ...results].sort((first, second) =>
+            (resourceOrder.get(first.resource.id.toLocaleLowerCase()) ?? 0)
+            - (resourceOrder.get(second.resource.id.toLocaleLowerCase()) ?? 0)
+          );
+        }
+      },
+      complete: () => {
         this.loadingAutomaticMetrics = false;
       },
       error: (error: unknown) => {
         console.error('Failed to query default Azure Monitor metrics:', error);
-        this.automaticErrors.push(
-          this.errorMessage(error, 'Default metrics could not be queried.')
-        );
+        this.automaticQueryError = this.errorMessage(
+          error,
+          'Default metrics could not be queried.'
+        ).split(', supported ones are')[0];
         this.loadingAutomaticMetrics = false;
       }
     });
@@ -539,10 +645,22 @@ export class MetricsComponent implements OnChanges, OnDestroy {
         map((definitions): ResourceMetricDefinitions => ({ resource, definitions })),
         catchError((error: unknown): Observable<ResourceMetricDefinitions> => {
           console.error(`Failed to load metric definitions for ${resource.id}:`, error);
+          const errorMessage = this.errorMessage(
+            error,
+            'Metric definitions could not be loaded.'
+          );
+          const unsupported = this.isUnsupportedMetricResourceError(errorMessage, resource.type);
+          if (unsupported) {
+            this.unsupportedMetricResourceErrors.set(
+              resource.id.toLocaleLowerCase(),
+              errorMessage
+            );
+          }
           return of({
             resource,
             definitions: [],
-            error: this.errorMessage(error, 'Metric definitions could not be loaded.')
+            error: errorMessage,
+            unsupported
           });
         })
       );
@@ -553,6 +671,14 @@ export class MetricsComponent implements OnChanges, OnDestroy {
       .subscribe({
         next: (results) => {
           this.explorerResourceDefinitions = results;
+          const unsupportedIds = new Set(
+            results
+              .filter((result) => result.unsupported)
+              .map((result) => result.resource.id.toLocaleLowerCase())
+          );
+          this.selectedExplorerResourceIds = this.selectedExplorerResourceIds.filter(
+            (id) => !unsupportedIds.has(id.toLocaleLowerCase())
+          );
           const availableNames = new Set(
             this.explorerMetricOptions.map((metric) => metric.name.value)
           );
@@ -560,7 +686,8 @@ export class MetricsComponent implements OnChanges, OnDestroy {
             .filter((name) => availableNames.has(name));
 
           this.ensureExplorerAggregation();
-          this.explorerError = results.find((result) => result.error)?.error ?? null;
+          this.explorerError = results.find((result) => result.error && !result.unsupported)
+            ?.error ?? null;
           this.loadingExplorerDefinitions = false;
         },
         error: (error: unknown) => {
@@ -681,6 +808,26 @@ export class MetricsComponent implements OnChanges, OnDestroy {
   }
 
   private errorMessage(error: unknown, fallback: string): string {
+    if (error instanceof HttpErrorResponse) {
+      const responseError: unknown = error.error;
+      if (responseError && typeof responseError === 'object') {
+        const nestedError = 'error' in responseError
+          && responseError.error
+          && typeof responseError.error === 'object'
+          ? responseError.error
+          : responseError;
+        if ('message' in nestedError && typeof nestedError.message === 'string') {
+          return nestedError.message;
+        }
+      }
+    }
+
     return error instanceof Error && error.message ? error.message : fallback;
+  }
+
+  private isUnsupportedMetricResourceError(errorMessage: string, resourceType: string): boolean {
+    const normalizedMessage = errorMessage.toLocaleLowerCase();
+    return normalizedMessage.includes(resourceType.toLocaleLowerCase())
+      && /\bnot a supported\b|\bis not supported\b/.test(normalizedMessage);
   }
 }

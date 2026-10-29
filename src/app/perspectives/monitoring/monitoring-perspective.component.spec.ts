@@ -97,6 +97,15 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
     expect(fixture.componentInstance.filteredDiagnosticSettings).toEqual([]);
   });
 
+  it('keeps resource search out of the Monitoring perspective toolbar', () => {
+    const fixture = TestBed.createComponent(MonitoringPerspectiveComponent);
+    fixture.detectChanges();
+    const toolbar = (fixture.nativeElement as HTMLElement).querySelector('.perspective-actions');
+
+    expect(toolbar?.textContent).not.toContain('Find resources');
+    expect(toolbar?.textContent).toContain('Refresh');
+  });
+
   it('shows workspace query actions and opens KQL for the clicked card', () => {
     const workspace = {
       id: '/workspaces/first',

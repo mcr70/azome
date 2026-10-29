@@ -9,3 +9,27 @@
 .cdk-overlay-pane div.mat-mdc-select-panel {
   background-color: #fff !important;
 }
+
+/* Shared inline loading spinner. */
+.loading-spinner {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  flex: 0 0 auto;
+  border: 2px solid #dbe2ea;
+  border-top-color: #0f766e;
+  border-radius: 50%;
+  animation: azome-spinner 0.8s linear infinite;
+}
+
+@keyframes azome-spinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+  }
+}
