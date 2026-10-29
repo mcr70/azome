@@ -51,7 +51,25 @@ like storage accounts, NoSQL databases, RDS databases and alike.
 
 ## Monitoring perspective
 
-Show Azure activity logs and other log sources.
+The Monitoring perspective includes an Azure Monitor Metrics view. Auto-Metrics
+uses resource-specific metric profiles when available and falls back to metric
+definitions from Azure Monitor for other resource types. Metrics are grouped
+inside a card for each resource. Metric Explorer lets you compare one or more
+shared metrics across selected resources and choose a common aggregation. Both
+views support 1-hour, 6-hour, 24-hour, 7-day, and 30-day time ranges.
+
+Open `/monitoring/metrics?resourceId=<resource-id>` to resolve and display a
+resource in Metric Explorer, with only that resource selected. The user chooses
+which metrics to query. This does not change the shared resource selection. The
+Metrics tab also uses resources already selected elsewhere in the application.
+Use **Find resources** in Metric Explorer to open the shared Resource Graph
+tool. Select individual query results or add all selectable results to the
+shared resource selection for use across perspectives.
+
+Monitoring resource inventory and Activity Log requests load independently so
+a slow Activity Log response does not delay the resource views.
+
+The perspective also shows Azure activity logs and other log sources.
 
 Overview lists diagnostic settings in a separate group using the shared resource
 cards. Source-to-destination connections are shown in the resource detail pane,

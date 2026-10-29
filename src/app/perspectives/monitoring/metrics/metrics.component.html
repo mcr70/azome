@@ -1,0 +1,308 @@
+<section class="metrics-view" aria-labelledby="metrics-view-title">
+  <div class="metric-tabs" role="tablist" aria-label="Metrics views">
+    <button
+      #autoMetricsTab
+      id="auto-metrics-tab"
+      type="button"
+      role="tab"
+      aria-controls="auto-metrics-panel"
+      [attr.aria-selected]="metricView === 'auto'"
+      [tabIndex]="metricView === 'auto' ? 0 : -1"
+      (click)="selectMetricView('auto')"
+      (keydown.arrowright)="selectMetricView('explorer'); metricExplorerTab.focus(); $event.preventDefault()"
+      (keydown.arrowleft)="selectMetricView('explorer'); metricExplorerTab.focus(); $event.preventDefault()"
+      (keydown.home)="selectMetricView('auto'); autoMetricsTab.focus(); $event.preventDefault()"
+      (keydown.end)="selectMetricView('explorer'); metricExplorerTab.focus(); $event.preventDefault()">
+      Auto-Metrics
+    </button>
+    <button
+      #metricExplorerTab
+      id="metric-explorer-tab"
+      type="button"
+      role="tab"
+      aria-controls="metric-explorer-panel"
+      [attr.aria-selected]="metricView === 'explorer'"
+      [tabIndex]="metricView === 'explorer' ? 0 : -1"
+      (click)="selectMetricView('explorer')"
+      (keydown.arrowright)="selectMetricView('auto'); autoMetricsTab.focus(); $event.preventDefault()"
+      (keydown.arrowleft)="selectMetricView('auto'); autoMetricsTab.focus(); $event.preventDefault()"
+      (keydown.home)="selectMetricView('auto'); autoMetricsTab.focus(); $event.preventDefault()"
+      (keydown.end)="selectMetricView('explorer'); metricExplorerTab.focus(); $event.preventDefault()">
+      Metric Explorer
+    </button>
+  </div>
+
+  <header class="metrics-heading">
+    <div>
+      <p class="eyebrow">Azure Monitor</p>
+      <h2 id="metrics-view-title">Metrics</h2>
+      <p class="description">
+        Review resource performance or build a query from the selected resources.
+      </p>
+    </div>
+    <div class="metrics-controls">
+      <button
+        class="metrics-refresh"
+        type="button"
+        [disabled]="metricView === 'auto' ? loadingAutomaticMetrics : queryingExplorer"
+        (click)="refreshMetrics()">
+        Refresh metrics
+      </button>
+      <label class="time-range-control">
+        <span>Time range</span>
+        <select
+          #timeRangeSelect
+          [value]="timeRange"
+          (change)="setTimeRange(timeRangeSelect.value)">
+          @for (range of timeRanges; track range.value) {
+            <option [value]="range.value">{{ range.label }}</option>
+          }
+        </select>
+      </label>
+    </div>
+  </header>
+
+  @if (initialResourceLoading) {
+    <p class="status-message" role="status">Resolving linked resource...</p>
+  }
+
+  @if (initialResourceError) {
+    <p class="error-message" role="alert">{{ initialResourceError }}</p>
+  }
+
+  @if (metricView === 'auto' && availableResources.length === 0 && !initialResourceLoading) {
+    <div class="empty-state metrics-empty-selection">
+      <span>Select resources in the Resources perspective, or</span>
+      <button
+        class="resource-graph-open-button"
+        type="button"
+        (click)="openResourceGraph()">
+        Find resources
+      </button>
+    </div>
+  }
+
+  <section
+    id="auto-metrics-panel"
+    class="metrics-panel"
+    role="tabpanel"
+    aria-labelledby="auto-metrics-tab"
+    [hidden]="metricView !== 'auto'">
+    @if (metricView === 'auto') {
+      @if (loadingAutomaticMetrics) {
+        <p class="status-message" role="status">Loading resource metrics...</p>
+      }
+
+      @for (error of automaticErrors; track error) {
+        <p class="error-message" role="alert">{{ error }}</p>
+      }
+
+      @if (!loadingAutomaticMetrics && automaticMetrics.length > 0) {
+        <div class="resource-metrics-list">
+          @for (group of groupMetrics(automaticMetrics); track group.resource.id) {
+            <article class="resource-metrics-card">
+              <header class="resource-metrics-heading">
+                <div>
+                  <h3>{{ group.resource.name }}</h3>
+                  <p>{{ group.resource.type }}</p>
+                </div>
+                <span>{{ group.metrics.length }} metrics</span>
+              </header>
+              <div class="metric-grid">
+                @for (metric of group.metrics; track metric.name) {
+                  <article class="metric-card">
+                    <header class="metric-card-heading">
+                      <h4>{{ metric.name }}</h4>
+                      <span class="aggregation">{{ metric.aggregation }}</span>
+                    </header>
+                    @if (metric.error) {
+                      <p class="error-message" role="alert">{{ metric.error }}</p>
+                    } @else if (metric.points.length > 0) {
+                      <p class="metric-value">
+                        {{ formatMetricValue(metricValue(metric.points[metric.points.length - 1], metric.aggregation)) }}
+                        <span>{{ metric.unit || '' }}</span>
+                      </p>
+                      <div
+                        class="metric-chart"
+                        role="img"
+                        [attr.aria-label]="metric.name + ' values for ' + metric.resource.name">
+                        @for (point of metric.points; track point.timeStamp) {
+                          <span
+                            class="metric-bar"
+                            [style.height.%]="barHeight(metric, point)"
+                            [title]="(point.timeStamp | date: 'short') + ': '
+                              + formatMetricValue(metricValue(point, metric.aggregation))">
+                          </span>
+                        }
+                      </div>
+                      <div class="chart-range">
+                        <span>{{ metric.points[0].timeStamp | date: 'short' }}</span>
+                        <span>{{ metric.points[metric.points.length - 1].timeStamp | date: 'short' }}</span>
+                      </div>
+                    } @else {
+                      <p class="empty-chart">No data is available for this time range.</p>
+                    }
+                  </article>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      } @else if (!loadingAutomaticMetrics && availableResources.length > 0 && automaticErrors.length === 0) {
+        <p class="empty-state">
+          No metrics are available for the selected resources.
+        </p>
+      }
+    }
+  </section>
+
+  <section
+    id="metric-explorer-panel"
+    class="metrics-panel"
+    role="tabpanel"
+    aria-labelledby="metric-explorer-tab"
+    [hidden]="metricView !== 'explorer'">
+    @if (metricView === 'explorer') {
+      <div class="explorer-builder">
+        <fieldset class="resource-picker">
+          <legend class="resource-picker-heading">Resources</legend>
+          <button
+            class="resource-graph-open-button"
+            type="button"
+            (click)="openResourceGraph()">
+            Find resources
+          </button>
+          @for (resource of availableResources; track resource.id) {
+            <label class="resource-option">
+              <input
+                type="checkbox"
+                [checked]="selectedExplorerResourceIds.includes(resource.id)"
+                (change)="toggleExplorerResource(resource.id, $event)">
+              <span>
+                <strong>{{ resource.name }}</strong>
+                <small>{{ resource.type }}</small>
+              </span>
+            </label>
+          } @empty {
+            <p class="empty-state">
+              No resources are selected. Find resources in Resource Graph to add them to your
+              global selection.
+            </p>
+          }
+        </fieldset>
+
+        <div class="query-options">
+          <label class="metric-picker">
+            <span>Metrics (select one or more)</span>
+            <select
+              #metricSelect
+              multiple
+              size="5"
+              [disabled]="loadingExplorerDefinitions || explorerMetricOptions.length === 0"
+              (change)="selectExplorerMetrics(metricSelect)">
+              @for (metric of explorerMetricOptions; track metric.name.value) {
+                <option
+                  [value]="metric.name.value"
+                  [selected]="selectedExplorerMetricNames.includes(metric.name.value)">
+                  {{ metric.name.localizedValue || metric.name.value }}
+                </option>
+              }
+            </select>
+          </label>
+
+          <label>
+            <span>Aggregation</span>
+            <select
+              #aggregationSelect
+              [value]="selectedExplorerAggregation"
+              [disabled]="explorerAggregationOptions.length === 0"
+              (change)="selectExplorerAggregation(aggregationSelect.value)">
+              @for (aggregation of explorerAggregationOptions; track aggregation) {
+                <option [value]="aggregation">{{ aggregation }}</option>
+              }
+            </select>
+          </label>
+
+          <button
+            class="query-button"
+            type="button"
+            [disabled]="queryingExplorer || loadingExplorerDefinitions
+              || selectedExplorerResourceIds.length === 0 || selectedExplorerMetricNames.length === 0"
+            (click)="queryExplorer()">
+            {{ queryingExplorer ? 'Querying...' : 'Run query' }}
+          </button>
+        </div>
+      </div>
+
+      @if (loadingExplorerDefinitions) {
+        <p class="status-message" role="status">Loading metric definitions...</p>
+      }
+
+      @if (explorerError) {
+        <p class="error-message" role="alert">{{ explorerError }}</p>
+      }
+
+      @if (queryingExplorer) {
+        <p class="status-message" role="status">Querying Azure Monitor...</p>
+      }
+
+      @if (!loadingExplorerDefinitions && selectedExplorerResourceIds.length > 0
+        && explorerMetricOptions.length === 0 && !explorerError) {
+        <p class="empty-state">No common metrics are available for the selected resources.</p>
+      }
+
+      @if (explorerMetrics.length > 0) {
+        <div class="resource-metrics-list">
+          @for (group of groupMetrics(explorerMetrics); track group.resource.id) {
+            <article class="resource-metrics-card">
+              <header class="resource-metrics-heading">
+                <div>
+                  <h3>{{ group.resource.name }}</h3>
+                  <p>{{ group.resource.type }}</p>
+                </div>
+                <span>{{ group.metrics.length }} metrics</span>
+              </header>
+              <div class="metric-grid">
+                @for (metric of group.metrics; track metric.name) {
+                  <article class="metric-card">
+                    <header class="metric-card-heading">
+                      <h4>{{ metric.name }}</h4>
+                      <span class="aggregation">{{ metric.aggregation }}</span>
+                    </header>
+                    @if (metric.error) {
+                      <p class="error-message" role="alert">{{ metric.error }}</p>
+                    } @else if (metric.points.length > 0) {
+                      <p class="metric-value">
+                        {{ formatMetricValue(metricValue(metric.points[metric.points.length - 1], metric.aggregation)) }}
+                        <span>{{ metric.unit || '' }}</span>
+                      </p>
+                      <div
+                        class="metric-chart"
+                        role="img"
+                        [attr.aria-label]="metric.name + ' values for ' + metric.resource.name">
+                        @for (point of metric.points; track point.timeStamp) {
+                          <span
+                            class="metric-bar"
+                            [style.height.%]="barHeight(metric, point)"
+                            [title]="(point.timeStamp | date: 'short') + ': '
+                              + formatMetricValue(metricValue(point, metric.aggregation))">
+                          </span>
+                        }
+                      </div>
+                      <div class="chart-range">
+                        <span>{{ metric.points[0].timeStamp | date: 'short' }}</span>
+                        <span>{{ metric.points[metric.points.length - 1].timeStamp | date: 'short' }}</span>
+                      </div>
+                    } @else {
+                      <p class="empty-chart">No data is available for this time range.</p>
+                    }
+                  </article>
+                }
+              </div>
+            </article>
+          }
+        </div>
+      }
+    }
+  </section>
+</section>

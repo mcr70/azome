@@ -407,22 +407,36 @@
 	overflow-wrap: anywhere;
 }
 
-.add-resource-button {
-	white-space: nowrap;
-	padding: 6px 10px;
-	border: 1px solid #0f766e;
-	border-radius: 4px;
-	background: #ffffff;
-	color: #0f766e;
-	cursor: pointer;
-	font: inherit;
-	font-size: 0.875rem;
+.resource-graph-selection-heading,
+.resource-graph-selection-cell {
+	width: 34px;
+	padding-right: 4px !important;
+	padding-left: 4px !important;
 }
 
-.add-resource-button:disabled {
-	background: #f0fdfa;
-	cursor: default;
-	opacity: 0.75;
+.resource-graph-selection-checkbox {
+	width: 16px;
+	height: 16px;
+	margin: 2px;
+	cursor: pointer;
+	opacity: 0;
+}
+
+.resource-graph-row:hover .resource-graph-selection-checkbox,
+.resource-graph-row:focus-within .resource-graph-selection-checkbox,
+.resource-graph-selection-checkbox:checked,
+.resource-graph-selection-checkbox:focus-visible {
+	opacity: 1;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	clip-path: inset(50%);
 }
 
 .app-content {

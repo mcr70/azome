@@ -259,7 +259,6 @@ export class ResourceGraphService {
     );
   }
 
-
   public getDataResources(): Observable<AzureDataResource[]> {
     const query = `
       resources
@@ -375,7 +374,9 @@ export class ResourceGraphService {
    * @returns An observable that emits the details of the Azure resource, or null if not found.
    */
   public getResourceDetails(resourceId: string): Observable<AzureResourceDetail | null> {
-    const query = `Resources | where id =~ '${resourceId}' | project id, name, type, location, resourceGroup, kind, tags, properties, sku`;
+    const escapedResourceId = resourceId.replace(/'/g, "''");
+    const query = `Resources | where id =~ '${escapedResourceId}'`
+      + ' | project id, name, type, location, resourceGroup, kind, tags, properties, sku';
 
     return this.resourceGraphApi.query<{ data: AzureResourceDetail[] }>({
       subscriptions: [environment.azure.subscriptionId],

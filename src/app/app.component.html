@@ -240,11 +240,13 @@
             <table class="resource-graph-table">
               <thead>
                 <tr>
+                  @if (hasSelectableResults) {
+                    <th class="resource-graph-selection-heading" scope="col">
+                      <span class="visually-hidden">Selection</span>
+                    </th>
+                  }
                   @for (column of resourceGraphVisibleColumns; track column) {
                     <th scope="col">{{ column }}</th>
-                  }
-                  @if (hasSelectableResults) {
-                    <th scope="col">Selection</th>
                   }
                 </tr>
               </thead>
@@ -258,25 +260,27 @@
                     (click)="toggleResourceGraphRow(rowIndex)"
                     (keydown.enter)="$event.target === $event.currentTarget && toggleResourceGraphRow(rowIndex)"
                   >
+                    @if (hasSelectableResults) {
+                      <td class="resource-graph-selection-cell">
+                        @if (toSelectedAzureResource(result); as selectedResource) {
+                          <input
+                            class="resource-graph-selection-checkbox"
+                            type="checkbox"
+                            [checked]="resourceSelection.isSelected(selectedResource.id)"
+                            [attr.aria-label]="resourceSelection.isSelected(selectedResource.id)
+                              ? 'Remove ' + selectedResource.name + ' from selection'
+                              : 'Add ' + selectedResource.name + ' to selection'"
+                            (click)="$event.stopPropagation()"
+                            (change)="toggleResourceGraphSelection(selectedResource, $event)"
+                          >
+                        }
+                      </td>
+                    }
                     @for (column of resourceGraphVisibleColumns; track column) {
                       <td>
                         <span class="resource-graph-cell" [title]="resourceGraphCell(result[column])">
                           {{ resourceGraphCell(result[column]) }}
                         </span>
-                      </td>
-                    }
-                    @if (hasSelectableResults) {
-                      <td>
-                        @if (toSelectedAzureResource(result); as selectedResource) {
-                          <button
-                            type="button"
-                            class="add-resource-button"
-                            [disabled]="resourceSelection.isSelected(selectedResource.id)"
-                            (click)="$event.stopPropagation(); addToSelection(selectedResource)"
-                          >
-                            {{ resourceSelection.isSelected(selectedResource.id) ? 'Added' : 'Add to selection' }}
-                          </button>
-                        }
                       </td>
                     }
                   </tr>

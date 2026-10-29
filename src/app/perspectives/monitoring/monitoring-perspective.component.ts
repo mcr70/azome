@@ -1,9 +1,10 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { LucideDynamicIcon, LucideSearch } from '@lucide/angular';
+import { ActivatedRoute } from '@angular/router';
 import { KqlComponent } from '@components/kql/kql.component';
-import { Subject, Subscription, forkJoin } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { of, Subject, Subscription } from 'rxjs';
+import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
 import {
   ActivityLogEvent,
   LogAnalyticsWorkspace,
@@ -27,6 +28,7 @@ import {
 import { matchesTextFilter } from '@app/utils/text-filter';
 import { ActivityLogComponent } from './activity-log/activity-log.component';
 import { LogAnalyticsComponent } from './log-analytics/log-analytics.component';
+import { MetricsComponent } from './metrics/metrics.component';
 import { DiagnosticSettingsService } from '@services/azure/diagnostic-settings.service';
 import { DiagnosticSetting, DiagnosticSettingsResult } from '@services/azure/diagnostic-settings.model';
 
@@ -50,6 +52,7 @@ interface MonitoringResourceCategoryGroup {
     KqlComponent,
     ActivityLogComponent,
     LogAnalyticsComponent,
+    MetricsComponent,
     ResourceCardComponent,
     ResourceGridSelectionComponent,
     ResourceDetailPaneComponent,
@@ -62,10 +65,12 @@ interface MonitoringResourceCategoryGroup {
 export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
   public readonly searchIcon = LucideSearch.icon;
   public kqlWorkspace: { id: string; name: string } | null = null;
-  public activeTab: 'overview' | 'log-analytics' | 'activity' = 'overview';
+  public activeTab: 'overview' | 'metrics' | 'log-analytics' | 'activity' = 'overview';
   public resources: MonitoringResource[] = [];
   public workspaces: LogAnalyticsWorkspace[] = [];
   public activityEvents: ActivityLogEvent[] = [];
+  public loadingActivity = false;
+  public activityError: string | null = null;
   public loading = false;
   public error: string | null = null;
   public filterQuery = '';
@@ -75,26 +80,88 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
   public diagnosticFailures: DiagnosticSettingsResult['failures'] = [];
   public loadingDiagnostics = false;
   public diagnosticError: string | null = null;
+  public linkedMetricResource: SelectedAzureResource | null = null;
+  public linkedMetricResourceLoading = false;
+  public linkedMetricResourceError: string | null = null;
 
   private readonly destroy$ = new Subject<void>();
   private detailRequestId = 0;
   private diagnosticRequest?: Subscription;
+  private activityRequest?: Subscription;
 
   constructor(
     private readonly monitoring: MonitoringService,
     private readonly resourceSelection: ResourceSelectionService,
     private readonly panelService: ResourceDetailPanelService,
     private readonly resourceGraph: ResourceGraphService,
-    private readonly diagnostics: DiagnosticSettingsService
+    private readonly diagnostics: DiagnosticSettingsService,
+    private readonly route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    if (this.route.routeConfig?.path === 'monitoring/metrics') {
+      this.activeTab = 'metrics';
+    }
+
     this.resourceSelection.selectedResources$
       .pipe(takeUntil(this.destroy$))
       .subscribe((resources) => this.selectedResources = resources);
     this.panelService.panels$
       .pipe(takeUntil(this.destroy$))
       .subscribe((panels) => this.panels = panels);
+    this.route.queryParamMap
+      .pipe(
+        switchMap((params) => {
+          const resourceId = params.get('resourceId');
+          this.linkedMetricResource = null;
+          this.linkedMetricResourceError = null;
+
+          if (!resourceId) {
+            this.linkedMetricResourceLoading = false;
+            return of(null);
+          }
+
+          this.activeTab = 'metrics';
+          this.linkedMetricResourceLoading = true;
+
+          if (!this.isSafeResourceId(resourceId)) {
+            this.linkedMetricResourceError = 'The linked resource ID is not a valid Azure resource ID.';
+            this.linkedMetricResourceLoading = false;
+            return of(null);
+          }
+
+          return this.resourceGraph.getResourceDetails(resourceId).pipe(
+            map((resource) => ({ resourceId, resource, error: null as string | null })),
+            catchError((error: unknown) => {
+              console.error('Failed to resolve linked metrics resource:', error);
+              return of({
+                resourceId,
+                resource: null,
+                error: 'The linked resource could not be resolved. Check your Azure access.'
+              });
+            })
+          );
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((result) => {
+        if (!result) {
+          return;
+        }
+
+        this.linkedMetricResourceLoading = false;
+        if (result.resource) {
+          this.linkedMetricResource = {
+            id: result.resource.id,
+            name: result.resource.name,
+            type: result.resource.type,
+            resourceGroup: result.resource.resourceGroup ?? ''
+          };
+        } else {
+          this.linkedMetricResourceError = result.error
+            ?? `The resource ${result.resourceId} was not found in the configured subscription.`;
+        }
+      });
     this.loadMonitoringData();
   }
 
@@ -167,37 +234,54 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     this.loadDiagnosticSettings();
     this.loading = true;
     this.error = null;
-    forkJoin({
-      resources: this.monitoring.getMonitoringResources(),
-      activity: this.monitoring.getActivityLog()
-    }).pipe(takeUntil(this.destroy$)).subscribe({
-      next: ({ resources, activity }) => {
-        this.resources = resources;
-        this.workspaces = resources
-          .filter((resource) => resource.type.toLowerCase()
-            === 'microsoft.operationalinsights/workspaces')
-          .map((resource) => ({
-            id: resource.id,
-            name: resource.name,
-            resourceGroup: resource.resourceGroup,
-            location: resource.location,
-            properties: {
-              customerId: resource.properties?.customerId,
-              retentionInDays: resource.properties?.retentionInDays
-            }
-          }));
-        this.activityEvents = activity.sort((a, b) =>
-          new Date(b.eventTimestamp).getTime() - new Date(a.eventTimestamp).getTime()
-        );
-        this.loading = false;
-      },
-      error: (error: unknown) => {
-        console.error('Failed to load monitoring data:', error);
-        this.error = 'Monitoring data could not be loaded. '
-          + 'Check that your account has Reader access to this subscription.';
-        this.loading = false;
-      }
-    });
+    this.loadingActivity = true;
+    this.activityError = null;
+
+    this.monitoring.getMonitoringResources()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (resources) => {
+          this.resources = resources;
+          this.workspaces = resources
+            .filter((resource) => resource.type.toLowerCase()
+              === 'microsoft.operationalinsights/workspaces')
+            .map((resource) => ({
+              id: resource.id,
+              name: resource.name,
+              resourceGroup: resource.resourceGroup,
+              location: resource.location,
+              properties: {
+                customerId: resource.properties?.customerId,
+                retentionInDays: resource.properties?.retentionInDays
+              }
+            }));
+          this.loading = false;
+        },
+        error: (error: unknown) => {
+          console.error('Failed to load monitoring resources:', error);
+          this.error = 'Monitoring resources could not be loaded. '
+            + 'Check that your account has Reader access to this subscription.';
+          this.loading = false;
+        }
+      });
+
+    this.activityRequest?.unsubscribe();
+    this.activityRequest = this.monitoring.getActivityLog()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (activity) => {
+          this.activityEvents = activity.sort((a, b) =>
+            new Date(b.eventTimestamp).getTime() - new Date(a.eventTimestamp).getTime()
+          );
+          this.loadingActivity = false;
+        },
+        error: (error: unknown) => {
+          console.error('Failed to load activity log:', error);
+          this.activityError = 'Activity log could not be loaded. '
+            + 'Check that your account has Reader access to this subscription.';
+          this.loadingActivity = false;
+        }
+      });
   }
 
   public loadDiagnosticSettings(): void {
@@ -222,8 +306,13 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
-  public selectTab(tab: 'overview' | 'log-analytics' | 'activity'): void {
+  public selectTab(tab: 'overview' | 'metrics' | 'log-analytics' | 'activity'): void {
     this.activeTab = tab;
+  }
+
+  private isSafeResourceId(resourceId: string): boolean {
+    return /^\/subscriptions\/[a-f0-9-]+\/resourceGroups\/[a-zA-Z0-9._()-]+\/providers\/[a-zA-Z0-9.]+(?:\/[a-zA-Z0-9._()-]+)+$/i
+      .test(resourceId);
   }
 
   public openWorkspaceQuery(resource: MonitoringResource, event: Event): void {

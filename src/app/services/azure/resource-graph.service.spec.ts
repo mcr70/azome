@@ -140,4 +140,16 @@ describe('ResourceGraphService tagged apps', () => {
     expect(next).not.toHaveBeenCalled();
     expect(error).toHaveBeenCalled();
   });
+
+  it('escapes quotes in resource IDs before adding them to a Resource Graph query', () => {
+    const resourceId = "/subscriptions/sub/resourceGroups/apps/providers/Microsoft.Web/sites/o'brien";
+    service.getResourceDetails(resourceId).subscribe();
+
+    const request = http.expectOne(url);
+    const expectedFilter = "where id =~ '/subscriptions/sub/resourceGroups/apps/"
+      + "providers/Microsoft.Web/sites/o''brien'";
+    expect(request.request.body.query).toContain(expectedFilter);
+    request.flush({ data: [] });
+  });
+
 });

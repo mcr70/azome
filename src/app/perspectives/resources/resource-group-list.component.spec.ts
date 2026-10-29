@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideRouter } from '@angular/router';
 import { ResourceGroupListComponent } from './resource-group-list.component';
 import { ResourceSelectionService } from '@services/azome/resource-selection.service';
 
@@ -9,7 +10,8 @@ describe('ResourceGroupListComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [HttpClientTestingModule, ResourceGroupListComponent]
+      imports: [HttpClientTestingModule, ResourceGroupListComponent],
+      providers: [provideRouter([])]
     })
     .compileComponents();
 
@@ -20,6 +22,25 @@ describe('ResourceGroupListComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('links each resource card to its metrics deep link', () => {
+    const resource = {
+      id: '/subscriptions/test/resourceGroups/apps/providers/Microsoft.Web/sites/orders',
+      name: 'orders',
+      type: 'Microsoft.Web/sites'
+    };
+    component.loading = false;
+    component.resourceGroups = [{ id: 'group', name: 'apps', location: 'westeurope' }];
+    component.groupResources = { apps: [resource] };
+    component.expandedGroups.add('apps');
+    fixture.detectChanges();
+
+    const link = fixture.nativeElement.querySelector('.resource-action') as HTMLAnchorElement;
+    const target = new URL(link.getAttribute('href')!, 'http://localhost');
+
+    expect(target.pathname).toBe('/monitoring/metrics');
+    expect(target.searchParams.get('resourceId')).toBe(resource.id);
   });
 
   it('selects only filtered cards in a group and preserves other selections', () => {

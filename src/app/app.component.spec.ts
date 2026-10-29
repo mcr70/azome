@@ -5,11 +5,13 @@ import { QueryEditorComponent } from './components/query-editor/query-editor.com
 import { RESOURCE_GRAPH_TABLES } from './components/query-editor/kql';
 import { AuthService } from './services/azome/auth.service';
 import { ResourceSelectionService } from './services/azome/resource-selection.service';
+import { ResourceGraphDialogService } from './services/azome/resource-graph-dialog.service';
 import { ProfileService } from './services/azure/profile.service';
 import {
   ResourceGraphQueryResult,
   ResourceGraphService
 } from './services/azure/resource-graph.service';
+import { GovernanceService } from './services/azure/governance.service';
 import { DEFAULT_PERSPECTIVES } from './components/preferences/perspective-preference.model';
 import { Router } from '@angular/router';
 import { EMPTY, of, throwError } from 'rxjs';
@@ -29,6 +31,7 @@ describe('AppComponent', () => {
       providers: [
         { provide: AuthService, useValue: { isAuthenticated$: EMPTY, user$: EMPTY } },
         { provide: ProfileService, useValue: { getMyProfile: () => EMPTY } },
+        { provide: GovernanceService, useValue: {} },
         { provide: ResourceGraphService, useValue: { executeQuery: () => EMPTY } },
         { provide: Router, useValue: router }
       ]
@@ -44,6 +47,17 @@ describe('AppComponent', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
     expect(app).toBeTruthy();
+  });
+
+  it('opens the shared Resource Graph dialog when another view requests it', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+
+    TestBed.inject(ResourceGraphDialogService).requestOpen();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.resourceGraphDialogOpen).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.resource-graph-dialog')).toBeTruthy();
   });
 
   it('opens the built-in table list without running or changing the query', () => {
@@ -225,10 +239,18 @@ describe('AppComponent', () => {
       .toEqual(['name', 'type', 'resourceGroup', 'location']);
     expect(element.querySelectorAll('th').length).toBe(10);
 
-    element.querySelector<HTMLButtonElement>('.add-resource-button')!.click();
+    const selectionCheckbox = element.querySelector<HTMLInputElement>(
+      '.resource-graph-selection-checkbox'
+    )!;
+    selectionCheckbox.click();
     fixture.detectChanges();
     expect(app.expandedResourceGraphRows.size).toBe(0);
     expect(TestBed.inject(ResourceSelectionService).selectedResources.length).toBe(1);
+    expect(selectionCheckbox.checked).toBeTrue();
+
+    selectionCheckbox.click();
+    fixture.detectChanges();
+    expect(TestBed.inject(ResourceSelectionService).selectedResources.length).toBe(0);
 
     app.toggleResourceGraphRow(0);
     app.runResourceGraphQuery();
@@ -283,7 +305,7 @@ describe('AppComponent', () => {
     expect(rows[0].textContent).toContain('{...}');
     expect(rows[0].textContent).toContain('\u2014');
     expect(rows[1].textContent).toContain('2 items');
-    expect(element.querySelector('.add-resource-button')).toBeNull();
+    expect(element.querySelector('.resource-graph-selection-checkbox')).toBeNull();
     expect(element.querySelector('.resource-graph-result-count')?.textContent)
       .not.toContain('incomplete');
   });

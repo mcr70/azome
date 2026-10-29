@@ -9,7 +9,7 @@
           <p class="eyebrow">Perspective</p>
           <h1 id="monitoring-title">Monitoring</h1>
           <p class="description">
-            Review monitoring resources, Log Analytics workspaces and subscription activity.
+            Review resource metrics, Log Analytics workspaces and subscription activity.
           </p>
         </div>
         <div class="perspective-actions">
@@ -34,11 +34,26 @@
           [attr.aria-selected]="activeTab === 'overview'"
           [tabIndex]="activeTab === 'overview' ? 0 : -1"
           (click)="selectTab('overview')"
-          (keydown.arrowright)="selectTab('log-analytics'); logAnalyticsTab.focus(); $event.preventDefault()"
+          (keydown.arrowright)="selectTab('metrics'); metricsTab.focus(); $event.preventDefault()"
           (keydown.arrowleft)="selectTab('activity'); activityTab.focus(); $event.preventDefault()"
           (keydown.home)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
           (keydown.end)="selectTab('activity'); activityTab.focus(); $event.preventDefault()">
           Overview
+        </button>
+        <button
+          #metricsTab
+          id="metrics-tab"
+          type="button"
+          role="tab"
+          aria-controls="metrics-panel"
+          [attr.aria-selected]="activeTab === 'metrics'"
+          [tabIndex]="activeTab === 'metrics' ? 0 : -1"
+          (click)="selectTab('metrics')"
+          (keydown.arrowright)="selectTab('log-analytics'); logAnalyticsTab.focus(); $event.preventDefault()"
+          (keydown.arrowleft)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
+          (keydown.home)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
+          (keydown.end)="selectTab('activity'); activityTab.focus(); $event.preventDefault()">
+          Metrics
         </button>
         <button
           #logAnalyticsTab
@@ -50,7 +65,7 @@
           [tabIndex]="activeTab === 'log-analytics' ? 0 : -1"
           (click)="selectTab('log-analytics')"
           (keydown.arrowright)="selectTab('activity'); activityTab.focus(); $event.preventDefault()"
-          (keydown.arrowleft)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
+          (keydown.arrowleft)="selectTab('metrics'); metricsTab.focus(); $event.preventDefault()"
           (keydown.home)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
           (keydown.end)="selectTab('activity'); activityTab.focus(); $event.preventDefault()">
           Log Analytics
@@ -72,8 +87,8 @@
         </button>
       </div>
 
-      @if (loading) {
-        <p class="status-message" role="status">Loading monitoring data...</p>
+      @if (loading && (activeTab === 'overview' || activeTab === 'log-analytics')) {
+        <p class="status-message" role="status">Loading monitoring resources...</p>
       }
 
       @if (error) {
@@ -231,6 +246,22 @@
       </section>
 
       <section
+        id="metrics-panel"
+        class="monitoring-section"
+        role="tabpanel"
+        aria-labelledby="metrics-tab"
+        [hidden]="activeTab !== 'metrics'">
+        @if (activeTab === 'metrics') {
+          <app-monitoring-metrics
+            [resources]="selectedResources"
+            [initialResource]="linkedMetricResource"
+            [initialResourceLoading]="linkedMetricResourceLoading"
+            [initialResourceError]="linkedMetricResourceError">
+          </app-monitoring-metrics>
+        }
+      </section>
+
+      <section
         id="log-analytics-panel"
         class="monitoring-section"
         role="tabpanel"
@@ -247,7 +278,15 @@
         role="tabpanel"
         aria-labelledby="activity-tab"
         [hidden]="activeTab !== 'activity'">
-        @if (activeTab === 'activity' && !loading && !error) {
+        @if (activeTab === 'activity' && loadingActivity) {
+          <p class="status-message" role="status">Loading activity log...</p>
+        }
+        @if (activeTab === 'activity' && activityError) {
+          <div class="error-message" role="alert">
+            {{ activityError }}
+          </div>
+        }
+        @if (activeTab === 'activity' && !loadingActivity && !activityError) {
           <app-activity-log
             [events]="activityEvents"
             [selectedResources]="selectedResources">

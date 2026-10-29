@@ -13,6 +13,7 @@ export const routes: Routes = [
   { path: '', component: LoginComponent },
   { path: 'rg', component: ResourcesPerspectiveComponent, canActivate: [MsalGuard] },
   { path: 'networking', component: NetworkingPerspectiveComponent, canActivate: [MsalGuard] },
+  { path: 'monitoring/metrics', component: MonitoringPerspectiveComponent, canActivate: [MsalGuard] },
   { path: 'monitoring', component: MonitoringPerspectiveComponent, canActivate: [MsalGuard] },
   { path: 'data', component: DataPerspectiveComponent, canActivate: [MsalGuard] },
   { path: 'app', component: AppPerspectiveComponent, canActivate: [MsalGuard] },

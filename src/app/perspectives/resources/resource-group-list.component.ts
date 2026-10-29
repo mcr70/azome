@@ -1,4 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
+import { RouterLink } from '@angular/router';
 
 import { EMPTY, from, Subject } from 'rxjs';
 import { catchError, finalize, mergeMap, takeUntil, tap } from 'rxjs/operators';
@@ -20,6 +21,7 @@ import { ResourceSelectionService } from '@services/azome/resource-selection.ser
     ResourceDetailPaneComponent,
     ResourceTypeIconComponent,
     ResourceCardComponent,
+    RouterLink,
     ResourceGridSelectionComponent,
     TextFilterComponent
   ],

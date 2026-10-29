@@ -1,19 +1,30 @@
 import { TestBed } from '@angular/core/testing';
-import { of, Subject } from 'rxjs';
+import { By } from '@angular/platform-browser';
+import { ActivatedRoute, convertToParamMap, ParamMap } from '@angular/router';
+import { BehaviorSubject, of, Subject } from 'rxjs';
 import { DiagnosticSetting, DiagnosticSettingsResult } from '@services/azure/diagnostic-settings.model';
 import { DiagnosticSettingsService } from '@services/azure/diagnostic-settings.service';
-import { MonitoringService } from '@services/azure/monitoring.service';
+import {
+  ActivityLogEvent,
+  MonitoringResource,
+  MonitoringService
+} from '@services/azure/monitoring.service';
+import { AzureMetricsService } from '@services/azure/azure-metrics.service';
 import { LogAnalyticsService } from '@services/azure/log-analytics.service';
 import { ResourceGraphService } from '@services/azure/resource-graph.service';
 import { ResourceDetailPanelService } from '@services/azome/resource-detail-panel.service';
+import { ResourceSelectionService } from '@services/azome/resource-selection.service';
 import { MonitoringPerspectiveComponent } from './monitoring-perspective.component';
+import { MetricsComponent } from './metrics/metrics.component';
 
 describe('MonitoringPerspectiveComponent diagnostic settings', () => {
   let diagnostics: jasmine.SpyObj<DiagnosticSettingsService>;
   let graph: jasmine.SpyObj<ResourceGraphService>;
   let monitoring: jasmine.SpyObj<MonitoringService>;
+  let metrics: jasmine.SpyObj<AzureMetricsService>;
   let logs: jasmine.SpyObj<LogAnalyticsService>;
   let panelService: ResourceDetailPanelService;
+  let queryParamMap: BehaviorSubject<ParamMap>;
   const setting: DiagnosticSetting = {
     id: '/app/providers/Microsoft.Insights/diagnosticSettings/export',
     name: 'export',
@@ -36,6 +47,11 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
     monitoring = jasmine.createSpyObj<MonitoringService>(
       'MonitoringService', ['getMonitoringResources', 'getActivityLog']
     );
+    metrics = jasmine.createSpyObj<AzureMetricsService>(
+      'AzureMetricsService', ['getMetricDefinitions', 'getMetric']
+    );
+    metrics.getMetricDefinitions.and.returnValue(of([]));
+    metrics.getMetric.and.returnValue(of({ name: 'Metric', data: [] }));
     logs = jasmine.createSpyObj<LogAnalyticsService>(
       'LogAnalyticsService', ['getTables', 'getActiveTableNames']
     );
@@ -43,13 +59,19 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
     logs.getActiveTableNames.and.returnValue(of([]));
     monitoring.getMonitoringResources.and.returnValue(of([]));
     monitoring.getActivityLog.and.returnValue(of([]));
+    queryParamMap = new BehaviorSubject(convertToParamMap({}));
     await TestBed.configureTestingModule({
       imports: [MonitoringPerspectiveComponent],
       providers: [
         { provide: MonitoringService, useValue: monitoring },
+        { provide: AzureMetricsService, useValue: metrics },
         { provide: LogAnalyticsService, useValue: logs },
         { provide: DiagnosticSettingsService, useValue: diagnostics },
-        { provide: ResourceGraphService, useValue: graph }
+        { provide: ResourceGraphService, useValue: graph },
+        {
+          provide: ActivatedRoute,
+          useValue: { queryParamMap }
+        }
       ]
     }).compileComponents();
     panelService = TestBed.inject(ResourceDetailPanelService);
@@ -143,5 +165,96 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
     expect(element.querySelector('app-resource-card')).not.toBeNull();
     fixture.destroy();
     expect(response.observed).toBeFalse();
+  });
+
+  it('does not wait for the activity log before showing monitoring resources', () => {
+    const resourceResponse = new Subject<MonitoringResource[]>();
+    const activityResponse = new Subject<ActivityLogEvent[]>();
+    monitoring.getMonitoringResources.and.returnValue(resourceResponse);
+    monitoring.getActivityLog.and.returnValue(activityResponse);
+
+    const fixture = TestBed.createComponent(MonitoringPerspectiveComponent);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.loading).toBeTrue();
+    expect(fixture.componentInstance.loadingActivity).toBeTrue();
+
+    resourceResponse.next([{
+      id: '/subscriptions/test/resourceGroups/logs/providers/Microsoft.Insights/components/app',
+      name: 'app',
+      type: 'Microsoft.Insights/components',
+      resourceGroup: 'logs',
+      location: 'westeurope',
+      category: 'Application Insights'
+    }]);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.loading).toBeFalse();
+    expect(fixture.componentInstance.loadingActivity).toBeTrue();
+    expect(fixture.nativeElement.textContent).not.toContain('Loading monitoring resources...');
+
+    fixture.componentInstance.selectTab('activity');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Loading activity log...');
+
+    activityResponse.next([]);
+    fixture.detectChanges();
+    expect(fixture.componentInstance.loadingActivity).toBeFalse();
+    fixture.destroy();
+  });
+
+  it('opens the metrics view for a linked resource without changing shared selection', () => {
+    const resourceId = '/subscriptions/00000000-0000-0000-0000-000000000001'
+      + '/resourceGroups/apps/providers/Microsoft.Web/sites/orders';
+    const sharedResource = {
+      id: '/subscriptions/00000000-0000-0000-0000-000000000001'
+        + '/resourceGroups/apps/providers/Microsoft.Compute/virtualMachines/shared-vm',
+      name: 'shared-vm',
+      type: 'Microsoft.Compute/virtualMachines',
+      resourceGroup: 'apps'
+    };
+    TestBed.inject(ResourceSelectionService).select(sharedResource);
+    graph.getResourceDetails.and.returnValue(of({
+      id: resourceId,
+      name: 'orders',
+      type: 'Microsoft.Web/sites',
+      resourceGroup: 'apps'
+    }));
+
+    const fixture = TestBed.createComponent(MonitoringPerspectiveComponent);
+    fixture.detectChanges();
+    queryParamMap.next(convertToParamMap({ resourceId }));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.activeTab).toBe('metrics');
+    expect(fixture.componentInstance.linkedMetricResource).toEqual({
+      id: resourceId,
+      name: 'orders',
+      type: 'Microsoft.Web/sites',
+      resourceGroup: 'apps'
+    });
+    const metricsView = fixture.debugElement.query(By.directive(MetricsComponent))
+      .componentInstance as MetricsComponent;
+    const mainMetricsTab = fixture.nativeElement.querySelector('.monitoring-tabs #metrics-tab');
+    const metricsSubTabs = fixture.nativeElement.querySelector('.metrics-view .metric-tabs');
+    expect(metricsView.metricView).toBe('explorer');
+    expect(metricsView.selectedExplorerResourceIds).toEqual([resourceId]);
+    expect(mainMetricsTab.compareDocumentPosition(metricsSubTabs)
+      & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(TestBed.inject(ResourceSelectionService).selectedResources).toEqual([sharedResource]);
+    fixture.destroy();
+  });
+
+  it('rejects unsafe resource IDs before resolving a deep link', () => {
+    const fixture = TestBed.createComponent(MonitoringPerspectiveComponent);
+    fixture.detectChanges();
+    queryParamMap.next(convertToParamMap({
+      resourceId: '/subscriptions/00000000-0000-0000-0000-000000000001'
+        + "/resourceGroups/apps/providers/Microsoft.Web/sites/orders'|take 1"
+    }));
+
+    expect(graph.getResourceDetails).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.linkedMetricResourceError)
+      .toContain('not a valid Azure resource ID');
+    fixture.destroy();
   });
 });

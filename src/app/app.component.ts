@@ -32,6 +32,7 @@ import {
   ResourceSelectionService,
   SelectedAzureResource
 } from './services/azome/resource-selection.service';
+import { ResourceGraphDialogService } from './services/azome/resource-graph-dialog.service';
 import { Subject, Subscription } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -138,6 +139,7 @@ export class AppComponent implements OnInit, OnDestroy {
     public auth: AuthService,
     private azure: ProfileService,
     private resourceGraph: ResourceGraphService,
+    private resourceGraphDialog: ResourceGraphDialogService,
     private router: Router,
     public resourceSelection: ResourceSelectionService
   ) {}
@@ -145,6 +147,9 @@ export class AppComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.loadSavedResourceGraphQueries();
     this.loadPerspectivePreferences();
+    this.resourceGraphDialog.openRequests$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => this.openResourceGraphDialog());
 
     this.router.events
       .pipe(takeUntil(this.destroy$))
@@ -220,8 +225,10 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  public openResourceGraphDialog(toolsMenu: HTMLDetailsElement): void {
-    toolsMenu.open = false;
+  public openResourceGraphDialog(toolsMenu?: HTMLDetailsElement): void {
+    if (toolsMenu) {
+      toolsMenu.open = false;
+    }
     this.resourceGraphQuery = 'Resources | limit 10';
     this.resourceGraphQueryName = '';
     this.selectedSavedResourceGraphQueryName = '';
@@ -439,6 +446,15 @@ export class AppComponent implements OnInit, OnDestroy {
 
   public addToSelection(resource: SelectedAzureResource): void {
     this.resourceSelection.select(resource);
+  }
+
+  public toggleResourceGraphSelection(resource: SelectedAzureResource, event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    if (checkbox.checked) {
+      this.resourceSelection.select(resource);
+    } else {
+      this.resourceSelection.deselect(resource.id);
+    }
   }
 
   public addAllResultsToSelection(): void {

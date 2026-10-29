@@ -110,6 +110,23 @@
                     [selectable]="true"
                     [iconSize]="18">
                     <ng-container card-actions>
+                      <a
+                        class="resource-action"
+                        [routerLink]="['/monitoring/metrics']"
+                        [queryParams]="{ resourceId: resource.id }"
+                        [attr.aria-label]="'View metrics for ' + resource.name"
+                        title="View metrics">
+                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                          <path
+                            d="M3 3v18h18M19 9l-5 5-4-4-3 3"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2">
+                          </path>
+                        </svg>
+                      </a>
                       <button
                         type="button"
                         class="resource-action"
