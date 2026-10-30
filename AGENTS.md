@@ -81,6 +81,21 @@ a calling template can utilize to fill in data to be shown.
 ## Other Components
 - Keep common/general components separate from resource detail components. Do not mix them in the same directories.
 
+## Component Complexity & Decomposition Rules
+To prevent God Components and keep cognitive load manageable, apply these decomposition rules:
+
+### Refactoring Thresholds
+Consider splitting a component when any of these apply:
+- Its TypeScript file exceeds approximately 300–400 lines.
+- It manages multiple distinct views, feature contexts, or complex sub-flows.
+- Its RxJS streams have more than 2–3 nested operators with complex inline closures.
+
+### Decomposition Architecture
+- Use a shell/orchestrator for shared state such as tabs and filters, with focused child components for each feature or view.
+- Extract shared calculations, formatting, and query helpers into stateless support services or utilities.
+- Put shared component styles in a feature-level `<feature>-shared.scss`; keep view-specific styles with their components.
+- Move complex error handling and related state updates into private helpers or support services instead of expanding inline `catchError` pipelines.
+
 
 # Perspectives
 - Perspectives are located in the `src/app/perspectives` folder.

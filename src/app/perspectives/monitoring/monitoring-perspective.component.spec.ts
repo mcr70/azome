@@ -15,6 +15,7 @@ import { ResourceGraphService } from '@services/azure/resource-graph.service';
 import { ResourceDetailPanelService } from '@services/azome/resource-detail-panel.service';
 import { ResourceSelectionService } from '@services/azome/resource-selection.service';
 import { MonitoringPerspectiveComponent } from './monitoring-perspective.component';
+import { MetricExplorerComponent } from './metrics/metric-explorer.component';
 import { MetricsComponent } from './metrics/metrics.component';
 
 describe('MonitoringPerspectiveComponent diagnostic settings', () => {
@@ -243,10 +244,12 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
     });
     const metricsView = fixture.debugElement.query(By.directive(MetricsComponent))
       .componentInstance as MetricsComponent;
+    const explorerView = fixture.debugElement.query(By.directive(MetricExplorerComponent))
+      .componentInstance as MetricExplorerComponent;
     const mainMetricsTab = fixture.nativeElement.querySelector('.monitoring-tabs #metrics-tab');
     const metricsSubTabs = fixture.nativeElement.querySelector('.metrics-view .metric-tabs');
     expect(metricsView.metricView).toBe('explorer');
-    expect(metricsView.selectedExplorerResourceIds).toEqual([resourceId]);
+    expect(explorerView.selectedExplorerResourceIds).toEqual([resourceId]);
     expect(mainMetricsTab.compareDocumentPosition(metricsSubTabs)
       & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(TestBed.inject(ResourceSelectionService).selectedResources).toEqual([sharedResource]);
