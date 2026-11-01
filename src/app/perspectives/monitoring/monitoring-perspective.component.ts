@@ -3,8 +3,8 @@ import { NgTemplateOutlet } from '@angular/common';
 import { LucideDynamicIcon, LucideSearch } from '@lucide/angular';
 import { ActivatedRoute } from '@angular/router';
 import { KqlComponent } from '@components/kql/kql.component';
-import { of, Subject, Subscription } from 'rxjs';
-import { catchError, map, switchMap, takeUntil } from 'rxjs/operators';
+import { Subject, Subscription } from 'rxjs';
+import { switchMap, takeUntil } from 'rxjs/operators';
 import {
   ActivityLogEvent,
   LogAnalyticsWorkspace,
@@ -26,23 +26,28 @@ import {
   ResourcePanelConfig
 } from '@services/azome/resource-detail-panel.service';
 import { matchesTextFilter } from '@app/utils/text-filter';
+import {
+  groupResourcesByCategory,
+  PerspectiveResourceCategoryGroup
+} from '../perspective-resource-groups';
+import { selectFloatingPanel, selectPinnedPanels } from '../perspective-utils';
 import { ActivityLogComponent } from './activity-log/activity-log.component';
+import { LinkedMetricResourceService } from './linked-metric-resource.service';
 import { LogAnalyticsComponent } from './log-analytics/log-analytics.component';
 import { MetricsComponent } from './metrics/metrics.component';
+import { monitoringResourceTypeLabel } from './monitoring-resource-labels';
 import { DiagnosticSettingsService } from '@services/azure/diagnostic-settings.service';
 import { DiagnosticSetting, DiagnosticSettingsResult } from '@services/azure/diagnostic-settings.model';
 
-interface MonitoringResourceTypeGroup {
-  type: string;
-  label: string;
-  resources: MonitoringResource[];
-}
+type MonitoringTab = 'overview' | 'metrics' | 'log-analytics' | 'activity';
 
-interface MonitoringResourceCategoryGroup {
-  category: MonitoringResource['category'];
-  types: MonitoringResourceTypeGroup[];
-}
-
+/**
+ * Shell of the Monitoring perspective.
+ *
+ * Orchestrates the overview, metrics, Log Analytics, and activity log tabs,
+ * loads the monitoring resource inventory and diagnostic settings, and resolves
+ * deep links into the Metrics view via {@link LinkedMetricResourceService}.
+ */
 @Component({
   selector: 'app-monitoring-perspective',
   standalone: true,
@@ -60,12 +65,12 @@ interface MonitoringResourceCategoryGroup {
     TextFilterComponent
   ],
   templateUrl: './monitoring-perspective.component.html',
-  styleUrl: './monitoring-perspective.component.scss'
+  styleUrls: ['../perspective-shared.scss', './monitoring-perspective.component.scss']
 })
 export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
   public readonly searchIcon = LucideSearch.icon;
   public kqlWorkspace: { id: string; name: string } | null = null;
-  public activeTab: 'overview' | 'metrics' | 'log-analytics' | 'activity' = 'overview';
+  public activeTab: MonitoringTab = 'overview';
   public resources: MonitoringResource[] = [];
   public workspaces: LogAnalyticsWorkspace[] = [];
   public activityEvents: ActivityLogEvent[] = [];
@@ -95,10 +100,15 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     private readonly panelService: ResourceDetailPanelService,
     private readonly resourceGraph: ResourceGraphService,
     private readonly diagnostics: DiagnosticSettingsService,
+    private readonly linkedResource: LinkedMetricResourceService,
     private readonly route: ActivatedRoute
   ) {}
 
-  ngOnInit(): void {
+  /**
+   * Subscribes to shared selection and panel state, watches the `resourceId`
+   * query parameter for metric deep links, and loads the monitoring data.
+   */
+  public ngOnInit(): void {
     if (this.route.routeConfig?.path === 'monitoring/metrics') {
       this.activeTab = 'metrics';
     }
@@ -109,59 +119,7 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     this.panelService.panels$
       .pipe(takeUntil(this.destroy$))
       .subscribe((panels) => this.panels = panels);
-    this.route.queryParamMap
-      .pipe(
-        switchMap((params) => {
-          const resourceId = params.get('resourceId');
-          this.linkedMetricResource = null;
-          this.linkedMetricResourceError = null;
-
-          if (!resourceId) {
-            this.linkedMetricResourceLoading = false;
-            return of(null);
-          }
-
-          this.activeTab = 'metrics';
-          this.linkedMetricResourceLoading = true;
-
-          if (!this.isSafeResourceId(resourceId)) {
-            this.linkedMetricResourceError = 'The linked resource ID is not a valid Azure resource ID.';
-            this.linkedMetricResourceLoading = false;
-            return of(null);
-          }
-
-          return this.resourceGraph.getResourceDetails(resourceId).pipe(
-            map((resource) => ({ resourceId, resource, error: null as string | null })),
-            catchError((error: unknown) => {
-              console.error('Failed to resolve linked metrics resource:', error);
-              return of({
-                resourceId,
-                resource: null,
-                error: 'The linked resource could not be resolved. Check your Azure access.'
-              });
-            })
-          );
-        }),
-        takeUntil(this.destroy$)
-      )
-      .subscribe((result) => {
-        if (!result) {
-          return;
-        }
-
-        this.linkedMetricResourceLoading = false;
-        if (result.resource) {
-          this.linkedMetricResource = {
-            id: result.resource.id,
-            name: result.resource.name,
-            type: result.resource.type,
-            resourceGroup: result.resource.resourceGroup ?? ''
-          };
-        } else {
-          this.linkedMetricResourceError = result.error
-            ?? `The resource ${result.resourceId} was not found in the configured subscription.`;
-        }
-      });
+    this.watchLinkedMetricResource();
     this.loadMonitoringData();
   }
 
@@ -170,13 +128,14 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  
+  /** Monitoring resources matching the current text filter. */
   public get filteredResources(): MonitoringResource[] {
     return this.resources.filter((resource) =>
       matchesTextFilter(this.filterQuery, resource.resourceGroup, resource.name, resource.type)
     );
   }
 
+  /** Diagnostic settings matching the current text filter. */
   public get filteredDiagnosticSettings(): DiagnosticSetting[] {
     return this.diagnosticSettings.filter((setting) =>
       matchesTextFilter(
@@ -190,46 +149,34 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     );
   }
 
-  public get categoryGroups(): MonitoringResourceCategoryGroup[] {
-    const categories = new Map<
-      MonitoringResource['category'],
-      Map<string, MonitoringResource[]>
-    >();
-
-    for (const resource of this.filteredResources) {
-      const categoryTypes = categories.get(resource.category)
-        ?? new Map<string, MonitoringResource[]>();
-      const resourceType = resource.type.toLowerCase();
-      const typeResources = categoryTypes.get(resourceType) ?? [];
-
-      typeResources.push(resource);
-      categoryTypes.set(resourceType, typeResources);
-      categories.set(resource.category, categoryTypes);
-    }
-
-    return Array.from(categories.entries())
-      .sort(([categoryA], [categoryB]) => categoryA.localeCompare(categoryB))
-      .map(([category, types]) => ({
-        category,
-        types: Array.from(types.entries())
-          .sort(([typeA], [typeB]) => typeA.localeCompare(typeB))
-          .map(([type, resources]) => ({
-            type,
-            label: this.resourceTypeLabel(type),
-            resources
-          }))
-      }));
+  /** Filtered resources grouped into sorted category and type sections. */
+  public get categoryGroups(): PerspectiveResourceCategoryGroup<
+    MonitoringResource['category'],
+    MonitoringResource
+  >[] {
+    return groupResourcesByCategory(
+      this.filteredResources,
+      (resource) => resource.category,
+      (resource) => resource.type,
+      (type) => this.resourceTypeLabel(type)
+    );
   }
 
+  /** Panels pinned into the side-by-side slots. */
   public get pinnedPanels(): ResourcePanelConfig[] {
-    return this.panels.filter((panel) => panel.pinned);
+    return selectPinnedPanels(this.panels);
   }
 
+  /** The floating resource details panel, if one is open. */
   public get floatingPanel(): ResourcePanelConfig | null {
-    return this.panels.find((panel) => !panel.pinned) ?? null;
+    return selectFloatingPanel(this.panels);
   }
 
-
+  /**
+   * Loads the monitoring resources, diagnostic settings, and activity log. The
+   * three requests are independent so each section renders as soon as its own
+   * data arrives.
+   */
   public loadMonitoringData(): void {
     this.loadDiagnosticSettings();
     this.loading = true;
@@ -242,19 +189,7 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (resources) => {
           this.resources = resources;
-          this.workspaces = resources
-            .filter((resource) => resource.type.toLowerCase()
-              === 'microsoft.operationalinsights/workspaces')
-            .map((resource) => ({
-              id: resource.id,
-              name: resource.name,
-              resourceGroup: resource.resourceGroup,
-              location: resource.location,
-              properties: {
-                customerId: resource.properties?.customerId,
-                retentionInDays: resource.properties?.retentionInDays
-              }
-            }));
+          this.workspaces = this.toWorkspaces(resources);
           this.loading = false;
         },
         error: (error: unknown) => {
@@ -284,6 +219,7 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
+  /** Discovers diagnostic settings, replacing any discovery still in flight. */
   public loadDiagnosticSettings(): void {
     this.diagnosticRequest?.unsubscribe();
     this.loadingDiagnostics = true;
@@ -306,15 +242,21 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
-  public selectTab(tab: 'overview' | 'metrics' | 'log-analytics' | 'activity'): void {
+  /**
+   * Activates a monitoring tab.
+   *
+   * @param tab Tab to activate.
+   */
+  public selectTab(tab: MonitoringTab): void {
     this.activeTab = tab;
   }
 
-  private isSafeResourceId(resourceId: string): boolean {
-    return /^\/subscriptions\/[a-f0-9-]+\/resourceGroups\/[a-zA-Z0-9._()-]+\/providers\/[a-zA-Z0-9.]+(?:\/[a-zA-Z0-9._()-]+)+$/i
-      .test(resourceId);
-  }
-
+  /**
+   * Opens the KQL dialog for a Log Analytics workspace card.
+   *
+   * @param resource Workspace resource whose card action was clicked.
+   * @param event Click event; prevented so the card selection does not change.
+   */
   public openWorkspaceQuery(resource: MonitoringResource, event: Event): void {
     event.preventDefault();
     event.stopPropagation();
@@ -324,6 +266,14 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Opens the resource details panel for a monitoring resource. Diagnostic
+   * settings already hold their full payload and open without a Graph query;
+   * stale responses are ignored when the user clicks another card meanwhile.
+   *
+   * @param resourceId ARM resource ID of the clicked resource.
+   * @param event Optional click event; prevented to keep the card selection.
+   */
   public openResourceDetails(resourceId: string, event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
@@ -356,37 +306,78 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Returns the display label for a monitoring resource type.
+   *
+   * @param type Full Azure resource type.
+   * @returns A friendly label, falling back to the last type segment.
+   */
   public resourceTypeLabel(type: string): string {
-    const labels: Record<string, string> = {
-      'microsoft.insights/actiongroups': 'Action groups',
-      'microsoft.insights/activitylogalerts': 'Activity log alerts',
-      'microsoft.insights/autoscalesettings': 'Autoscale settings',
-      'microsoft.insights/components': 'Application Insights',
-      'microsoft.insights/datacollectionendpoints': 'Data collection endpoints',
-      'microsoft.insights/datacollectionrules': 'Data collection rules',
-      'microsoft.insights/diagnosticsettings': 'Diagnostic settings',
-      'microsoft.insights/logprofiles': 'Log profiles',
-      'microsoft.insights/metricalerts': 'Metric alerts',
-      'microsoft.insights/scheduledqueryrules': 'Scheduled query rules',
-      'microsoft.insights/smartdetectoralertrules': 'Smart detector alert rules',
-      'microsoft.insights/webtests': 'Availability tests',
-      'microsoft.insights/workbooks': 'Workbooks',
-      'microsoft.alertsmanagement/actionrules': 'Alert processing rules',
-      'microsoft.dashboard/grafana': 'Azure Managed Grafana',
-      'microsoft.operationalinsights/dataexports': 'Data exports',
-      'microsoft.operationalinsights/savedsearches': 'Saved searches',
-      'microsoft.operationalinsights/workspaces': 'Log Analytics workspaces'
-    };
-
-    return labels[type.toLowerCase()] ?? type.split('/').pop() ?? type;
+    return monitoringResourceTypeLabel(type);
   }
 
+  /**
+   * Closes a resource details panel.
+   *
+   * @param panelId Identifier of the panel to close.
+   */
   public closePanel(panelId: string): void {
     this.panelService.closePanel(panelId);
   }
 
+  /**
+   * Changes the pinned state of a resource details panel.
+   *
+   * @param panelId Identifier of the panel to pin or unpin.
+   */
   public togglePanelPin(panelId: string): void {
     this.panelService.togglePin(panelId);
   }
 
+  /**
+   * Mirrors the `resourceId` query parameter into the linked metric resource
+   * state and switches to the Metrics tab whenever a deep link arrives.
+   */
+  private watchLinkedMetricResource(): void {
+    this.route.queryParamMap
+      .pipe(
+        switchMap((params) => {
+          const resourceId = params.get('resourceId');
+
+          if (resourceId) {
+            this.activeTab = 'metrics';
+          }
+
+          return this.linkedResource.resolve(resourceId);
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe((state) => {
+        this.linkedMetricResource = state.resource;
+        this.linkedMetricResourceError = state.error;
+        this.linkedMetricResourceLoading = state.loading;
+      });
+  }
+
+  /**
+   * Extracts the Log Analytics workspaces from the monitoring resource list.
+   *
+   * @param resources All monitoring resources of the subscription.
+   * @returns Workspace summaries for the Log Analytics tab.
+   */
+  private toWorkspaces(resources: MonitoringResource[]): LogAnalyticsWorkspace[] {
+    return resources
+      .filter((resource) => resource.type.toLowerCase()
+        === 'microsoft.operationalinsights/workspaces')
+      .map((resource) => ({
+        id: resource.id,
+        name: resource.name,
+        resourceGroup: resource.resourceGroup,
+        location: resource.location,
+        properties: {
+          customerId: resource.properties?.customerId,
+          retentionInDays: resource.properties?.retentionInDays
+        }
+      }));
+  }
 }

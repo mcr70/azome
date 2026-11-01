@@ -1,14 +1,50 @@
-<section class="resources-perspective" aria-labelledby="resources-title">
-  <div class="perspective-heading">
-    <div>
-      <p class="eyebrow">Perspective</p>
-      <h1 id="resources-title">Resources</h1>
-      <p class="description">Overview of resource groups and their contained Azure resources.</p>
+<section class="perspective-root" aria-labelledby="resources-title">
+  <div
+    class="perspective-workspace-layout"
+    [class.has-one-pinned-panel]="pinnedPanels.length === 1"
+    [class.has-two-pinned-panels]="pinnedPanels.length === 2">
+
+    <div class="perspective-main-content">
+      <div class="perspective-heading">
+        <div>
+          <p class="eyebrow">Perspective</p>
+          <h1 id="resources-title">Resources</h1>
+          <p class="description">Overview of resource groups and their contained Azure resources.</p>
+        </div>
+        <div class="perspective-actions">
+          <app-resource-selection-bar></app-resource-selection-bar>
+          <button
+            class="refresh-button"
+            type="button"
+            (click)="groupList.refresh()"
+            [disabled]="listLoading">
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <app-resource-group-list #groupList (loadingChange)="listLoading = $event" />
     </div>
-    <div class="perspective-actions">
-      <app-resource-selection-bar></app-resource-selection-bar>
-    </div>
+
+    @if (pinnedPanels.length > 0) {
+      <div class="pinned-panel-slots" aria-label="Pinned resource panels">
+        @for (panel of pinnedPanels; track panel.id) {
+          <app-resource-detail-pane
+            [panel]="panel"
+            [pinned]="true"
+            (close)="closePanel($event)"
+            (togglePin)="togglePanelPin($event)">
+          </app-resource-detail-pane>
+        }
+      </div>
+    }
   </div>
 
-  <app-resource-group-list />
+  @if (floatingPanel; as panel) {
+    <app-resource-detail-pane
+      [panel]="panel"
+      (close)="closePanel($event)"
+      (togglePin)="togglePanelPin($event)">
+    </app-resource-detail-pane>
+  }
 </section>

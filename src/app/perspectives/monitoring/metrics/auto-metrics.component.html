@@ -1,0 +1,98 @@
+@if (loadingAutomaticMetrics) {
+  <p
+    class="status-message metrics-loading"
+    role="status">
+    <span
+      class="loading-spinner"
+      aria-hidden="true">
+    </span>
+    Loading resource metrics... {{ automaticLoadedResourceCount }} /
+    {{ automaticTotalResourceCount }}
+  </p>
+}
+
+@if (showAutomaticErrors) {
+  <div class="metrics-error-notice" role="alert">
+    <div class="metrics-error-notice-body">
+      @if (automaticFailedResources.length > 0) {
+        <strong>Following metrics could not be loaded:</strong>
+        <ul>
+          @for (resource of automaticFailedResources; track resource.id) {
+            <li>
+              {{ resource.name }}
+              <small>{{ resource.type }}</small>
+            </li>
+          }
+        </ul>
+      }
+      @if (automaticQueryError) {
+        <p>{{ automaticQueryError }}</p>
+      }
+    </div>
+    <button
+      type="button"
+      class="metrics-error-notice-close"
+      aria-label="Dismiss metric errors"
+      title="Dismiss"
+      (click)="dismissAutomaticErrors()">
+      ✕
+    </button>
+  </div>
+}
+
+@if (automaticMetrics.length > 0) {
+  <div class="resource-metrics-list">
+    @for (group of metricsSupport.groupMetrics(automaticMetrics); track group.resource.id) {
+      <article class="resource-metrics-card">
+        <header class="resource-metrics-heading">
+          <div>
+            <h3>{{ group.resource.name }}</h3>
+            <p>{{ group.resource.type }}</p>
+          </div>
+          <span>{{ group.metrics.length }} metrics</span>
+        </header>
+        <div class="metric-grid">
+          @for (metric of group.metrics; track metric.name) {
+            <article class="metric-card">
+              <header class="metric-card-heading">
+                <h4>{{ metric.name }}</h4>
+                <span class="aggregation">{{ metric.aggregation }}</span>
+              </header>
+              @if (metric.error) {
+                <p class="error-message" role="alert">{{ metric.error }}</p>
+              } @else if (metric.points.length > 0) {
+                <p class="metric-value">
+                  {{ metricsSupport.formatMetricValue(metricsSupport.metricValue(metric.points[metric.points.length - 1], metric.aggregation)) }}
+                  <span>{{ metric.unit || '' }}</span>
+                </p>
+                <div
+                  class="metric-chart"
+                  role="img"
+                  [attr.aria-label]="metric.name + ' values for ' + metric.resource.name">
+                  @for (point of metric.points; track point.timeStamp) {
+                    <span
+                      class="metric-bar"
+                      [style.height.%]="metricsSupport.barHeight(metric, point)"
+                      [title]="(point.timeStamp | date: 'short') + ': '
+                        + metricsSupport.formatMetricValue(metricsSupport.metricValue(point, metric.aggregation))">
+                    </span>
+                  }
+                </div>
+                <div class="chart-range">
+                  <span>{{ metric.points[0].timeStamp | date: 'short' }}</span>
+                  <span>{{ metric.points[metric.points.length - 1].timeStamp | date: 'short' }}</span>
+                </div>
+              } @else {
+                <p class="empty-chart">No data is available for this time range.</p>
+              }
+            </article>
+          }
+        </div>
+      </article>
+    }
+  </div>
+} @else if (!loadingAutomaticMetrics && resources.length > 0 && !showAutomaticErrors) {
+  <p class="empty-state">
+    No metrics are available for the selected resources.
+  </p>
+}

@@ -17,18 +17,18 @@ import {
   ResourcePanelConfig
 } from '@services/azome/resource-detail-panel.service';
 import { matchesTextFilter } from '@app/utils/text-filter';
+import {
+  groupResourcesByCategory,
+  PerspectiveResourceCategoryGroup
+} from '../perspective-resource-groups';
+import { selectFloatingPanel, selectPinnedPanels } from '../perspective-utils';
 
-interface DataResourceTypeGroup {
-  type: string;
-  label: string;
-  resources: AzureDataResource[];
-}
-
-interface DataResourceCategoryGroup {
-  category: DataResourceCategory;
-  types: DataResourceTypeGroup[];
-}
-
+/**
+ * Data perspective.
+ *
+ * Lists the data-plane oriented resources (storage, databases, messaging) by
+ * category and provides the data Browse pane for supported resource types.
+ */
 @Component({
   selector: 'app-data-perspective',
   standalone: true,
@@ -41,7 +41,7 @@ interface DataResourceCategoryGroup {
     ResourceSelectionBarComponent
   ],
   templateUrl: './data-perspective.component.html',
-  styleUrl: './data-perspective.component.scss'
+  styleUrls: ['../perspective-shared.scss', './data-perspective.component.scss']
 })
 export class DataPerspectiveComponent implements OnInit, OnDestroy {
   public resources: AzureDataResource[] = [];
@@ -61,62 +61,50 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
   ) {
   }
 
-  ngOnInit(): void {
+  /** Loads the data resources and mirrors the shared panel state. */
+  public ngOnInit(): void {
     this.loadResources();
     this.panelService.panels$
       .pipe(takeUntil(this.destroy$))
       .subscribe((panels) => this.panels = panels);
   }
 
-  ngOnDestroy(): void {
+  public ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-
-  public get categoryGroups(): DataResourceCategoryGroup[] {
-    const categories = new Map<DataResourceCategory, Map<string, AzureDataResource[]>>();
-
-    for (const resource of this.filteredResources) {
-      const category = resource.category;
-      const categoryTypes = categories.get(category) ?? new Map<string, AzureDataResource[]>();
-      const resourceType = resource.type.toLowerCase();
-      const typeResources = categoryTypes.get(resourceType) ?? [];
-
-      typeResources.push(resource);
-      categoryTypes.set(resourceType, typeResources);
-      categories.set(category, categoryTypes);
-    }
-
-    return Array.from(categories.entries())
-      .sort(([categoryA], [categoryB]) => categoryA.localeCompare(categoryB))
-      .map(([category, types]) => ({
-        category,
-        types: Array.from(types.entries())
-          .sort(([typeA], [typeB]) => typeA.localeCompare(typeB))
-          .map(([type, resources]) => ({
-            type,
-            label: this.resourceTypeLabel(type),
-            resources
-          }))
-      }));
+  /** Filtered resources grouped into sorted category and type sections. */
+  public get categoryGroups(): PerspectiveResourceCategoryGroup<
+    DataResourceCategory,
+    AzureDataResource
+  >[] {
+    return groupResourcesByCategory(
+      this.filteredResources,
+      (resource) => resource.category,
+      (resource) => resource.type,
+      (type) => this.resourceTypeLabel(type)
+    );
   }
 
+  /** Data resources matching the current text filter. */
   public get filteredResources(): AzureDataResource[] {
     return this.resources.filter((resource) =>
       matchesTextFilter(this.filterQuery, resource.resourceGroup, resource.name)
     );
   }
 
+  /** Panels pinned into the side-by-side slots. */
   public get pinnedPanels(): ResourcePanelConfig[] {
-    return this.panels.filter((panel) => panel.pinned);
+    return selectPinnedPanels(this.panels);
   }
 
+  /** The floating resource details panel, if one is open. */
   public get floatingPanel(): ResourcePanelConfig | null {
-    return this.panels.find((panel) => !panel.pinned) ?? null;
+    return selectFloatingPanel(this.panels);
   }
 
-
+  /** Loads the data resources of the configured subscription. */
   public loadResources(): void {
     this.loading = true;
     this.error = null;
@@ -136,6 +124,13 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Opens the resource details panel for a resource. Stale responses are
+   * ignored when the user clicks another card before the first one resolves.
+   *
+   * @param resourceId ARM resource ID of the clicked resource.
+   * @param event Optional click event; prevented to keep the card selection.
+   */
   public openResourceDetails(resourceId: string, event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
@@ -166,12 +161,24 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Tells whether the Browse pane supports a resource type.
+   *
+   * @param resource Data resource shown on a card.
+   * @returns True for storage accounts and Cosmos DB accounts.
+   */
   public isBrowsable(resource: AzureDataResource): boolean {
     const type = resource.type.toLowerCase();
     return type === 'microsoft.storage/storageaccounts'
       || type === 'microsoft.documentdb/databaseaccounts';
   }
 
+  /**
+   * Opens the data Browse pane for a resource.
+   *
+   * @param resource Data resource to browse.
+   * @param event Click event; prevented so the card selection does not change.
+   */
   public openBrowse(resource: AzureDataResource, event: Event): void {
     event.preventDefault();
     event.stopPropagation();
@@ -185,6 +192,12 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Returns the display label for a data resource type.
+   *
+   * @param type Full Azure resource type.
+   * @returns A friendly label, falling back to the last type segment.
+   */
   public resourceTypeLabel(type: string): string {
     const labels: Record<string, string> = {
       'microsoft.storage/storageaccounts': 'Storage accounts',
@@ -201,16 +214,26 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
     return labels[type.toLowerCase()] ?? type.split('/').pop() ?? type;
   }
 
+  /**
+   * Closes a resource details panel.
+   *
+   * @param panelId Identifier of the panel to close.
+   */
   public closePanel(panelId: string): void {
     this.panelService.closePanel(panelId);
   }
 
+  /** Closes the data Browse pane. */
   public closeBrowse(): void {
     this.browseResource = null;
   }
 
+  /**
+   * Changes the pinned state of a resource details panel.
+   *
+   * @param panelId Identifier of the panel to pin or unpin.
+   */
   public togglePanelPin(panelId: string): void {
     this.panelService.togglePin(panelId);
   }
-
 }

@@ -24,6 +24,12 @@ interface ActivityLogFilter {
   resourceIds: string[];
 }
 
+/**
+ * Paged activity log table of the Monitoring perspective.
+ *
+ * Filters events by free text and by the shared resource selection, and lets
+ * the user open event details or add event resources to the selection.
+ */
 @Component({
   selector: 'app-activity-log',
   standalone: true,
@@ -61,6 +67,12 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
     };
   }
 
+  /**
+   * Pushes new events into the table and re-applies the active filter. When
+   * the shared selection changes, the log scrolls itself into view.
+   *
+   * @param changes Angular input changes for this component.
+   */
   public ngOnChanges(changes: SimpleChanges): void {
     if (changes['events']) {
       this.dataSource.data = this.events;
@@ -80,23 +92,51 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
   }
 
 
+  /**
+   * Applies a new text filter to the event table.
+   *
+   * @param value Filter text entered by the user.
+   */
   public applyFilter(value: string): void {
     this.filterQuery = value;
     this.updateDataSourceFilter();
   }
 
+  /**
+   * Human-readable operation name of an event.
+   *
+   * @param event Activity log event.
+   * @returns The localized or raw operation name.
+   */
   public operationName(event: ActivityLogEvent): string {
     return event.operationName?.localizedValue || event.operationName?.value || 'Unknown operation';
   }
 
+  /**
+   * Human-readable status of an event.
+   *
+   * @param event Activity log event.
+   * @returns The localized or raw status.
+   */
   public statusName(event: ActivityLogEvent): string {
     return event.status?.localizedValue || event.status?.value || 'Unknown';
   }
 
+  /**
+   * Opens the detail panel for an event.
+   *
+   * @param event Activity log event to inspect.
+   */
   public openDetails(event: ActivityLogEvent): void {
     this.selectedEvent = event;
   }
 
+  /**
+   * Opens the detail panel with Enter or Space when a table row has focus.
+   *
+   * @param keyboardEvent Keyboard event raised on the row.
+   * @param event Activity log event of the row.
+   */
   public onRowKeydown(keyboardEvent: KeyboardEvent, event: ActivityLogEvent): void {
     if (keyboardEvent.target !== keyboardEvent.currentTarget) {
       return;
@@ -108,10 +148,23 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
     }
   }
 
+  /**
+   * Tells whether the resource of an event is in the shared selection.
+   *
+   * @param event Activity log event.
+   * @returns True when the event resource is selected.
+   */
   public isEventSelected(event: ActivityLogEvent): boolean {
     return Boolean(event.resourceId && this.resourceSelection.isSelected(event.resourceId));
   }
 
+  /**
+   * Adds or removes the resource of an event in the shared selection when its
+   * row checkbox changes.
+   *
+   * @param changeEvent Change event of the checkbox.
+   * @param event Activity log event of the row.
+   */
   public onEventSelectionChange(changeEvent: Event, event: ActivityLogEvent): void {
     if (!event.resourceId) {
       return;
@@ -129,6 +182,7 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
     this.resourceSelection.deselect(event.resourceId);
   }
 
+  /** Serializes the current text and resource filters into the data source. */
   private updateDataSourceFilter(): void {
     const filter: ActivityLogFilter = {
       query: this.filterQuery.trim().toLocaleLowerCase(),
@@ -139,6 +193,14 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
     this.paginator?.firstPage();
   }
 
+  /**
+   * Tells whether an event belongs to one of the selected resources or their
+   * child resources.
+   *
+   * @param event Activity log event.
+   * @param resourceIds Normalized IDs of the selected resources.
+   * @returns True when the event resource matches a selected resource.
+   */
   private matchesSelectedResource(event: ActivityLogEvent, resourceIds: string[]): boolean {
     const eventResourceId = this.normalizeId(event.resourceId ?? '');
     return resourceIds.some((resourceId) =>
@@ -146,10 +208,23 @@ export class ActivityLogComponent implements AfterViewInit, OnChanges {
     );
   }
 
+  /**
+   * Normalizes a resource ID for comparisons.
+   *
+   * @param resourceId Raw resource ID.
+   * @returns Lower-cased ID without trailing slashes.
+   */
   private normalizeId(resourceId: string): string {
     return resourceId.replace(/\/+$/, '').toLocaleLowerCase();
   }
 
+  /**
+   * Builds a selectable resource from the resource ID of an event by parsing
+   * the provider, type, and name segments of the ARM resource ID.
+   *
+   * @param event Activity log event.
+   * @returns The selection entry, or null when the event has no resource ID.
+   */
   private resourceFromEvent(event: ActivityLogEvent): SelectedAzureResource | null {
     const id = event.resourceId?.trim();
     if (!id) {

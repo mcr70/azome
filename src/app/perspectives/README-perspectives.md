@@ -1,5 +1,22 @@
 # Perspectices
 
+## Shared building blocks
+
+The top level of `src/app/perspectives` contains files shared by the
+perspectives:
+
+- `perspective-shared.scss` – the common shell layout: workspace grid, pinned
+  and floating resource panel slots, perspective heading and action toolbar,
+  view tabs, and the shared state/section/grid styles. Perspectives include it
+  via `styleUrls: ['../perspective-shared.scss', './<component>.scss']` and keep
+  only view-specific rules and overrides in their own SCSS. The shared layout
+  classes in templates are `perspective-root`, `perspective-workspace-layout`,
+  `perspective-main-content`, and `view-tabs`.
+- `perspective-resource-groups.ts` – the generic category → resource type
+  grouping used by the App, Data, and Monitoring overview grids.
+- `perspective-utils.ts` – helpers for pinned/floating panel selection and
+  short resource type names.
+
 ## Resource selection
 
 Click a resource card to select it or remove its selection. Selectable cards show
@@ -15,8 +32,7 @@ Other grids' selections are preserved. The **Selected resources** summary and
 **Clear selection** action are shared across perspectives. Activity log resource checkboxes are always available;
 opening an event still shows its details.
 
-The selection summary sits in the perspective heading next to Refresh (or in the
-same heading area in Resources, which has no Refresh button). By default it shows
+The selection summary sits in the perspective heading next to Refresh. By default it shows
 only the selection count. Clicking it opens a floating resource list, keeping the
 content below stable. Each resource has a red remove button to deselect it.
 Resource names scroll to the corresponding card; Clear selection removes all

@@ -25,12 +25,17 @@ Property Declarations: Declare each property on a separate line. Never stack mul
 
 Method Formatting: Every method body MUST be formatted across multiple lines with proper indentation (2 spaces). Never write inline single-line methods. Write comment in following format:
 ```
-  /** 
-   * Selects a queue and loads its message count and first peek results. 
-   * @param name Name of the queue
+  /**
+   * Selects a queue and loads its message count and first peek results. Returns no value.
+   *
+   * @param name Name of the queue.
    */
   selectQueue(name: string): void {
 ```
+
+Document each method's purpose, parameters, and return value so callers can understand how to use it. Add a blank JSDoc line between the summary and the first `@param` tag. Use `@returns` when the method returns a value. Omit `@returns Nothing` for `void` methods, and include useful behavior in the summary when needed.
+
+Use concise single-line comments inside long or complex methods to explain non-obvious decisions or processing steps. Add blank lines within method bodies to separate logical steps, but use them moderately. Keep consecutive `const` declarations together without blank lines between them; use blank lines to separate the declaration group from surrounding logic when helpful.
 
 Line Length & Whitespace: Keep maximum line length around 100–120 characters. Leave blank lines between class properties and methods.
 
@@ -75,6 +80,21 @@ a calling template can utilize to fill in data to be shown.
 
 ## Other Components
 - Keep common/general components separate from resource detail components. Do not mix them in the same directories.
+
+## Component Complexity & Decomposition Rules
+To prevent God Components and keep cognitive load manageable, apply these decomposition rules:
+
+### Refactoring Thresholds
+Consider splitting a component when any of these apply:
+- Its TypeScript file exceeds approximately 300–400 lines.
+- It manages multiple distinct views, feature contexts, or complex sub-flows.
+- Its RxJS streams have more than 2–3 nested operators with complex inline closures.
+
+### Decomposition Architecture
+- Use a shell/orchestrator for shared state such as tabs and filters, with focused child components for each feature or view.
+- Extract shared calculations, formatting, and query helpers into stateless support services or utilities.
+- Put shared component styles in a feature-level `<feature>-shared.scss`; keep view-specific styles with their components.
+- Move complex error handling and related state updates into private helpers or support services instead of expanding inline `catchError` pipelines.
 
 
 # Perspectives

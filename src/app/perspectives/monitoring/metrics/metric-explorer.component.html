@@ -1,0 +1,161 @@
+<div class="explorer-builder">
+  <fieldset class="resource-picker" aria-label="Resources">
+    @if (resources.length > 0) {
+      <label class="resource-select-all">
+        <input
+          type="checkbox"
+          [checked]="allExplorerResourcesSelected"
+          [indeterminate]="someExplorerResourcesSelected"
+          [disabled]="selectableExplorerResources.length === 0"
+          aria-label="Select all resources for the metrics query"
+          (change)="toggleAllExplorerResources($event)">
+        <span>Select all resources</span>
+      </label>
+      <div class="resource-options">
+        @for (resource of resources; track resource.id) {
+          @let unsupported = !!unsupportedResourceError(resource.id);
+          <label
+            class="resource-option"
+            [class.unsupported]="unsupported">
+            @if (unsupported) {
+              <span
+                class="unsupported-metric-icon"
+                role="img"
+                aria-label="Unsupported: could not read metric definitions"
+                title="Unsupported: could not read metric definitions">
+                ⚠
+              </span>
+            } @else {
+              <input
+                type="checkbox"
+                [checked]="selectedExplorerResourceIds.includes(resource.id)"
+                (change)="toggleExplorerResource(resource.id, $event)">
+            }
+            <span class="resource-option-text">
+              <strong>{{ resource.name }}</strong>
+              <small>{{ resource.type }}</small>
+            </span>
+          </label>
+        }
+      </div>
+    } @else {
+      <p class="empty-state">
+        No resources are selected. Find resources in Resource Graph to add them to your
+        global selection.
+      </p>
+    }
+  </fieldset>
+
+  <div class="query-options">
+    <label class="metric-picker">
+      <span>Metrics (select one or more)</span>
+      <select
+        #metricSelect
+        multiple
+        size="5"
+        [disabled]="loadingExplorerDefinitions || explorerMetricOptions.length === 0"
+        (change)="selectExplorerMetrics(metricSelect)">
+        @for (metric of explorerMetricOptions; track metric.name.value) {
+          <option
+            [value]="metric.name.value"
+            [selected]="selectedExplorerMetricNames.includes(metric.name.value)">
+            {{ metric.name.localizedValue || metric.name.value }}
+          </option>
+        }
+      </select>
+    </label>
+
+    <label>
+      <span>Aggregation</span>
+      <select
+        #aggregationSelect
+        [value]="selectedExplorerAggregation"
+        [disabled]="explorerAggregationOptions.length === 0"
+        (change)="selectExplorerAggregation(aggregationSelect.value)">
+        @for (aggregation of explorerAggregationOptions; track aggregation) {
+          <option [value]="aggregation">{{ aggregation }}</option>
+        }
+      </select>
+    </label>
+  </div>
+  <div class="query-actions">
+    <button
+      class="query-button"
+      type="button"
+      [disabled]="queryingExplorer || loadingExplorerDefinitions
+        || selectedExplorerResourceIds.length === 0 || selectedExplorerMetricNames.length === 0"
+      (click)="queryExplorer()">
+      {{ queryingExplorer ? 'Querying...' : 'Run query' }}
+    </button>
+  </div>
+</div>
+
+@if (loadingExplorerDefinitions) {
+  <p class="status-message" role="status">Loading metric definitions...</p>
+}
+
+@if (explorerError) {
+  <p class="error-message" role="alert">{{ explorerError }}</p>
+}
+
+@if (queryingExplorer) {
+  <p class="status-message" role="status">Querying Azure Monitor...</p>
+}
+
+@if (!loadingExplorerDefinitions && selectedExplorerResourceIds.length > 0
+  && explorerMetricOptions.length === 0 && !explorerError) {
+  <p class="empty-state">No common metrics are available for the selected resources.</p>
+}
+
+@if (explorerMetrics.length > 0) {
+  <div class="resource-metrics-list">
+    @for (group of metricsSupport.groupMetrics(explorerMetrics); track group.resource.id) {
+      <article class="resource-metrics-card">
+        <header class="resource-metrics-heading">
+          <div>
+            <h3>{{ group.resource.name }}</h3>
+            <p>{{ group.resource.type }}</p>
+          </div>
+          <span>{{ group.metrics.length }} metrics</span>
+        </header>
+        <div class="metric-grid">
+          @for (metric of group.metrics; track metric.name) {
+            <article class="metric-card">
+              <header class="metric-card-heading">
+                <h4>{{ metric.name }}</h4>
+                <span class="aggregation">{{ metric.aggregation }}</span>
+              </header>
+              @if (metric.error) {
+                <p class="error-message" role="alert">{{ metric.error }}</p>
+              } @else if (metric.points.length > 0) {
+                <p class="metric-value">
+                  {{ metricsSupport.formatMetricValue(metricsSupport.metricValue(metric.points[metric.points.length - 1], metric.aggregation)) }}
+                  <span>{{ metric.unit || '' }}</span>
+                </p>
+                <div
+                  class="metric-chart"
+                  role="img"
+                  [attr.aria-label]="metric.name + ' values for ' + metric.resource.name">
+                  @for (point of metric.points; track point.timeStamp) {
+                    <span
+                      class="metric-bar"
+                      [style.height.%]="metricsSupport.barHeight(metric, point)"
+                      [title]="(point.timeStamp | date: 'short') + ': '
+                        + metricsSupport.formatMetricValue(metricsSupport.metricValue(point, metric.aggregation))">
+                    </span>
+                  }
+                </div>
+                <div class="chart-range">
+                  <span>{{ metric.points[0].timeStamp | date: 'short' }}</span>
+                  <span>{{ metric.points[metric.points.length - 1].timeStamp | date: 'short' }}</span>
+                </div>
+              } @else {
+                <p class="empty-chart">No data is available for this time range.</p>
+              }
+            </article>
+          }
+        </div>
+      </article>
+    }
+  </div>
+}
