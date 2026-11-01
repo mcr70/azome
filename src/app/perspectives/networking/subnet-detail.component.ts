@@ -6,6 +6,10 @@ import { switchMap, takeUntil } from 'rxjs/operators';
 import { ResourceGraphService, SubnetRoutingDetail } from '@services/azure/resource-graph.service';
 import { ResourceTypeIconComponent } from '@components/resource-card/resource-type-icon.component';
 
+/**
+ * Subnet detail view showing the network security group and route table
+ * attached to a subnet, resolved via query parameters from the topology list.
+ */
 @Component({
   selector: 'app-subnet-detail',
   standalone: true,
@@ -24,6 +28,10 @@ export class SubnetDetailComponent implements OnInit, OnDestroy {
 
   constructor(private route: ActivatedRoute, private resourceGraph: ResourceGraphService) {}
 
+  /**
+   * Watches the query parameters and loads the routing detail for the
+   * referenced network security group and route table.
+   */
   ngOnInit(): void {
     this.loading = true;
 

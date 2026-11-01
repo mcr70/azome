@@ -121,7 +121,7 @@ describe('AppPerspectiveComponent', () => {
   });
 
   it('keeps the heading actions inside a narrow content area when resources are selected', () => {
-    const content = element.querySelector<HTMLElement>('.app-main-content')!;
+    const content = element.querySelector<HTMLElement>('.perspective-main-content')!;
     content.style.width = '360px';
     const filter = element.querySelector<HTMLElement>('app-text-filter')!;
     const initialTop = filter.getBoundingClientRect().top;

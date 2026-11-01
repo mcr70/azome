@@ -1,178 +1,155 @@
-<div class="resource-workspace-layout" [class.has-one-pinned-panel]="pinnedPanels.length === 1" [class.has-two-pinned-panels]="pinnedPanels.length === 2">
-  <div class="resource-groups-container">
-    @if (loading) {
-      <p class="status-message">Loading resource groups...</p>
-    }
+<div class="resource-groups-container">
+  @if (loading) {
+    <p class="status-message">Loading resource groups...</p>
+  }
 
-    @if (error) {
-      <div class="error-message" role="alert">
-        <strong>Failed to load resource groups.</strong>
-        <span>{{ error }}</span>
-      </div>
-    }
+  @if (error) {
+    <div class="error-message" role="alert">
+      <strong>Failed to load resource groups.</strong>
+      <span>{{ error }}</span>
+    </div>
+  }
 
-    @if (!loading && !error && resourceGroups.length > 0) {
-      <app-text-filter
-        label="Filter resource groups and resources by name"
-        placeholder="Search terms; prefix a term with ! to exclude it"
-        [query]="filterQuery"
-        (queryChange)="onFilterChange($event)">
-      </app-text-filter>
-    }
+  @if (!loading && !error && resourceGroups.length > 0) {
+    <app-text-filter
+      label="Filter resource groups and resources by name"
+      placeholder="Search terms; prefix a term with ! to exclude it"
+      [query]="filterQuery"
+      (queryChange)="onFilterChange($event)">
+    </app-text-filter>
+  }
 
-    @if (!loading && !error && resourceGroups.length === 0) {
-      <div class="empty-state">
-        No resource groups found or subscription empty.
-      </div>
-    }
+  @if (!loading && !error && resourceGroups.length === 0) {
+    <div class="empty-state">
+      No resource groups found or subscription empty.
+    </div>
+  }
 
-    @if (!loading && !error && loadingFilteredResources) {
-      <div class="empty-state">
-        Searching resource names...
-      </div>
-    }
+  @if (!loading && !error && loadingFilteredResources) {
+    <div class="empty-state">
+      Searching resource names...
+    </div>
+  }
 
-    @if (!loading && !error && !loadingFilteredResources && resourceGroups.length > 0 && filteredResourceGroups.length === 0) {
-      <div class="empty-state">
-        No resource groups or resources match this filter.
-      </div>
-    }
+  @if (!loading && !error && !loadingFilteredResources && resourceGroups.length > 0 && filteredResourceGroups.length === 0) {
+    <div class="empty-state">
+      No resource groups or resources match this filter.
+    </div>
+  }
 
-    @for (group of filteredResourceGroups; track group.name) {
-      <div
-        class="resource-group-card"
-        [class.expanded]="isGroupExpanded(group.name)"
-        >
-        <header class="resource-group-heading">
-          <button
-            type="button"
-            class="resource-group-header"
-            (click)="toggleGroup(group.name)"
-            [attr.aria-expanded]="isGroupExpanded(group.name)">
-            <div class="group-title">
-              <div>
-                <p class="resource-kind">Resource group</p>
-                <h2 class="group-name">
-                  <app-resource-type-icon type="resourceGroup"></app-resource-type-icon>
-                  {{ group.name }}
-                </h2>
-              </div>
+  @for (group of filteredResourceGroups; track group.name) {
+    <div
+      class="resource-group-card"
+      [class.expanded]="isGroupExpanded(group.name)"
+      >
+      <header class="resource-group-heading">
+        <button
+          type="button"
+          class="resource-group-header"
+          (click)="toggleGroup(group.name)"
+          [attr.aria-expanded]="isGroupExpanded(group.name)">
+          <div class="group-title">
+            <div>
+              <p class="resource-kind">Resource group</p>
+              <h2 class="group-name">
+                <app-resource-type-icon type="resourceGroup"></app-resource-type-icon>
+                {{ group.name }}
+              </h2>
             </div>
-            <div class="group-meta">
-              <dl class="meta-item">
-                <dt>Location</dt>
-                <dd>{{ group.location }}</dd>
-              </dl>
-              @if (group.properties?.provisioningState) {
-                <dl class="meta-item">
-                  <dt>State</dt>
-                  <dd>{{ group.properties?.provisioningState }}</dd>
-                </dl>
-              }
-              <span class="chevron" [class.open]="isGroupExpanded(group.name)"></span>
-            </div>
-          </button>
-          @if (isGroupExpanded(group.name) && !loadingResources[group.name]) {
-            <app-resource-grid-selection
-              [resources]="filteredGroupResources(group.name)"
-              [resourceGroup]="group.name"
-              [label]="group.name">
-            </app-resource-grid-selection>
-          }
-        </header>
-        @if (isGroupExpanded(group.name)) {
-          <div class="resources-panel">
-            @if (loadingResources[group.name]) {
-              <div class="loading-resources">
-                Loading resources...
-              </div>
-            }
-            @if (!loadingResources[group.name] && filteredGroupResources(group.name).length === 0) {
-              <div
-                class="no-resources"
-                >
-                @if (filterQuery.trim()) {
-                  No resources in this resource group match the filter.
-                } @else {
-                  No individual resources found in this resource group.
-                }
-              </div>
-            }
-            @if (!loadingResources[group.name] && filteredGroupResources(group.name).length > 0) {
-              <div
-                class="resource-grid" >
-                @for (resource of filteredGroupResources(group.name); track resource.id) {
-                  <app-resource-card
-                    [type]="resource.type"
-                    [name]="resource.name"
-                    [resourceId]="resource.id"
-                    [resourceGroup]="group.name"
-                    [selectable]="true"
-                    [iconSize]="18">
-                    <ng-container card-actions>
-                      <a
-                        class="resource-action"
-                        [routerLink]="['/monitoring/metrics']"
-                        [queryParams]="{ resourceId: resource.id }"
-                        [attr.aria-label]="'View metrics for ' + resource.name"
-                        title="View metrics">
-                        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                          <path
-                            d="M3 3v18h18M19 9l-5 5-4-4-3 3"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                            stroke-width="2">
-                          </path>
-                        </svg>
-                      </a>
-                      <button
-                        type="button"
-                        class="resource-action"
-                        [attr.aria-label]="'Show details for ' + resource.name"
-                        title="Resource details"
-                        (click)="selectResource(resource)">
-                        <span aria-hidden="true">i</span>
-                      </button>
-                    </ng-container>
-                    <ng-container card-metadata>
-                      <span class="resource-type">{{ getShortType(resource.type) }}</span>
-                      @if (resource.location) {
-                        <span class="resource-location">
-                          {{ resource.location }}
-                        </span>
-                      }
-                    </ng-container>
-                  </app-resource-card>
-                }
-              </div>
-            }
           </div>
+          <div class="group-meta">
+            <dl class="meta-item">
+              <dt>Location</dt>
+              <dd>{{ group.location }}</dd>
+            </dl>
+            @if (group.properties?.provisioningState) {
+              <dl class="meta-item">
+                <dt>State</dt>
+                <dd>{{ group.properties?.provisioningState }}</dd>
+              </dl>
+            }
+            <span class="chevron" [class.open]="isGroupExpanded(group.name)"></span>
+          </div>
+        </button>
+        @if (isGroupExpanded(group.name) && !loadingResources[group.name]) {
+          <app-resource-grid-selection
+            [resources]="filteredGroupResources(group.name)"
+            [resourceGroup]="group.name"
+            [label]="group.name">
+          </app-resource-grid-selection>
         }
-      </div>
-    }
-
-  </div>
-
-  @if (pinnedPanels.length > 0) {
-    <div class="pinned-panel-slots" aria-label="Pinned resource panels">
-      @for (panel of pinnedPanels; track panel) {
-        <app-resource-detail-pane
-          [panel]="panel"
-          [pinned]="true"
-          (close)="closePanel($event)"
-          (togglePin)="togglePanelPin($event)">
-        </app-resource-detail-pane>
+      </header>
+      @if (isGroupExpanded(group.name)) {
+        <div class="resources-panel">
+          @if (loadingResources[group.name]) {
+            <div class="loading-resources">
+              Loading resources...
+            </div>
+          }
+          @if (!loadingResources[group.name] && filteredGroupResources(group.name).length === 0) {
+            <div
+              class="no-resources"
+              >
+              @if (filterQuery.trim()) {
+                No resources in this resource group match the filter.
+              } @else {
+                No individual resources found in this resource group.
+              }
+            </div>
+          }
+          @if (!loadingResources[group.name] && filteredGroupResources(group.name).length > 0) {
+            <div
+              class="resource-grid" >
+              @for (resource of filteredGroupResources(group.name); track resource.id) {
+                <app-resource-card
+                  [type]="resource.type"
+                  [name]="resource.name"
+                  [resourceId]="resource.id"
+                  [resourceGroup]="group.name"
+                  [selectable]="true"
+                  [iconSize]="18">
+                  <ng-container card-actions>
+                    <a
+                      class="resource-action"
+                      [routerLink]="['/monitoring/metrics']"
+                      [queryParams]="{ resourceId: resource.id }"
+                      [attr.aria-label]="'View metrics for ' + resource.name"
+                      title="View metrics">
+                      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                        <path
+                          d="M3 3v18h18M19 9l-5 5-4-4-3 3"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2">
+                        </path>
+                      </svg>
+                    </a>
+                    <button
+                      type="button"
+                      class="resource-action"
+                      [attr.aria-label]="'Show details for ' + resource.name"
+                      title="Resource details"
+                      (click)="selectResource(resource)">
+                      <span aria-hidden="true">i</span>
+                    </button>
+                  </ng-container>
+                  <ng-container card-metadata>
+                    <span class="resource-type">{{ getShortType(resource.type) }}</span>
+                    @if (resource.location) {
+                      <span class="resource-location">
+                        {{ resource.location }}
+                      </span>
+                    }
+                  </ng-container>
+                </app-resource-card>
+              }
+            </div>
+          }
+        </div>
       }
     </div>
   }
-</div>
 
-@if (floatingPanel; as panel) {
-  <app-resource-detail-pane
-    [panel]="panel"
-    (close)="closePanel($event)"
-    (togglePin)="togglePanelPin($event)">
-  </app-resource-detail-pane>
-}
+</div>

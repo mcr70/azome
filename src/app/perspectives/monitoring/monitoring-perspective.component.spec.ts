@@ -246,7 +246,7 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
       .componentInstance as MetricsComponent;
     const explorerView = fixture.debugElement.query(By.directive(MetricExplorerComponent))
       .componentInstance as MetricExplorerComponent;
-    const mainMetricsTab = fixture.nativeElement.querySelector('.monitoring-tabs #metrics-tab');
+    const mainMetricsTab = fixture.nativeElement.querySelector('.view-tabs #metrics-tab');
     const metricsSubTabs = fixture.nativeElement.querySelector('.metrics-view .metric-tabs');
     expect(metricsView.metricView).toBe('explorer');
     expect(explorerView.selectedExplorerResourceIds).toEqual([resourceId]);

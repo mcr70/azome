@@ -19,23 +19,23 @@ import {
   ResourceDetailPanelService,
   ResourcePanelConfig
 } from '@services/azome/resource-detail-panel.service';
-
-interface AppResourceTypeGroup {
-  type: string;
-  label: string;
-  resources: AzureAppResource[];
-}
-
-interface AppResourceCategoryGroup {
-  category: AppResourceCategory;
-  types: AppResourceTypeGroup[];
-}
+import {
+  groupResourcesByCategory,
+  PerspectiveResourceCategoryGroup
+} from '../perspective-resource-groups';
+import { selectFloatingPanel, selectPinnedPanels } from '../perspective-utils';
 
 interface AppGroup {
   name: string;
   resources: AzureTaggedAppResource[];
 }
 
+/**
+ * Applications perspective.
+ *
+ * Shows application-centric resources either grouped by category and type, or
+ * grouped into logical applications based on the `azome-apps` resource tag.
+ */
 @Component({
   selector: 'app-app-perspective',
   standalone: true,
@@ -48,7 +48,7 @@ interface AppGroup {
     ResourceSelectionBarComponent
   ],
   templateUrl: './app-perspective.component.html',
-  styleUrl: './app-perspective.component.scss'
+  styleUrls: ['../perspective-shared.scss', './app-perspective.component.scss']
 })
 export class AppPerspectiveComponent implements OnInit, OnDestroy {
   public resources: AzureAppResource[] = [];
@@ -70,53 +70,43 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
   ) {
   }
 
-  ngOnInit(): void {
+  /** Loads the resources of the active tab and mirrors the shared panel state. */
+  public ngOnInit(): void {
     this.loadResources();
     this.panelService.panels$
       .pipe(takeUntil(this.destroy$))
       .subscribe((panels) => this.panels = panels);
   }
 
-  ngOnDestroy(): void {
+  public ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-
-  public get categoryGroups(): AppResourceCategoryGroup[] {
-    const categories = new Map<AppResourceCategory, Map<string, AzureAppResource[]>>();
-
-    for (const resource of this.filteredResources) {
-      const category = resource.category;
-      const categoryTypes = categories.get(category) ?? new Map<string, AzureAppResource[]>();
-      const resourceType = (resource.type ?? '').toLowerCase();
-      const typeResources = categoryTypes.get(resourceType) ?? [];
-
-      typeResources.push(resource);
-      categoryTypes.set(resourceType, typeResources);
-      categories.set(category, categoryTypes);
-    }
-
-    return Array.from(categories.entries())
-      .sort(([categoryA], [categoryB]) => categoryA.localeCompare(categoryB))
-      .map(([category, types]) => ({
-        category,
-        types: Array.from(types.entries())
-          .sort(([typeA], [typeB]) => typeA.localeCompare(typeB))
-          .map(([type, resources]) => ({
-            type,
-            label: this.resourceTypeLabel(type, resources[0]?.kind),
-            resources
-          }))
-      }));
+  /** Filtered resources grouped into sorted category and type sections. */
+  public get categoryGroups(): PerspectiveResourceCategoryGroup<
+    AppResourceCategory,
+    AzureAppResource
+  >[] {
+    return groupResourcesByCategory(
+      this.filteredResources,
+      (resource) => resource.category,
+      (resource) => resource.type ?? '',
+      (type, resources) => this.resourceTypeLabel(type, resources[0]?.kind)
+    );
   }
 
+  /** Application resources matching the current text filter. */
   public get filteredResources(): AzureAppResource[] {
     return this.resources.filter((resource) =>
       matchesTextFilter(this.filterQuery, resource.resourceGroup, resource.name, resource.kind)
     );
   }
 
+  /**
+   * Resources grouped into applications by their `azome-apps` tag. App names
+   * are trimmed, empty names are ignored, and each app lists a resource once.
+   */
   public get appGroups(): AppGroup[] {
     const apps = new Map<string, AzureTaggedAppResource[]>();
 
@@ -142,21 +132,28 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
       .sort((appA, appB) => appA.name.localeCompare(appB.name));
   }
 
+  /** Whether any loaded resource declares at least one app membership. */
   public get hasAppMemberships(): boolean {
     return this.taggedResources.some((resource) =>
       resource.tags['azome-apps']?.split(',').some((name) => name.trim())
     );
   }
 
+  /** Panels pinned into the side-by-side slots. */
   public get pinnedPanels(): ResourcePanelConfig[] {
-    return this.panels.filter((panel) => panel.pinned);
+    return selectPinnedPanels(this.panels);
   }
 
+  /** The floating resource details panel, if one is open. */
   public get floatingPanel(): ResourcePanelConfig | null {
-    return this.panels.find((panel) => !panel.pinned) ?? null;
+    return selectFloatingPanel(this.panels);
   }
 
-
+  /**
+   * Loads the resources of the active tab, replacing any request still in
+   * flight. The Categories tab lists app resources by type; the Apps tab loads
+   * the resources tagged with app memberships.
+   */
   public loadResources(): void {
     this.resourceRequest?.unsubscribe();
     this.loading = true;
@@ -186,6 +183,11 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Activates a view tab and loads its data when the tab actually changes.
+   *
+   * @param tab Tab to activate.
+   */
   public selectTab(tab: 'categories' | 'apps'): void {
     if (tab === this.activeTab) {
       return;
@@ -195,12 +197,13 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
     this.loadResources();
   }
 
-  private onResourceLoadError(error: unknown): void {
-    console.error('Failed to load app resources:', error);
-    this.error = 'Application resources could not be loaded. Check your subscription access and try again.';
-    this.loading = false;
-  }
-
+  /**
+   * Opens the resource details panel for a resource. Stale responses are
+   * ignored when the user clicks another card before the first one resolves.
+   *
+   * @param resourceId ARM resource ID of the clicked resource.
+   * @param event Optional click event; prevented to keep the card selection.
+   */
   public openResourceDetails(resourceId: string, event?: Event): void {
     event?.preventDefault();
     event?.stopPropagation();
@@ -232,6 +235,13 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
+  /**
+   * Returns the display label for an application resource type.
+   *
+   * @param type Full Azure resource type.
+   * @param kind Optional resource kind used to tell Function Apps apart from App Services.
+   * @returns A friendly label, falling back to the last type segment.
+   */
   public resourceTypeLabel(type: string, kind?: string): string {
     const normalizedType = type.toLowerCase();
     const normalizedKind = kind?.toLowerCase() ?? '';
@@ -248,12 +258,32 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
     return labels[normalizedType] ?? type.split('/').pop() ?? type;
   }
 
+  /**
+   * Closes a resource details panel.
+   *
+   * @param panelId Identifier of the panel to close.
+   */
   public closePanel(panelId: string): void {
     this.panelService.closePanel(panelId);
   }
 
+  /**
+   * Changes the pinned state of a resource details panel.
+   *
+   * @param panelId Identifier of the panel to pin or unpin.
+   */
   public togglePanelPin(panelId: string): void {
     this.panelService.togglePin(panelId);
   }
 
+  /**
+   * Reports a resource list load failure and resets the loading state.
+   *
+   * @param error Error raised by the Resource Graph query.
+   */
+  private onResourceLoadError(error: unknown): void {
+    console.error('Failed to load app resources:', error);
+    this.error = 'Application resources could not be loaded. Check your subscription access and try again.';
+    this.loading = false;
+  }
 }

@@ -1,9 +1,9 @@
-<section class="monitoring-perspective" aria-labelledby="monitoring-title">
+<section class="perspective-root" aria-labelledby="monitoring-title">
   <div
-    class="monitoring-workspace-layout"
+    class="perspective-workspace-layout"
     [class.has-one-pinned-panel]="pinnedPanels.length === 1"
     [class.has-two-pinned-panels]="pinnedPanels.length === 2">
-    <div class="monitoring-main-content">
+    <div class="perspective-main-content">
       <div class="perspective-heading">
         <div>
           <p class="eyebrow">Perspective</p>
@@ -24,7 +24,7 @@
         </div>
       </div>
 
-      <div class="monitoring-tabs" role="tablist" aria-label="Monitoring views">
+      <div class="view-tabs" role="tablist" aria-label="Monitoring views">
         <button
           #overviewTab
           id="overview-tab"
