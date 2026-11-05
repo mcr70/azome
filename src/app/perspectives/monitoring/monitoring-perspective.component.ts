@@ -7,7 +7,6 @@ import { Subject, Subscription } from 'rxjs';
 import { switchMap, takeUntil } from 'rxjs/operators';
 import {
   ActivityLogEvent,
-  LogAnalyticsWorkspace,
   MonitoringResource,
   MonitoringService
 } from '@services/azure/monitoring.service';
@@ -33,19 +32,18 @@ import {
 import { selectFloatingPanel, selectPinnedPanels } from '../perspective-utils';
 import { ActivityLogComponent } from './activity-log/activity-log.component';
 import { LinkedMetricResourceService } from './linked-metric-resource.service';
-import { LogAnalyticsComponent } from './log-analytics/log-analytics.component';
 import { MetricsComponent } from './metrics/metrics.component';
 import { monitoringResourceTypeLabel } from './monitoring-resource-labels';
 import { DiagnosticSettingsService } from '@services/azure/diagnostic-settings.service';
 import { DiagnosticSetting, DiagnosticSettingsResult } from '@services/azure/diagnostic-settings.model';
 
-type MonitoringTab = 'overview' | 'metrics' | 'log-analytics' | 'activity';
+type MonitoringTab = 'overview' | 'metrics' | 'activity';
 
 /**
  * Shell of the Monitoring perspective.
  *
- * Orchestrates the overview, metrics, Log Analytics, and activity log tabs,
- * loads the monitoring resource inventory and diagnostic settings, and resolves
+ * Orchestrates the overview, metrics, and activity log tabs, loads the
+ * monitoring resource inventory and diagnostic settings, and resolves
  * deep links into the Metrics view via {@link LinkedMetricResourceService}.
  */
 @Component({
@@ -56,7 +54,6 @@ type MonitoringTab = 'overview' | 'metrics' | 'log-analytics' | 'activity';
     LucideDynamicIcon,
     KqlComponent,
     ActivityLogComponent,
-    LogAnalyticsComponent,
     MetricsComponent,
     ResourceCardComponent,
     ResourceGridSelectionComponent,
@@ -72,7 +69,6 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
   public kqlWorkspace: { id: string; name: string } | null = null;
   public activeTab: MonitoringTab = 'overview';
   public resources: MonitoringResource[] = [];
-  public workspaces: LogAnalyticsWorkspace[] = [];
   public activityEvents: ActivityLogEvent[] = [];
   public loadingActivity = false;
   public activityError: string | null = null;
@@ -189,7 +185,6 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (resources) => {
           this.resources = resources;
-          this.workspaces = this.toWorkspaces(resources);
           this.loading = false;
         },
         error: (error: unknown) => {
@@ -357,27 +352,5 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
         this.linkedMetricResourceError = state.error;
         this.linkedMetricResourceLoading = state.loading;
       });
-  }
-
-  /**
-   * Extracts the Log Analytics workspaces from the monitoring resource list.
-   *
-   * @param resources All monitoring resources of the subscription.
-   * @returns Workspace summaries for the Log Analytics tab.
-   */
-  private toWorkspaces(resources: MonitoringResource[]): LogAnalyticsWorkspace[] {
-    return resources
-      .filter((resource) => resource.type.toLowerCase()
-        === 'microsoft.operationalinsights/workspaces')
-      .map((resource) => ({
-        id: resource.id,
-        name: resource.name,
-        resourceGroup: resource.resourceGroup,
-        location: resource.location,
-        properties: {
-          customerId: resource.properties?.customerId,
-          retentionInDays: resource.properties?.retentionInDays
-        }
-      }));
   }
 }

@@ -49,26 +49,11 @@
           [attr.aria-selected]="activeTab === 'metrics'"
           [tabIndex]="activeTab === 'metrics' ? 0 : -1"
           (click)="selectTab('metrics')"
-          (keydown.arrowright)="selectTab('log-analytics'); logAnalyticsTab.focus(); $event.preventDefault()"
+          (keydown.arrowright)="selectTab('activity'); activityTab.focus(); $event.preventDefault()"
           (keydown.arrowleft)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
           (keydown.home)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
           (keydown.end)="selectTab('activity'); activityTab.focus(); $event.preventDefault()">
           Metrics
-        </button>
-        <button
-          #logAnalyticsTab
-          id="log-analytics-tab"
-          type="button"
-          role="tab"
-          aria-controls="log-analytics-panel"
-          [attr.aria-selected]="activeTab === 'log-analytics'"
-          [tabIndex]="activeTab === 'log-analytics' ? 0 : -1"
-          (click)="selectTab('log-analytics')"
-          (keydown.arrowright)="selectTab('activity'); activityTab.focus(); $event.preventDefault()"
-          (keydown.arrowleft)="selectTab('metrics'); metricsTab.focus(); $event.preventDefault()"
-          (keydown.home)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
-          (keydown.end)="selectTab('activity'); activityTab.focus(); $event.preventDefault()">
-          Log Analytics
         </button>
         <button
           #activityTab
@@ -80,14 +65,14 @@
           [tabIndex]="activeTab === 'activity' ? 0 : -1"
           (click)="selectTab('activity')"
           (keydown.arrowright)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
-          (keydown.arrowleft)="selectTab('log-analytics'); logAnalyticsTab.focus(); $event.preventDefault()"
+          (keydown.arrowleft)="selectTab('metrics'); metricsTab.focus(); $event.preventDefault()"
           (keydown.home)="selectTab('overview'); overviewTab.focus(); $event.preventDefault()"
           (keydown.end)="selectTab('activity'); activityTab.focus(); $event.preventDefault()">
           Activity log
         </button>
       </div>
 
-      @if (loading && (activeTab === 'overview' || activeTab === 'log-analytics')) {
+      @if (loading && activeTab === 'overview') {
         <p class="status-message" role="status">Loading monitoring resources...</p>
       }
 
@@ -258,17 +243,6 @@
             [initialResourceLoading]="linkedMetricResourceLoading"
             [initialResourceError]="linkedMetricResourceError">
           </app-monitoring-metrics>
-        }
-      </section>
-
-      <section
-        id="log-analytics-panel"
-        class="monitoring-section"
-        role="tabpanel"
-        aria-labelledby="log-analytics-tab"
-        [hidden]="activeTab !== 'log-analytics'">
-        @if (activeTab === 'log-analytics' && !loading && !error) {
-          <app-log-analytics [workspaces]="workspaces"></app-log-analytics>
         }
       </section>
 

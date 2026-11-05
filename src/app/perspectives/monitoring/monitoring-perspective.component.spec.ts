@@ -129,7 +129,6 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
     element.querySelector<HTMLButtonElement>('[aria-label="Query logs for second"]')?.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.kqlWorkspace).toEqual({ id: 'workspace-two', name: 'second' });
-    expect(fixture.componentInstance.workspaces[1].properties.customerId).toBe('workspace-two');
     expect(logs.getTables).toHaveBeenCalledOnceWith('workspace-two');
     expect(logs.getActiveTableNames).toHaveBeenCalledOnceWith('workspace-two');
     expect(element.querySelector('dialog')?.open).toBeTrue();

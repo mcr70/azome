@@ -57,7 +57,7 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
   public error: string | null = null;
   public panels: ResourcePanelConfig[] = [];
   public filterQuery = '';
-  public activeTab: 'categories' | 'apps' = 'categories';
+  public activeTab: 'categories' | 'apps' = 'apps';
   public taggedResources: AzureTaggedAppResource[] = [];
 
   private readonly destroy$ = new Subject<void>();

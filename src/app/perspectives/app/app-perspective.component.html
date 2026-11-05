@@ -37,20 +37,6 @@
 
       <div class="view-tabs" role="tablist" aria-label="Application views">
         <button
-          #categoriesTab
-          id="categories-tab"
-          type="button"
-          role="tab"
-          aria-controls="categories-panel"
-          [attr.aria-selected]="activeTab === 'categories'"
-          [tabIndex]="activeTab === 'categories' ? 0 : -1"
-          (click)="selectTab('categories')"
-          (keydown.arrowright)="selectTab('apps'); appsTab.focus(); $event.preventDefault()"
-          (keydown.arrowleft)="selectTab('apps'); appsTab.focus(); $event.preventDefault()"
-          (keydown.end)="selectTab('apps'); appsTab.focus(); $event.preventDefault()">
-          Categories
-        </button>
-        <button
           #appsTab
           id="apps-tab"
           type="button"
@@ -63,6 +49,20 @@
           (keydown.arrowleft)="selectTab('categories'); categoriesTab.focus(); $event.preventDefault()"
           (keydown.home)="selectTab('categories'); categoriesTab.focus(); $event.preventDefault()">
           Apps
+        </button>
+        <button
+          #categoriesTab
+          id="categories-tab"
+          type="button"
+          role="tab"
+          aria-controls="categories-panel"
+          [attr.aria-selected]="activeTab === 'categories'"
+          [tabIndex]="activeTab === 'categories' ? 0 : -1"
+          (click)="selectTab('categories')"
+          (keydown.arrowright)="selectTab('apps'); appsTab.focus(); $event.preventDefault()"
+          (keydown.arrowleft)="selectTab('apps'); appsTab.focus(); $event.preventDefault()"
+          (keydown.end)="selectTab('apps'); appsTab.focus(); $event.preventDefault()">
+          Categories
         </button>
       </div>
 
