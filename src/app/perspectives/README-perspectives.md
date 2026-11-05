@@ -87,6 +87,24 @@ a slow Activity Log response does not delay the resource views.
 
 The perspective also shows Azure activity logs and other log sources.
 
+### KQL queries and Selected Resources
+
+The KQL dialog opened from Log Analytics workspace cards integrates with the global
+**Selected resources** selection:
+- **Tailored resource queries:** When one or more resources are selected across any
+  perspective, the KQL editor provides tailored query presets matching each resource's
+  type and optimal log table (e.g., `FunctionAppLogs` for Azure Functions with key
+  fields such as `LogLevel`, `Message`, and `ExceptionDetails`, `AppServiceConsoleLogs`
+  for App Services, `ContainerAppConsoleLogs_CL` for Container Apps, and `AzureDiagnostics`
+  for Key Vaults or generic resources).
+- **Automatic projection pre-fill:** If a single resource is selected when opening the
+  dialog with an empty query, the editor automatically initializes with that resource's
+  tailored query and sensible projection (`take 100`), eliminating the need to look up
+  table names or copy ARM resource IDs.
+- **Multi-resource options:** When multiple resources are selected, the toolbar offers a
+  menu to quickly switch between queries for individual resources, a combined query
+  if they share the same table, or a fallback combined `AzureDiagnostics` query.
+
 Overview lists diagnostic settings in a separate group using the shared resource
 cards. Source-to-destination connections are shown in the resource detail pane,
 not on the cards. Discovery uses paginated Resource Graph inventory followed by ARM

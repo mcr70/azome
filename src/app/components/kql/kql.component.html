@@ -54,6 +54,46 @@
 
       <div class="query-pane">
         <form (ngSubmit)="runQuery()">
+          @if (selectedResourceQueries.length > 0) {
+            <div class="resource-query-bar">
+              <span class="resource-query-label">Selected:</span>
+              @if (selectedResourceQueries.length === 1) {
+                <button
+                  type="button"
+                  class="resource-query-button"
+                  [disabled]="loading"
+                  (click)="applyResourceQuery(selectedResourceQueries[0])"
+                  [title]="selectedResourceQueries[0].description">
+                  {{ selectedResourceQueries[0].label }}
+                </button>
+              } @else {
+                <details
+                  #resourceQueriesMenu
+                  class="resource-queries-menu"
+                  (keydown.escape)="resourceQueriesMenu.open = false; $event.preventDefault(); $event.stopPropagation()">
+                  <summary aria-label="Selected resources queries">
+                    <span>{{ selectedResourceQueryLabel || ('Query selected (' + selectedResources.length + ')') }}</span>
+                    <svg [lucideIcon]="chevronIcon" [size]="16" aria-hidden="true"></svg>
+                  </summary>
+                  <ul class="resource-query-list" aria-label="Query options for selected resources">
+                    @for (option of selectedResourceQueries; track option.label) {
+                      <li>
+                        <button
+                          type="button"
+                          class="resource-query-select"
+                          [class.selected]="selectedResourceQueryLabel === option.label"
+                          [disabled]="loading"
+                          (click)="applyResourceQuery(option); resourceQueriesMenu.open = false"
+                          [title]="option.description">
+                          <span>{{ option.label }}</span>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                </details>
+              }
+            </div>
+          }
           <div class="saved-query-controls">
             <details #savedQueriesMenu class="saved-queries-menu"
               (keydown.escape)="savedQueriesMenu.open = false; $event.preventDefault(); $event.stopPropagation()">

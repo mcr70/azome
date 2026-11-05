@@ -31,6 +31,15 @@ import {
   LogAnalyticsService,
   LogAnalyticsTable
 } from '@services/azure/log-analytics.service';
+import {
+  ResourceKqlQueryOption,
+  buildDefaultResourceKqlQuery,
+  buildResourceKqlQueries
+} from './kql-resource-query';
+import {
+  ResourceSelectionService,
+  SelectedAzureResource
+} from '@services/azome/resource-selection.service';
 
 const SAVED_KQL_QUERIES_KEY = 'azome.savedKqlQueries';
 const RESULTS_PAGE_SIZE = 50;
@@ -65,6 +74,7 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
   public editorExtensions: QueryEditorExtensions = this.createEditorExtensions([]);
   public savedQueries: SavedKqlQuery[] = [];
   public selectedSavedQueryName = '';
+  public selectedResourceQueryLabel = '';
   public queryName = '';
   public savedQueryError: string | null = null;
   public query = '';
@@ -83,11 +93,15 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
   public tablesError: string | null = null;
   public queryError: string | null = null;
 
+  private lastAppliedResourceQuery = '';
   private tablesSubscription?: Subscription;
   private querySubscription?: Subscription;
   private readonly resultPages = new Map<number, number>();
 
-  constructor(private logAnalytics: LogAnalyticsService) {
+  constructor(
+    private readonly logAnalytics: LogAnalyticsService,
+    private readonly resourceSelection: ResourceSelectionService
+  ) {
     this.loadSavedQueries();
   }
 
@@ -107,6 +121,8 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
     this.activityError = null;
     this.results = null;
     this.query = '';
+    this.lastAppliedResourceQuery = '';
+    this.selectedResourceQueryLabel = '';
     this.queryName = '';
     this.selectedSavedQueryName = '';
     this.tableFilter = '';
@@ -115,6 +131,7 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
     if (this.workspaceId) {
       this.loadTables();
     }
+    this.initializeDefaultQuery();
   }
 
   ngOnDestroy(): void {
@@ -156,15 +173,80 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
         if (this.sourceTablesPanel?.nativeElement.open) {
           this.scanSourceTables();
         }
+        if (!this.query.trim()) {
+          this.initializeDefaultQuery();
+        }
       },
       error: (error: unknown) => this.tablesError = this.errorMessage(error)
     });
+  }
+
+  /**
+   * The list of currently selected Azure resources.
+   */
+  public get selectedResources(): readonly SelectedAzureResource[] {
+    return this.resourceSelection.selectedResources;
+  }
+
+  /**
+   * Tailored KQL query options based on the currently selected resources and workspace tables.
+   */
+  public get selectedResourceQueries(): ResourceKqlQueryOption[] {
+    return buildResourceKqlQueries(
+      this.resourceSelection.selectedResources,
+      this.tables
+    );
+  }
+
+  /**
+   * Populates the query editor with a tailored resource query.
+   *
+   * @param option The selected query option to apply.
+   */
+  public applyResourceQuery(option: ResourceKqlQueryOption): void {
+    this.query = option.query;
+    this.lastAppliedResourceQuery = option.query;
+    this.selectedResourceQueryLabel = option.label;
+    this.selectedSavedQueryName = '';
+    this.queryName = '';
+    this.selectedTable = null;
+  }
+
+  /**
+   * Handles user-driven changes to the query editor text.
+   *
+   * @param newQuery Updated KQL query string.
+   */
+  public onQueryChange(newQuery: string): void {
+    this.query = newQuery;
+    if (newQuery !== this.lastAppliedResourceQuery) {
+      this.selectedResourceQueryLabel = '';
+    }
+  }
+
+  /**
+   * Initializes the query editor with a default query from selected resources if available.
+   */
+  private initializeDefaultQuery(): void {
+    if (!this.query.trim()) {
+      const options = buildResourceKqlQueries(
+        this.resourceSelection.selectedResources,
+        this.tables
+      );
+      if (options.length > 0) {
+        this.query = options[0].query;
+        this.lastAppliedResourceQuery = options[0].query;
+        this.selectedResourceQueryLabel = options[0].label;
+      }
+    }
   }
 
   public selectTable(table: LogAnalyticsSchemaTable): void {
     this.resetSourceTables();
     this.selectedTable = table;
     this.selectedSavedQueryName = '';
+    this.selectedResourceQueryLabel = '';
+    this.lastAppliedResourceQuery = '';
     this.queryName = '';
     const hasCategory = table.columns.some((column) => column.name === 'Category');
     this.query = hasCategory
@@ -225,6 +307,8 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
     }
     this.resetSourceTables();
     this.query = savedQuery.query;
+    this.lastAppliedResourceQuery = '';
+    this.selectedResourceQueryLabel = '';
     this.queryName = savedQuery.name;
     this.selectedSavedQueryName = savedQuery.name;
     this.selectedTable = null;
