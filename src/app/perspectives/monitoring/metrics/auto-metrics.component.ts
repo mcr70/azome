@@ -36,6 +36,16 @@ const METRIC_PROFILES: Record<string, string[]> = {
   ]
 };
 
+// Function apps share the microsoft.web/sites type but emit execution metrics
+// instead of meaningful HTTP metrics (e.g. timer/queue triggered functions).
+const FUNCTION_APP_PROFILE: string[] = [
+  'FunctionExecutionCount',
+  'FunctionExecutionUnits',
+  'Requests',
+  'Http5xx',
+  'MemoryWorkingSet'
+];
+
 const AUTOMATIC_METRICS_CONCURRENCY = 8;
 
 @Component({
@@ -198,10 +208,15 @@ export class AutoMetricsComponent implements OnChanges, OnDestroy {
     definitions: import('@services/azure/azure-metrics.service').AzureMetricDefinition[]
   ): MetricQuery[] {
     const type = resource.type.toLocaleLowerCase();
-    const profile = METRIC_PROFILES[type];
     const available = new Map(
       definitions.map((definition) => [definition.name.value.toLocaleLowerCase(), definition])
     );
+
+    // Only function apps expose FunctionExecutionCount, so its presence
+    // distinguishes them from regular web apps of the same resource type.
+    const profile = type === 'microsoft.web/sites' && available.has('functionexecutioncount')
+      ? FUNCTION_APP_PROFILE
+      : METRIC_PROFILES[type];
 
     const preferred = (profile ?? [])
       .map((name) => available.get(name.toLocaleLowerCase()))

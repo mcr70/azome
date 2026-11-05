@@ -48,7 +48,7 @@ export const TIME_RANGES: MetricTimeRangeOption[] = [
   { value: '6h', label: 'Last 6 hours', durationMs: 6 * 60 * 60 * 1000, interval: 'PT5M' },
   { value: '24h', label: 'Last 24 hours', durationMs: 24 * 60 * 60 * 1000, interval: 'PT15M' },
   { value: '7d', label: 'Last 7 days', durationMs: 7 * 24 * 60 * 60 * 1000, interval: 'PT1H' },
-  { value: '30d', label: 'Last 30 days', durationMs: 30 * 24 * 60 * 60 * 1000, interval: 'PT1H' }
+  { value: '30d', label: 'Last 30 days', durationMs: 30 * 24 * 60 * 60 * 1000, interval: 'PT6H' }
 ];
 
 export const METRIC_AGGREGATIONS: MetricAggregation[] = ['Average', 'Maximum', 'Total', 'Count'];
