@@ -1,0 +1,52 @@
+import { Injectable } from '@angular/core';
+
+/**
+ * Simple wrapper around the browser's `localStorage`.
+ * It stores only plain strings and never holds sensitive data.
+ */
+@Injectable({
+  providedIn: 'root',
+})
+export class LocalStorageService {
+  /**
+   * Returns the stored string for the given key, or `null` if missing.
+   *
+   * @param key Storage key.
+   * @returns Stored value, or `null` when missing or storage is unavailable.
+   */
+  getItem(key: string): string | null {
+    try {
+      return window.localStorage.getItem(key);
+    } catch {
+      // Local storage may be disabled – fall back to `null`.
+      return null;
+    }
+  }
+
+  /**
+   * Stores the string value for the given key.
+   *
+   * @param key Storage key.
+   * @param value Value to store.
+   */
+  setItem(key: string, value: string): void {
+    try {
+      window.localStorage.setItem(key, value);
+    } catch {
+      // Silently ignore write failures (e.g., private-browsing mode).
+    }
+  }
+
+  /**
+   * Removes a key from local storage.
+   *
+   * @param key Storage key.
+   */
+  removeItem(key: string): void {
+    try {
+      window.localStorage.removeItem(key);
+    } catch {
+      // ignore
+    }
+  }
+}

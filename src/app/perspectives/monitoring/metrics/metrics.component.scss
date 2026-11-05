@@ -84,28 +84,9 @@
   color: #0f766e;
 }
 
-.metric-tabs button:focus-visible,
-.time-range-control select:focus-visible {
+.metric-tabs button:focus-visible {
   outline: 2px solid #0f766e;
   outline-offset: 2px;
-}
-
-.time-range-control {
-  display: grid;
-  gap: 5px;
-  color: #475569;
-  font-size: 0.875rem;
-  font-weight: 600;
-}
-
-.time-range-control select {
-  min-height: 38px;
-  padding: 6px 30px 6px 10px;
-  border: 1px solid #94a3b8;
-  border-radius: 4px;
-  background: #ffffff;
-  color: #172033;
-  font: inherit;
 }
 
 .metrics-panel {

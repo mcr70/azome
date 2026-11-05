@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, OnChanges, SimpleChanges, ViewChild } from '@angular/core';
 import { SelectedAzureResource } from '@services/azome/resource-selection.service';
 import { ResourceGraphDialogService } from '@services/azome/resource-graph-dialog.service';
+import { TimeRangeSelectComponent } from '@components/time-range-select/time-range-select.component';
 import { AutoMetricsComponent } from './auto-metrics.component';
 import { MetricExplorerComponent } from './metric-explorer.component';
 import { MetricTimeRange, MetricView, TIME_RANGES } from './metrics.model';
@@ -9,7 +10,7 @@ import { MetricTimeRange, MetricView, TIME_RANGES } from './metrics.model';
 @Component({
   selector: 'app-monitoring-metrics',
   standalone: true,
-  imports: [CommonModule, AutoMetricsComponent, MetricExplorerComponent],
+  imports: [CommonModule, AutoMetricsComponent, MetricExplorerComponent, TimeRangeSelectComponent],
   templateUrl: './metrics.component.html',
   styleUrls: ['./metrics-shared.scss', './metrics.component.scss']
 })
@@ -22,7 +23,6 @@ export class MetricsComponent implements OnChanges {
   @ViewChild('autoMetrics') public autoMetrics?: AutoMetricsComponent;
   @ViewChild('metricExplorer') public metricExplorer?: MetricExplorerComponent;
 
-  public readonly timeRanges = TIME_RANGES;
   public readonly metricViews: MetricView[] = ['auto', 'explorer'];
   public metricView: MetricView = 'auto';
   public timeRange: MetricTimeRange = '24h';

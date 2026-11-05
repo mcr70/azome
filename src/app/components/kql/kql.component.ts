@@ -1,25 +1,13 @@
 import {
-  AfterViewInit,
-  Component,
-  ElementRef,
-  EventEmitter,
-  HostListener,
-  Input,
-  OnChanges,
-  OnDestroy,
-  Output,
-  ViewChild
+  AfterViewInit, Component, ElementRef, EventEmitter,
+  HostListener, Input, OnChanges, OnDestroy,
+  Output, ViewChild
 } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import {
-  LucideChevronDown,
-  LucideDynamicIcon,
-  LucidePlay,
-  LucideRefreshCw,
-  LucideSave,
-  LucideSquare,
-  LucideX
+  LucideChevronDown, LucideDynamicIcon, LucidePlay,
+  LucideRefreshCw, LucideSave, LucideSquare, LucideX
 } from '@lucide/angular';
 import { QueryEditorComponent } from '@components/query-editor/query-editor.component';
 import type { QueryEditorExtensions } from '@components/query-editor/query-editor.component';
@@ -27,9 +15,7 @@ import { kqlEditorExtensions } from '@components/query-editor/kql';
 import type { KqlCompletionSchema } from '@components/query-editor/kql';
 import { Subscription, catchError, finalize, forkJoin, of } from 'rxjs';
 import {
-  LogAnalyticsSchemaTable,
-  LogAnalyticsService,
-  LogAnalyticsTable
+  LogAnalyticsSchemaTable, LogAnalyticsService, LogAnalyticsTable
 } from '@services/azure/log-analytics.service';
 import {
   ResourceKqlQueryOption,
@@ -40,6 +26,7 @@ import {
   ResourceSelectionService,
   SelectedAzureResource
 } from '@services/azome/resource-selection.service';
+import { TimeRangeSelectComponent } from '@components/time-range-select/time-range-select.component';
 
 const SAVED_KQL_QUERIES_KEY = 'azome.savedKqlQueries';
 const RESULTS_PAGE_SIZE = 50;
@@ -52,7 +39,7 @@ interface SavedKqlQuery {
 @Component({
   selector: 'app-kql',
   standalone: true,
-  imports: [FormsModule, LucideDynamicIcon, QueryEditorComponent],
+  imports: [FormsModule, LucideDynamicIcon, QueryEditorComponent, TimeRangeSelectComponent],
   templateUrl: './kql.component.html',
   styleUrl: './kql.component.scss'
 })
@@ -78,7 +65,7 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
   public queryName = '';
   public savedQueryError: string | null = null;
   public query = '';
-  public timespan = 'P1D';
+  public timespan = '24h';
   public tableFilter = '';
   public tables: LogAnalyticsSchemaTable[] = [];
   public selectedTable: LogAnalyticsSchemaTable | null = null;
@@ -339,6 +326,31 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Converts the UI time-range value (MetricTimeRange) to the Log Analytics
+   * ISO-8601 duration string expected by the backend query API.
+   *
+   * @param value UI time-range value, e.g. `24h`.
+   * @returns ISO-8601 duration string, e.g. `P1D`.
+   */
+  private toLogAnalyticsTimespan(value: string): string {
+    switch (value) {
+      case '1h':
+        return 'PT1H';
+      case '6h':
+        return 'PT6H';
+      case '24h':
+        return 'P1D';
+      case '7d':
+        return 'P7D';
+      case '30d':
+        return 'P30D';
+      default:
+        // Fallback to the original value – safest default.
+        return value;
+    }
+  }
+
   public runQuery(): void {
     const query = this.query.trim();
     if (!query || !this.workspaceId || this.loading) {
@@ -348,17 +360,19 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
     this.resultPages.clear();
     this.queryError = null;
     this.loading = true;
-    this.querySubscription = this.logAnalytics.query(this.workspaceId, query, this.timespan).pipe(
-      finalize(() => this.loading = false)
-    ).subscribe({
-      next: (response) => {
-        this.results = response.tables;
-        this.queryError = response.error
-          ? `Partial results: ${this.errorMessage(response.error)}`
-          : null;
-      },
-      error: (error: unknown) => this.queryError = this.errorMessage(error)
-    });
+    const timespanParam = this.toLogAnalyticsTimespan(this.timespan);
+    this.querySubscription = this.logAnalytics
+      .query(this.workspaceId, query, timespanParam)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (response) => {
+          this.results = response.tables;
+          this.queryError = response.error
+            ? `Partial results: ${this.errorMessage(response.error)}`
+            : null;
+        },
+        error: (error: unknown) => (this.queryError = this.errorMessage(error)),
+      });
   }
 
   public cancelQuery(): void {

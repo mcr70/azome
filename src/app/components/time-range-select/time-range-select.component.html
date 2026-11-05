@@ -1,0 +1,16 @@
+<label
+  class="time-range-control"
+  [class.label-left]="labelPosition === 'left'">
+  @if (labelPosition !== 'none') {
+    <span>Time range</span>
+  }
+  <select
+    [ngModel]="value"
+    (ngModelChange)="onSelect($event)"
+    [disabled]="disabled"
+    title="Time range">
+    @for (range of timeRanges; track range.value) {
+      <option [value]="range.value">{{ range.label }}</option>
+    }
+  </select>
+</label>

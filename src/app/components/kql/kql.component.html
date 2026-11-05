@@ -139,13 +139,11 @@
             [(value)]="query"
           ></app-query-editor>
           <div class="query-actions">
-            <label for="kql-timespan">Time range</label>
-            <select id="kql-timespan" name="timespan" [(ngModel)]="timespan" [disabled]="loading">
-              <option value="PT1H">Last hour</option>
-              <option value="P1D">Last 24 hours</option>
-              <option value="P7D">Last 7 days</option>
-              <option value="P30D">Last 30 days</option>
-            </select>
+            <app-time-range-select
+              labelPosition="left"
+              [(value)]="timespan"
+              [disabled]="loading">
+            </app-time-range-select>
             <button type="button" class="icon-button run-button" (click)="runOrStopQuery()"
               [disabled]="!query.trim()"
               [title]="loading ? 'Stop running query' : 'Run query'"

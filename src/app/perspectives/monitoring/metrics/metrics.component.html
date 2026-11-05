@@ -53,17 +53,10 @@
         (click)="refreshMetrics()">
         Refresh metrics
       </button>
-      <label class="time-range-control">
-        <span>Time range</span>
-        <select
-          #timeRangeSelect
-          [value]="timeRange"
-          (change)="setTimeRange(timeRangeSelect.value)">
-          @for (range of timeRanges; track range.value) {
-            <option [value]="range.value">{{ range.label }}</option>
-          }
-        </select>
-      </label>
+      <app-time-range-select
+        [value]="timeRange"
+        (valueChange)="setTimeRange($event)">
+      </app-time-range-select>
     </div>
   </header>
 
