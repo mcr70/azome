@@ -36,6 +36,7 @@ import { MetricsComponent } from './metrics/metrics.component';
 import { monitoringResourceTypeLabel } from './monitoring-resource-labels';
 import { DiagnosticSettingsService } from '@services/azure/diagnostic-settings.service';
 import { DiagnosticSetting, DiagnosticSettingsResult } from '@services/azure/diagnostic-settings.model';
+import { ResourceDetailsActionComponent } from '@app/components/resource-card/actions/resource-details-action.component';
 
 type MonitoringTab = 'overview' | 'metrics' | 'activity';
 
@@ -59,8 +60,9 @@ type MonitoringTab = 'overview' | 'metrics' | 'activity';
     ResourceGridSelectionComponent,
     ResourceDetailPaneComponent,
     ResourceSelectionBarComponent,
-    TextFilterComponent
-  ],
+    TextFilterComponent,
+    ResourceDetailsActionComponent
+],
   templateUrl: './monitoring-perspective.component.html',
   styleUrls: ['../perspective-shared.scss', './monitoring-perspective.component.scss']
 })

@@ -24,6 +24,7 @@ import {
   PerspectiveResourceCategoryGroup
 } from '../perspective-resource-groups';
 import { selectFloatingPanel, selectPinnedPanels } from '../perspective-utils';
+import { ResourceDetailsActionComponent } from '@app/components/resource-card/actions/resource-details-action.component';
 
 interface AppGroup {
   name: string;
@@ -45,8 +46,9 @@ interface AppGroup {
     ResourceCardComponent,
     ResourceGridSelectionComponent,
     TextFilterComponent,
-    ResourceSelectionBarComponent
-  ],
+    ResourceSelectionBarComponent,
+    ResourceDetailsActionComponent
+],
   templateUrl: './app-perspective.component.html',
   styleUrls: ['../perspective-shared.scss', './app-perspective.component.scss']
 })
@@ -198,42 +200,29 @@ export class AppPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Opens the resource details panel for a resource. Stale responses are
-   * ignored when the user clicks another card before the first one resolves.
+   * Opens the resource details panel for a resource.
    *
-   * @param resourceId ARM resource ID of the clicked resource.
-   * @param event Optional click event; prevented to keep the card selection.
+   * @param resourceId ARM resource ID of the selected resource.
    */
-  public openResourceDetails(resourceId: string, event?: Event): void {
-    event?.preventDefault();
-    event?.stopPropagation();
-
-    const requestId = ++this.detailRequestId;
+  public selectResourceById(resourceId: string): void {
     this.loadingDetails = true;
+
     this.resourceGraph.getResourceDetails(resourceId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (details: AzureResourceDetail | null) => {
-          if (requestId !== this.detailRequestId) {
-            return;
-          }
-
+        next: (details) => {
           if (details) {
             this.panelService.openPanel(details);
           }
-
           this.loadingDetails = false;
         },
-        error: (error: unknown) => {
-          if (requestId !== this.detailRequestId) {
-            return;
-          }
-
-          console.error('Failed to fetch app resource details:', error);
+        error: (err) => {
+          console.error('Failed to fetch resource details:', err);
           this.loadingDetails = false;
         }
       });
   }
+
 
   /**
    * Returns the display label for an application resource type.

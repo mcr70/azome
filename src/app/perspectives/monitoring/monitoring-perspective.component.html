@@ -198,15 +198,13 @@
                     [resourceGroup]="setting.resourceGroup"
                     [selectable]="true">
                     <ng-container card-actions>
-                      <button
-                        class="resource-action details-action"
-                        type="button"
-                        [attr.aria-label]="'Show diagnostic connections for ' + setting.source.name"
-                        (click)="openResourceDetails(setting.id, $event)"
-                        title="Diagnostic setting details">
-                        <span aria-hidden="true">i</span>
-                      </button>
+                      <app-resource-details-action
+                        [resourceId]="setting.id"
+                        [resourceName]="setting.name"
+                        (detailsClick)="openResourceDetails($event.resourceId, $event.event)">
+                      </app-resource-details-action>
                     </ng-container>
+                    
                     <ng-container card-metadata>
                       <span>{{ setting.resourceGroup || 'Subscription' }}</span>
                       <span>{{ setting.location || 'Global' }}</span>
@@ -311,15 +309,13 @@
           <svg [lucideIcon]="searchIcon" [size]="18" aria-hidden="true"></svg>
         </button>
       }
-      <button
-        class="resource-action details-action"
-        type="button"
-        [attr.aria-label]="'Show details for ' + resource.name"
-        (click)="openResourceDetails(resource.id, $event)"
-        title="Resource details">
-        <span aria-hidden="true">i</span>
-      </button>
+      <app-resource-details-action
+        [resourceId]="resource.id"
+        [resourceName]="resource.name"
+        (detailsClick)="openResourceDetails($event.resourceId, $event.event)">
+      </app-resource-details-action>
     </ng-container>
+
     <ng-container card-metadata>
       <span>{{ resource.resourceGroup }}</span>
       <span>{{ resource.location || 'Global' }}</span>

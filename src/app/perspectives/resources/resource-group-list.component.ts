@@ -13,6 +13,9 @@ import { TextFilterComponent } from '@components/text-filter/text-filter.compone
 import { matchesTextFilter } from '@app/utils/text-filter';
 import { ResourceSelectionService } from '@services/azome/resource-selection.service';
 import { shortResourceTypeName } from '../perspective-utils';
+import { ResourceDetailsActionComponent } from '@app/components/resource-card/actions/resource-details-action.component';
+import { ResourceMetricsActionComponent } from '@app/components/resource-card/actions/resource-metrics-action.component';
+
 
 /**
  * Expandable resource group list of the Resources perspective.
@@ -27,10 +30,10 @@ import { shortResourceTypeName } from '../perspective-utils';
   imports: [
     ResourceTypeIconComponent,
     ResourceCardComponent,
-    RouterLink,
     ResourceGridSelectionComponent,
-    TextFilterComponent
-  ],
+    TextFilterComponent,
+    ResourceMetricsActionComponent, ResourceDetailsActionComponent
+],
   templateUrl: './resource-group-list.component.html',
   styleUrls: ['../perspective-shared.scss', './resource-group-list.component.scss']
 })
@@ -227,6 +230,32 @@ export class ResourceGroupListComponent implements OnInit, OnDestroy {
         }
       });
   }
+
+
+  /**
+   * Opens the resource details panel for a resource.
+   *
+   * @param resourceId ARM resource ID of the selected resource.
+   */
+  public selectResourceById(resourceId: string): void {
+    this.loadingDetails = true;
+
+    this.resourceGraphService.getResourceDetails(resourceId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (details) => {
+          if (details) {
+            this.panelService.openPanel(details);
+          }
+          this.loadingDetails = false;
+        },
+        error: (err) => {
+          console.error('Failed to fetch resource details:', err);
+          this.loadingDetails = false;
+        }
+      });
+  }
+
 
   /**
    * Returns the short display name of a full resource type.

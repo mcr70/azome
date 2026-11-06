@@ -22,6 +22,7 @@ import {
   PerspectiveResourceCategoryGroup
 } from '../perspective-resource-groups';
 import { selectFloatingPanel, selectPinnedPanels } from '../perspective-utils';
+import { ResourceDetailsActionComponent } from '@app/components/resource-card/actions/resource-details-action.component';
 
 /**
  * Data perspective.
@@ -38,8 +39,9 @@ import { selectFloatingPanel, selectPinnedPanels } from '../perspective-utils';
     ResourceGridSelectionComponent,
     DataBrowsePaneComponent,
     TextFilterComponent,
-    ResourceSelectionBarComponent
-  ],
+    ResourceSelectionBarComponent,
+    ResourceDetailsActionComponent
+],
   templateUrl: './data-perspective.component.html',
   styleUrls: ['../perspective-shared.scss', './data-perspective.component.scss']
 })
@@ -156,6 +158,30 @@ export class DataPerspectiveComponent implements OnInit, OnDestroy {
           }
 
           console.error('Failed to fetch resource details:', error);
+          this.loadingDetails = false;
+        }
+      });
+  }
+
+  /**
+   * Opens the resource details panel for a resource.
+   *
+   * @param resourceId ARM resource ID of the selected resource.
+   */
+  public selectResourceById(resourceId: string): void {
+    this.loadingDetails = true;
+
+    this.resourceGraph.getResourceDetails(resourceId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (details) => {
+          if (details) {
+            this.panelService.openPanel(details);
+          }
+          this.loadingDetails = false;
+        },
+        error: (err) => {
+          console.error('Failed to fetch resource details:', err);
           this.loadingDetails = false;
         }
       });
