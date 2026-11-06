@@ -1,5 +1,6 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+// src/app/perspectives/networking/networking-perspective.component.ts
 
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import {
@@ -22,6 +23,10 @@ import {
   shortResourceTypeName
 } from '../perspective-utils';
 
+import { ResourceNsgActionComponent } from '@app/components/resource-card/actions/resource-nsg-action.component';
+import { ResourceSubnetActionComponent } from '@app/components/resource-card/actions/resource-subnet-action.component';
+import { ResourceRouteTableActionComponent } from '@app/components/resource-card/actions/resource-route-table-action.component';
+
 /**
  * Networking perspective.
  *
@@ -39,8 +44,10 @@ import {
     ResourceCardComponent,
     ResourceGridSelectionComponent,
     TextFilterComponent,
-    ResourceSelectionBarComponent
-  ],
+    ResourceSelectionBarComponent,
+    ResourceNsgActionComponent,
+    ResourceRouteTableActionComponent
+],
   templateUrl: './networking-perspective.component.html',
   styleUrls: ['../perspective-shared.scss', './networking-perspective.component.scss']
 })
@@ -61,7 +68,9 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
     private readonly panelService: ResourceDetailPanelService
   ) {}
 
-  /** Loads the network topologies and mirrors the shared panel state. */
+  /** 
+   * Loads the network topologies and mirrors the shared panel state. 
+   */
   public ngOnInit(): void {
     this.loadTopologies();
     this.panelService.panels$
@@ -69,6 +78,9 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
       .subscribe((panels) => this.panels = panels);
   }
 
+  /** 
+   * Cleans up subscriptions when the component is destroyed. 
+   */
   public ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
@@ -86,7 +98,7 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
 
   /**
    * Opens resource details for a node selected in the network graph.
-   *
+   * 
    * @param resourceId ARM resource ID of the selected graph node.
    */
   public onGraphResourceSelect(resourceId: string): void {
@@ -97,7 +109,7 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
    * Opens the resource details panel for an ARM top-level resource such as a
    * network security group or a route table. The full resource JSON is
    * fetched via the Azure Resource Graph API.
-   *
+   * 
    * @param resourceId ARM resource ID; ignored when empty (unassigned NSG/route table).
    * @param event Optional click event; prevented to keep the card selection.
    */
@@ -130,7 +142,7 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
 
   /**
    * Applies a new text filter to the topology list.
-   *
+   * 
    * @param query Filter text entered by the user.
    */
   public onFilterChange(query: string): void {
@@ -140,7 +152,7 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
 
   /**
    * Returns the short display name of a full resource type.
-   *
+   * 
    * @param fullType Full Azure resource type.
    * @returns The last type segment, or "Resource" when the type is empty.
    */
@@ -150,7 +162,7 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
 
   /**
    * Builds the ARM resource ID of a subnet.
-   *
+   * 
    * @param topologyId Virtual network resource ID.
    * @param subnetName Subnet name inside the virtual network.
    * @returns The subnet resource ID.
@@ -162,7 +174,7 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
   /**
    * Maps the subnets of a virtual network into selectable resources for the
    * subnet grid selection.
-   *
+   * 
    * @param topology Virtual network topology.
    * @returns Selection entries for every subnet of the network.
    */
@@ -177,7 +189,7 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
 
   /**
    * Closes a resource details panel.
-   *
+   * 
    * @param panelId Identifier of the panel to close.
    */
   public closePanel(panelId: string): void {
@@ -186,7 +198,7 @@ export class NetworkingPerspectiveComponent implements OnInit, OnDestroy {
 
   /**
    * Changes the pinned state of a resource details panel.
-   *
+   * 
    * @param panelId Identifier of the panel to pin or unpin.
    */
   public togglePanelPin(panelId: string): void {

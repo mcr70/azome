@@ -1,0 +1,12 @@
+<button
+    type="button"
+    class="control-btn resource-action"
+    [attr.aria-label]="'Show details for NSG ' + nsgName"
+    [title]="'View NSG: ' + nsgName"
+    (click)="onClick($event)">
+    <app-resource-type-icon
+    type="Microsoft.Network/networkSecurityGroups"
+    [size]="16">
+    </app-resource-type-icon>
+    {{ nsgName }}
+</button>
