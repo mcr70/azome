@@ -25,6 +25,7 @@ import {
 } from '../perspective-resource-groups';
 import { selectFloatingPanel, selectPinnedPanels } from '../perspective-utils';
 import { ResourceDetailsActionComponent } from '@app/components/resource-card/actions/resource-details-action.component';
+import { ResourceMetricsActionComponent } from '@app/components/resource-card/actions/resource-metrics-action.component';
 
 interface AppGroup {
   name: string;
@@ -47,7 +48,8 @@ interface AppGroup {
     ResourceGridSelectionComponent,
     TextFilterComponent,
     ResourceSelectionBarComponent,
-    ResourceDetailsActionComponent
+    ResourceDetailsActionComponent,
+    ResourceMetricsActionComponent
 ],
   templateUrl: './app-perspective.component.html',
   styleUrls: ['../perspective-shared.scss', './app-perspective.component.scss']

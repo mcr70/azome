@@ -220,6 +220,11 @@
     [resourceGroup]="resource.resourceGroup"
     [selectable]="true">
     <ng-container card-actions>
+      <app-resource-metrics-action
+        [resourceId]="resource.id"
+        [resourceName]="resource.name">
+      </app-resource-metrics-action>                    
+
       <app-resource-details-action
         [resourceId]="resource.id"
         [resourceName]="resource.name"

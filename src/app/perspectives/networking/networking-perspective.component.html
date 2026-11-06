@@ -120,31 +120,19 @@
                     </ng-container>
                     <ng-container card-footer>
                       <div class="controls">
-                        @if (subnet.networkSecurityGroupId) {
-                          <button
-                            type="button"
-                            class="control-btn"
-                            (click)="openResourceDetails(subnet.networkSecurityGroupId, $event)">
-                            <app-resource-type-icon
-                              type="Microsoft.Network/networkSecurityGroups"
-                              [size]="16">
-                            </app-resource-type-icon>
-                            {{ subnet.networkSecurityGroupName }}
-                          </button>
+                        @if (subnet.networkSecurityGroupId && subnet.networkSecurityGroupName) {
+                          <app-resource-nsg-action
+                            [nsgId]="subnet.networkSecurityGroupId"
+                            [nsgName]="subnet.networkSecurityGroupName"
+                            (nsgClick)="openResourceDetails($event.resourceId, $event.event)">
+                          </app-resource-nsg-action>
                         }
                         @if (subnet.routeTableName) {
-                          <button
-                            type="button"
-                            class="control-btn"
-                            [class.unassigned]="!subnet.routeTableName"
-                            [disabled]="!subnet.routeTableId"
-                            (click)="openResourceDetails(subnet.routeTableId, $event)">
-                            <app-resource-type-icon
-                              type="Microsoft.Network/routeTables"
-                              [size]="16">
-                            </app-resource-type-icon>
-                            {{ subnet.routeTableName }}
-                          </button>
+                          <app-resource-route-table-action
+                            [routeTableId]="subnet.routeTableId"
+                            [routeTableName]="subnet.routeTableName"
+                            (routeTableClick)="openResourceDetails($event.resourceId, $event.event)">
+                          </app-resource-route-table-action>
                         }
                       </div>
                     </ng-container>
