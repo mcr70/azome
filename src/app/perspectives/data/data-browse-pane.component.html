@@ -1,0 +1,23 @@
+<dialog #dialog class="storage-backdrop" aria-labelledby="storage-dialog-title"
+    (cancel)="$event.preventDefault(); $event.stopPropagation(); close.emit()">
+    <section class="storage-dialog">
+    <header class="storage-header">
+        <div>
+        <h2 id="storage-dialog-title">{{ resource.name }}</h2>
+        <p class="workspace-name">Browse data</p>
+        </div>
+        <button type="button" class="icon-button" title="Close" aria-label="Close storage browser dialog"
+        (click)="close.emit()">
+        <svg [lucideIcon]="closeIcon" [size]="20" aria-hidden="true"></svg>
+        </button>
+    </header>
+
+    <div class="storage-content">
+        @if (browserComponent) {
+        <ng-container
+            *ngComponentOutlet="browserComponent; inputs: { resource: resource, view: 'browse' }">
+        </ng-container>
+        }
+    </div>
+    </section>
+</dialog>

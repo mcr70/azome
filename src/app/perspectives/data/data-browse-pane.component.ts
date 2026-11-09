@@ -1,50 +1,42 @@
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, Output, ViewChild, AfterViewInit, OnDestroy } from '@angular/core';
 import { AzureResourceDetail } from '@services/azure/resource-graph.service';
 import {
   ResourceDetailComponentType,
   ResourceDetailRegistryService
 } from '@services/azome/resource-detail.registry';
-import { DetailsPanelComponent } from '@components/details-panel/details-panel.component';
+import { LucideDynamicIcon, LucideX } from '@lucide/angular';
 
 /**
- * Hosts the data-plane browser of a resource inside a details panel. The
+ * Hosts the data-plane browser of a resource inside a centered modal dialog. The
  * concrete browser component is resolved from the resource detail registry.
  */
 @Component({
   selector: 'app-data-browse-pane',
   standalone: true,
-  imports: [CommonModule, DetailsPanelComponent],
-  template: `
-    <app-details-panel
-      [isOpen]="true"
-      [title]="resource.name"
-      [subtitle]="'Browse data'"
-      [variant]="variant"
-      [showPanelActions]="false"
-      (close)="close.emit()">
-      <ng-container
-        *ngComponentOutlet="browserComponent; inputs: { resource: resource, view: 'browse' }">
-      </ng-container>
-    </app-details-panel>
-  `,
-  styles: [
-    ':host { display: block; min-width: 0; }'
-  ]
+  imports: [CommonModule, LucideDynamicIcon],
+  templateUrl: './data-browse-pane.component.html',
+  styleUrls: ['./data-browse-pane.component.scss']
 })
-export class DataBrowsePaneComponent {
+export class DataBrowsePaneComponent implements AfterViewInit, OnDestroy {
   @Input({ required: true }) resource!: AzureResourceDetail;
   @Output() close = new EventEmitter<void>();
+  @ViewChild('dialog') private dialog!: ElementRef<HTMLDialogElement>;
+
+  public readonly closeIcon = LucideX.icon;
 
   constructor(private readonly registry: ResourceDetailRegistryService) {}
+
+  ngAfterViewInit(): void {
+    this.dialog.nativeElement.showModal();
+  }
+
+  ngOnDestroy(): void {
+    this.dialog?.nativeElement.close();
+  }
 
   /** Browser component registered for the resource type, if any. */
   public get browserComponent(): ResourceDetailComponentType | null {
     return this.registry.getComponent(this.resource.type);
-  }
-
-  /** Panel width variant preferred by the resolved browser component. */
-  public get variant(): 'default' | 'wide' | 'content' {
-    return this.browserComponent?.preferredVariant || 'wide';
   }
 }
