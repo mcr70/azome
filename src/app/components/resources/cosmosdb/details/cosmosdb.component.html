@@ -113,9 +113,12 @@
     }
   </div>
 }
+
 @if (view === 'browse') {
   <section class="cosmos-browser">
     <h3 class="resource-detail-heading">Browse data</h3>
+    
+    <!-- Ylärivi: Database, Container, Search mode, Max results ja + New Document -->
     <div class="browser-controls">
       <label>
         Database
@@ -125,6 +128,7 @@
           }
         </select>
       </label>
+      
       <label>
         Container
         <select [(ngModel)]="container">
@@ -133,6 +137,7 @@
           }
         </select>
       </label>
+      
       <label>
         Search
         <select [(ngModel)]="searchMode">
@@ -142,34 +147,64 @@
           <option value="sql">SQL query</option>
         </select>
       </label>
-      @if (searchMode !== 'all' && searchMode !== 'sql') {
-        <label>
-          {{ searchMode === 'id' ? 'Document ID' : 'Partition key (' + (partitionPath || 'unknown') + ')' }}
-          <input [(ngModel)]="searchValue" (keyup.enter)="search()" />
-        </label>
-      }
-      @if (searchMode === 'sql') {
-        <label class="sql-query-control">
-          SQL query
-          <textarea
-            [(ngModel)]="sqlQuery"
-            rows="3"
-            spellcheck="false"
-            placeholder="SELECT * FROM c WHERE c.category = 'settings'"
-          ></textarea>
-        </label>
-      }
+
       <label>
         Max results
         <input type="number" min="1" max="100" [(ngModel)]="resultLimit" />
       </label>
-      <button type="button" (click)="search()" [disabled]="loading || !container">
-        Search
-      </button>
-      <button type="button" (click)="openCreateDialog()" [disabled]="loading || !container">
+
+      <button type="button" class="action-button secondary-button" (click)="openCreateDialog()" [disabled]="loading || !container">
         + New Document
       </button>
     </div>
+
+    <!-- Alarivi: Full scan -haun Search-nappi omalla rivillään oikealla -->
+    @if (searchMode === 'all') {
+      <div class="search-input-row">
+        <div class="sql-query-actions">
+          <button type="button" class="action-button primary-search-btn" (click)="search()" [disabled]="loading || !container">
+            Search
+          </button>
+        </div>
+      </div>
+    }
+
+    <!-- Alarivi: Partition key tai ID -haku ja Search-nappi vierekkäin omalla alemmalla rivillään -->
+    @if (searchMode === 'partition' || searchMode === 'id') {
+      <div class="search-input-row">
+        <label class="search-input-label">
+          <span>{{ searchMode === 'id' ? 'Document ID' : 'Partition key (' + (partitionPath || 'unknown') + ')' }}</span>
+          <div class="search-input-group">
+            <input [(ngModel)]="searchValue" (keyup.enter)="search()" placeholder="Enter search value..." />
+            <button type="button" class="action-button primary-search-btn" (click)="search()" [disabled]="loading || !container">
+              Search
+            </button>
+          </div>
+        </label>
+      </div>
+    }
+
+    <!-- Alarivi: SQL-kyselyeditori ja Search-nappi oikealle alignoituna alapuolella -->
+    @if (searchMode === 'sql') {
+      <div class="sql-query-row">
+        <label class="sql-query-label">
+          <span>SQL query</span>
+          <app-query-editor
+            [value]="sqlQuery"
+            [editorId]="'cosmos-sql-editor'"
+            [ariaLabel]="'Cosmos DB SQL query editor'"
+            [extensions]="cosmosSqlEditorExtensions"
+            (valueChange)="sqlQuery = $event">
+          </app-query-editor>
+        </label>
+        <div class="sql-query-actions">
+          <button type="button" class="action-button primary-search-btn" (click)="search()" [disabled]="loading || !container">
+            Search
+          </button>
+        </div>
+      </div>
+    }
+
     @if (createDialogOpen) {
       <div class="document-dialog-backdrop">
         <section class="document-dialog" role="dialog" aria-modal="true" aria-labelledby="new-document-title">
@@ -207,17 +242,21 @@
         </section>
       </div>
     }
+
     @if (loading) {
       <p class="browser-status">Loading Cosmos DB data…</p>
     }
+
     @if (error && !createDialogOpen) {
       <p class="browser-error">{{ error }}</p>
     }
+
     @if (!loading && !error && databases.length === 0) {
       <p class="browser-status">
         No databases found or access is unavailable.
       </p>
     }
+
     @if (documents.length > 0) {
       <div class="document-table-wrapper">
         <table class="document-table">
@@ -257,6 +296,7 @@
         </table>
       </div>
     }
+
     @if (!loading && !error && container && documents.length === 0) {
       <p class="browser-status">
         No results loaded. Run a search to browse documents.

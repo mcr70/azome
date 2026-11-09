@@ -1,4 +1,4 @@
-import type { QueryEditorExtensions } from './query-editor.component';
+import type { QueryEditorExtensions } from '../query-editor.component';
 
 export interface KqlTableSchema {
   name: string;

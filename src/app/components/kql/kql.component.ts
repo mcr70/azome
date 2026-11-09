@@ -11,8 +11,8 @@ import {
 } from '@lucide/angular';
 import { QueryEditorComponent } from '@components/query-editor/query-editor.component';
 import type { QueryEditorExtensions } from '@components/query-editor/query-editor.component';
-import { kqlEditorExtensions } from '@components/query-editor/kql';
-import type { KqlCompletionSchema } from '@components/query-editor/kql';
+import { kqlEditorExtensions } from '@components/query-editor/extensions/kql';
+import type { KqlCompletionSchema } from '@components/query-editor/extensions/kql';
 import { Subscription, catchError, finalize, forkJoin, of } from 'rxjs';
 import {
   LogAnalyticsSchemaTable, LogAnalyticsService, LogAnalyticsTable

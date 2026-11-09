@@ -4,6 +4,9 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { PanelVariant, ResourceDetailItem } from '@services/azome/resource-detail.registry';
 import { CosmosDbService, CosmosResource } from '@services/azure/cosmosdb.service';
+import { CommonModule } from '@angular/common';
+import { QueryEditorComponent } from '@app/components/query-editor/query-editor.component';
+import { cosmosSqlEditorExtensions } from '@app/components/query-editor/extensions/cosmos-sql';
 
 export interface CosmosDbLocation {
   id?: string;
@@ -48,18 +51,18 @@ export interface CosmosDbProperties {
 @Component({
   selector: 'app-cosmos-db-detail',
   standalone: true,
-  imports: [FormsModule],
+  imports: [CommonModule, FormsModule, QueryEditorComponent],
   templateUrl: './cosmosdb.component.html',
   styleUrl: './cosmosdb.component.scss'
 })
 export class CosmosDbComponent implements ResourceDetailItem, OnInit {
   private readonly systemDocumentFields = new Set([
-    '_rid',
-    '_self',
-    '_etag',
-    '_attachments',
-    '_ts'
+    '_rid', '_self', '_etag', '_attachments', '_ts'
   ]);
+
+  public readonly cosmosSqlEditorExtensions = cosmosSqlEditorExtensions(() => ({
+    properties: ['id', 'name', 'category', 'status', 'partitionKey', 'properties']
+  }));
 
   @Input() resource: any;
   @Input() view: 'overview' | 'browse' = 'overview';

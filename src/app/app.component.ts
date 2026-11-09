@@ -23,7 +23,7 @@ import {
   kqlEditorExtensions,
   RESOURCE_GRAPH_COLUMNS,
   RESOURCE_GRAPH_TABLES
-} from './components/query-editor/kql';
+} from './components/query-editor/extensions/kql';
 import {
   DEFAULT_PERSPECTIVES,
   PerspectivePreference
