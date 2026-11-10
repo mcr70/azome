@@ -32,3 +32,19 @@
 .resource-detail-table td {
   overflow-wrap: anywhere;
 }
+
+.category-link {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #0284c7;
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.category-link:hover {
+  color: #0369a1;
+}

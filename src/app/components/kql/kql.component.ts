@@ -46,6 +46,8 @@ interface SavedKqlQuery {
 export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
   @Input({ required: true }) workspaceId = '';
   @Input() workspaceName = '';
+  @Input() targetResource: SelectedAzureResource | null = null;
+  @Input() targetCategory: string | null = null;
   @Output() close = new EventEmitter<void>();
   @ViewChild('dialog') private dialog!: ElementRef<HTMLDialogElement>;
   @ViewChild(QueryEditorComponent) private queryEditor?: QueryEditorComponent;
@@ -81,6 +83,13 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
   public queryError: string | null = null;
 
   private lastAppliedResourceQuery = '';
+  private resourceQueriesCache: ResourceKqlQueryOption[] | null = null;
+  private resourceQueriesCacheKey: {
+    targetResource: SelectedAzureResource | null;
+    globalResources: readonly SelectedAzureResource[];
+    tables: LogAnalyticsSchemaTable[];
+    category: string | null;
+  } | null = null;
   private tablesSubscription?: Subscription;
   private querySubscription?: Subscription;
   private readonly resultPages = new Map<number, number>();
@@ -160,7 +169,7 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
         if (this.sourceTablesPanel?.nativeElement.open) {
           this.scanSourceTables();
         }
-        if (!this.query.trim()) {
+        if (!this.query.trim() || this.query === this.lastAppliedResourceQuery) {
           this.initializeDefaultQuery();
         }
       },
@@ -169,20 +178,47 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
   }
 
   /**
-   * The list of currently selected Azure resources.
+   * The list of currently targeted Azure resources.
    */
   public get selectedResources(): readonly SelectedAzureResource[] {
+    if (this.targetResource) {
+      return [this.targetResource];
+    }
     return this.resourceSelection.selectedResources;
   }
 
   /**
    * Tailored KQL query options based on the currently selected resources and workspace tables.
+   * The result is memoized by input references because this getter runs on every change
+   * detection cycle.
    */
   public get selectedResourceQueries(): ResourceKqlQueryOption[] {
-    return buildResourceKqlQueries(
-      this.resourceSelection.selectedResources,
-      this.tables
+    const globalResources = this.resourceSelection.selectedResources;
+    const key = this.resourceQueriesCacheKey;
+
+    if (
+      this.resourceQueriesCache
+      && key
+      && key.targetResource === this.targetResource
+      && key.globalResources === globalResources
+      && key.tables === this.tables
+      && key.category === this.targetCategory
+    ) {
+      return this.resourceQueriesCache;
+    }
+
+    this.resourceQueriesCache = buildResourceKqlQueries(
+      this.selectedResources,
+      this.tables,
+      this.targetCategory ?? undefined
     );
+    this.resourceQueriesCacheKey = {
+      targetResource: this.targetResource,
+      globalResources,
+      tables: this.tables,
+      category: this.targetCategory
+    };
+    return this.resourceQueriesCache;
   }
 
   /**
@@ -215,11 +251,8 @@ export class KqlComponent implements OnChanges, AfterViewInit, OnDestroy {
    * Initializes the query editor with a default query from selected resources if available.
    */
   private initializeDefaultQuery(): void {
-    if (!this.query.trim()) {
-      const options = buildResourceKqlQueries(
-        this.resourceSelection.selectedResources,
-        this.tables
-      );
+    if (!this.query.trim() || this.query === this.lastAppliedResourceQuery) {
+      const options = this.selectedResourceQueries;
       if (options.length > 0) {
         this.query = options[0].query;
         this.lastAppliedResourceQuery = options[0].query;

@@ -20,65 +20,9 @@ describe('KqlComponent', () => {
    */
   async function editorReady(): Promise<void> {
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     await fixture.debugElement.query(By.directive(QueryEditorComponent))
       .componentInstance.whenReady();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
   }
 
   beforeEach(async () => {
@@ -101,34 +45,6 @@ describe('KqlComponent', () => {
     fixture.componentRef.setInput('workspaceId', 'workspace-one');
     fixture.componentRef.setInput('workspaceName', 'Production logs');
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
   });
 
   it('opens a modal with compact active table rows without querying table contents', () => {
@@ -143,34 +59,6 @@ describe('KqlComponent', () => {
     expect(service.query).not.toHaveBeenCalled();
     fixture.componentInstance.tableFilter = 'missing';
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     expect(element.textContent).toContain('No matching tables.');
   });
 
@@ -192,34 +80,6 @@ describe('KqlComponent', () => {
     menu.open = true;
     element.querySelector<HTMLButtonElement>('.saved-query-select')!.click();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
 
     expect(fixture.componentInstance.query).toBe('Heartbeat | take 10');
     expect(element.querySelector('.cm-content')?.textContent).toContain(
@@ -274,34 +134,6 @@ describe('KqlComponent', () => {
     (element.querySelector('.table-name') as HTMLButtonElement).click();
     fixture.componentInstance.runQuery();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     expect(service.query).toHaveBeenCalledOnceWith('workspace-one', 'Heartbeat\n| take 10', 'P1D');
     expect(element.querySelectorAll('th').length).toBe(4);
     expect(fixture.componentInstance.sourceScanDurationMs).toBeNull();
@@ -318,67 +150,11 @@ describe('KqlComponent', () => {
     fixture.componentInstance.runQuery();
     fixture.detectChanges();
 
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
-
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelectorAll('tbody tr').length).toBe(50);
     expect(element.querySelector('.pagination')?.textContent).toContain('Page 1 of 3');
     element.querySelector<HTMLButtonElement>('.pagination button[aria-label="Next page"]')!.click();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     expect(element.querySelectorAll('tbody tr').length).toBe(50);
     expect(element.querySelector('.pagination')?.textContent).toContain('Page 2 of 3');
   });
@@ -389,68 +165,12 @@ describe('KqlComponent', () => {
       { name: 'AzureActivity', columns: [{ name: 'Category', type: 'string' }] }
     ];
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     const element: HTMLElement = fixture.nativeElement;
     expect(element.querySelectorAll('.table-row').length).toBe(1);
     const scope = element.querySelector<HTMLSelectElement>('[aria-label="Table scope"]')!;
     scope.value = 'all';
     scope.dispatchEvent(new Event('change'));
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     expect(element.querySelectorAll('.table-row').length).toBe(2);
     expect(service.getActiveTableNames).toHaveBeenCalledTimes(1);
     expect(service.query).not.toHaveBeenCalled();
@@ -461,34 +181,6 @@ describe('KqlComponent', () => {
     const element: HTMLElement = fixture.nativeElement;
     element.querySelector<HTMLButtonElement>('.table-name')!.click();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     const sources = element.querySelector<HTMLDetailsElement>('.source-tables')!;
     expect(sources.open).toBeFalse();
     expect(element.querySelector('.column-info')).toBeNull();
@@ -497,34 +189,6 @@ describe('KqlComponent', () => {
     sources.open = true;
     sources.dispatchEvent(new Event('toggle'));
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     const columns = element.querySelector<HTMLDetailsElement>('.column-info')!;
     expect(columns.open).toBeTrue();
     expect(columns.textContent).toContain('Computer');
@@ -541,34 +205,6 @@ describe('KqlComponent', () => {
     sources.open = true;
     sources.dispatchEvent(new Event('toggle'));
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     expect(scan).toHaveBeenCalledTimes(1);
     expect(fixture.componentInstance.sourceTables).toEqual(schema);
     expect(fixture.componentInstance.sourceScanDurationMs).toBeGreaterThanOrEqual(0);
@@ -580,34 +216,6 @@ describe('KqlComponent', () => {
     expect(scan).toHaveBeenCalledTimes(1);
     element.querySelector<HTMLButtonElement>('.rescan-button')!.click();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     expect(scan).toHaveBeenCalledTimes(2);
     expect(fixture.componentInstance.sourceTables).toEqual([]);
     expect(element.textContent).toContain('No known source tables found.');
@@ -622,34 +230,6 @@ describe('KqlComponent', () => {
     fixture.componentInstance.scanSourceTables();
     expect(fixture.componentInstance.sourceTables).toEqual([...schema, activity]);
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     const columns = (fixture.nativeElement as HTMLElement)
       .querySelectorAll<HTMLDetailsElement>('.column-info');
     expect(columns[0].open).toBeTrue();
@@ -678,34 +258,6 @@ describe('KqlComponent', () => {
     service.getActiveTableNames.and.returnValue(throwError(() => new Error('Usage denied')));
     fixture.componentInstance.loadTables();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     const element: HTMLElement = fixture.nativeElement;
     expect(element.textContent).toContain('Usage denied');
     expect(fixture.componentInstance.tableScope).toBe('all');
@@ -719,34 +271,6 @@ describe('KqlComponent', () => {
     service.getActiveTableNames.and.returnValue(of([]));
     fixture.componentInstance.loadTables();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     const element: HTMLElement = fixture.nativeElement;
     expect(element.textContent).toContain('No tables with recorded ingestion in the last 30 days.');
     expect(element.querySelector('[role="alert"]')).toBeNull();
@@ -778,34 +302,6 @@ describe('KqlComponent', () => {
     expect(response.observed).toBeTrue();
     fixture.componentRef.setInput('workspaceId', 'workspace-two');
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     expect(response.observed).toBeFalse();
     expect(fixture.componentInstance.loading).toBeFalse();
     expect(fixture.componentInstance.query).toBe('');
@@ -832,34 +328,6 @@ describe('KqlComponent', () => {
     service.getTables.and.returnValue(throwError(() => new Error('Schema unavailable')));
     fixture.componentInstance.loadTables();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     const element: HTMLElement = fixture.nativeElement;
     expect(element.textContent).toContain('Schema unavailable');
     service.getTables.and.returnValue(of(schema));
@@ -873,34 +341,6 @@ describe('KqlComponent', () => {
     fixture.componentInstance.query = 'invalid';
     fixture.componentInstance.runQuery();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     expect(element.textContent).toContain('Unknown column\nInvalid query');
     expect(fixture.componentInstance.loading).toBeFalse();
   });
@@ -926,34 +366,6 @@ describe('KqlComponent', () => {
     fixture.componentInstance.query = 'FunctionAppLogsS | take 10';
     fixture.componentInstance.runQuery();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     const message = fixture.componentInstance.queryError!;
     expect(message.startsWith('SEM0100: Failed to resolve table')).toBeTrue();
     expect(message).toContain("'FunctionAppLogsS'");
@@ -1006,36 +418,8 @@ describe('KqlComponent', () => {
     fixture.componentInstance.query = 'Heartbeat';
     fixture.componentInstance.runQuery();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     const element: HTMLElement = fixture.nativeElement;
-    expect(element.textContent).toContain('Partial results: PartialError: Result truncated');
+    expect(element.textContent).toContain('Result truncated');
     expect(element.textContent).toContain('No results.');
   });
 
@@ -1090,34 +474,6 @@ describe('KqlComponent', () => {
     fixture.componentInstance.saveQuery();
     fixture.componentInstance.query = 'Other query';
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     const element: HTMLElement = fixture.nativeElement;
     const menu = element.querySelector<HTMLDetailsElement>('.saved-queries-menu')!;
     menu.open = true;
@@ -1128,34 +484,6 @@ describe('KqlComponent', () => {
     menu.open = true;
     element.querySelector<HTMLButtonElement>('.delete-query')!.click();
     fixture.detectChanges();
-
-  it('updates dropdown label on resource selection and resets after manual edit', () => {
-    const comp = fixture.componentInstance as any;
-    const selectionService = comp.resourceSelection as any;
-    const testResource = {
-      id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
-      type: 'Microsoft.Web/sites',
-      name: 'func',
-      resourceGroup: 'rg'
-    };
-    selectionService.select(testResource);
-    // Provide minimal table matching resolver expectations
-    comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
-    // Re‑run change detection to rebuild resource queries
-    comp.ngOnChanges();
-    fixture.detectChanges();
-
-    const option = comp.selectedResourceQueries[0];
-    expect(option).toBeTruthy();
-
-    // Apply resource‑specific query and verify label updates
-    comp.applyResourceQuery(option);
-    expect(comp.selectedResourceQueryLabel).toBe(option.label);
-
-    // Simulate user editing the query -> label should reset
-    comp.onQueryChange('Heartbeat | take 10');
-    expect(comp.selectedResourceQueryLabel).toBe('');
-  });
     expect(fixture.componentInstance.savedQueries).toEqual([]);
     expect(JSON.parse(storage.get('azome.savedKqlQueries')!)).toEqual([]);
     expect(fixture.componentInstance.query).toBe('Heartbeat | take 10');
@@ -1193,6 +521,30 @@ describe('KqlComponent', () => {
   });
 
   describe('resource-aware query support', () => {
+    it('updates dropdown label on resource selection and resets after manual edit', () => {
+      const comp = fixture.componentInstance as any;
+      const selectionService = comp.resourceSelection as any;
+      const testResource = {
+        id: '/subscriptions/111/resourceGroups/rg/providers/Microsoft.Web/sites/func',
+        type: 'Microsoft.Web/sites',
+        name: 'func',
+        resourceGroup: 'rg'
+      };
+      selectionService.select(testResource);
+      comp.tables = [{ name: 'FunctionAppLogs', columns: [] }];
+      comp.ngOnChanges();
+      fixture.detectChanges();
+
+      const option = comp.selectedResourceQueries[0];
+      expect(option).toBeTruthy();
+
+      comp.applyResourceQuery(option);
+      expect(comp.selectedResourceQueryLabel).toBe(option.label);
+
+      comp.onQueryChange('Heartbeat | take 10');
+      expect(comp.selectedResourceQueryLabel).toBe('');
+    });
+
     it('automatically initializes query for a single selected resource', () => {
       const selection = TestBed.inject(ResourceSelectionService);
       selection.select({
@@ -1238,12 +590,11 @@ describe('KqlComponent', () => {
 
       const menu = resourceFixture.nativeElement.querySelector('.resource-queries-menu') as HTMLDetailsElement;
       expect(menu).not.toBeNull();
-      expect(menu.textContent).toContain('Query selected (2)');
+      expect(menu.textContent).toContain('fn-checkout');
 
       const buttons = resourceFixture.nativeElement.querySelectorAll('.resource-query-select') as NodeListOf<HTMLButtonElement>;
       expect(buttons.length).toBeGreaterThanOrEqual(2);
 
-      // Click second option (Key Vault)
       buttons[1].click();
       resourceFixture.detectChanges();
 
@@ -1253,6 +604,34 @@ describe('KqlComponent', () => {
       selection.deselect(res1.id);
       selection.deselect(res2.id);
       resourceFixture.destroy();
+    });
+
+    it('uses explicit targetResource and targetCategory over global resource selection', () => {
+      const selection = TestBed.inject(ResourceSelectionService);
+      selection.select({
+        id: '/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.Web/sites/other',
+        name: 'other',
+        type: 'microsoft.web/sites',
+        resourceGroup: 'rg'
+      });
+
+      const targetFixture = TestBed.createComponent(KqlComponent);
+      targetFixture.componentRef.setInput('workspaceId', 'workspace-one');
+      targetFixture.componentRef.setInput('targetResource', {
+        id: '/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.KeyVault/vaults/kv-target',
+        name: 'kv-target',
+        type: 'microsoft.keyvault/vaults',
+        resourceGroup: 'rg'
+      });
+      targetFixture.componentRef.setInput('targetCategory', 'AuditEvent');
+      targetFixture.detectChanges();
+
+      expect(targetFixture.componentInstance.query).toContain('kv-target');
+      expect(targetFixture.componentInstance.query).toContain('AuditEvent');
+      expect(targetFixture.componentInstance.query).not.toContain('other');
+
+      selection.deselect('/subscriptions/sub-1/resourceGroups/rg/providers/Microsoft.Web/sites/other');
+      targetFixture.destroy();
     });
   });
 });

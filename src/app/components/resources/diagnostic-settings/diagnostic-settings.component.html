@@ -1,13 +1,13 @@
 @if (resource; as setting) {
   <section aria-label="Diagnostic setting connections">
     <h3 class="resource-detail-heading">Source resource</h3>
-      {{ setting.source.name }}
+    {{ setting.source.name }}
 
     <h3 class="resource-detail-heading">Destinations</h3>
     @for (destination of setting.destinations; track destination.id) {
       <div class="destination">
         <strong>{{ destination.label }}</strong>
-          {{ destination.name }}
+        {{ destination.name }}
         @if (destination.label === 'Event Hubs authorization rule') {
           <span>Event hub: {{ destination.eventHubName || 'Default (not specified)' }}</span>
         }
@@ -39,7 +39,19 @@
           @for (log of setting.properties.logs; track $index) {
             <tr>
               <td>Log</td>
-              <td>{{ log.categoryGroup ?? log.category ?? '-' }}</td>
+              <td>
+                @if (hasLogAnalyticsDestination(setting) && log.enabled) {
+                  <button
+                    type="button"
+                    class="category-link"
+                    (click)="openLogQuery(setting, log)"
+                    [title]="'Open KQL query for ' + (log.categoryGroup ?? log.category ?? 'log')">
+                    {{ log.categoryGroup ?? log.category ?? '-' }}
+                  </button>
+                } @else {
+                  {{ log.categoryGroup ?? log.category ?? '-' }}
+                }
+              </td>
               <td>{{ log.enabled ? 'Enabled' : 'Disabled' }}</td>
             </tr>
           }
@@ -57,6 +69,16 @@
       <p class="resource-detail-empty">No log or metric categories configured.</p>
     }
   </section>
+
+  @if (kqlDialogOpen && kqlWorkspaceId) {
+    <app-kql
+      [workspaceId]="kqlWorkspaceId"
+      [workspaceName]="kqlWorkspaceName"
+      [targetResource]="kqlTargetResource"
+      [targetCategory]="kqlTargetCategory"
+      (close)="closeKqlDialog()">
+    </app-kql>
+  }
 } @else {
   <p class="resource-detail-empty">No diagnostic setting details available.</p>
 }

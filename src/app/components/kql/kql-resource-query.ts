@@ -31,19 +31,73 @@ interface TableDefinition {
 }
 
 /**
+ * Returns a list of default projected columns for well-known log tables.
+ *
+ * @param tableName Name of the table.
+ * @returns Array of suggested column names.
+ */
+function knownCategoryColumns(tableName: string): string[] {
+  const lower = tableName.toLowerCase();
+  if (lower === 'apptraces') {
+    return ['TimeGenerated', 'Message', 'SeverityLevel', 'OperationName'];
+  }
+  if (lower === 'functionapplogs') {
+    return ['TimeGenerated', 'Message', 'FunctionName', 'ExceptionDetails'];
+  }
+  if (lower === 'appservicehttplogs') {
+    return ['TimeGenerated', 'CsMethod', 'CsUriStem', 'ScStatus', 'TimeTaken'];
+  }
+  if (lower === 'appserviceconsolelogs') {
+    return ['TimeGenerated', 'ResultDescription', 'Level'];
+  }
+  if (lower === 'containerappconsolelogs_cl') {
+    return ['TimeGenerated', 'Log_s', 'ContainerName_s'];
+  }
+  if (lower === 'keyvaultvaultevents') {
+    return ['TimeGenerated', 'OperationName', 'ResultType', 'CallerIPAddress'];
+  }
+  if (lower === 'storagebloblogs') {
+    return ['TimeGenerated', 'OperationName', 'StatusCode', 'CallerIpAddress', 'Uri'];
+  }
+  return ['TimeGenerated', 'OperationName', 'ResultType', 'ResultDescription'];
+}
+
+/**
  * Resolves the primary log table definitions and projections for a resource type.
  *
  * @param resource Selected resource to inspect.
  * @param availableTableNames Set of table names present in the target workspace.
+ * @param category Optional diagnostic category to target.
  * @returns Table definition with candidate table name and projection columns.
  */
 function resolveResourceTable(
   resource: SelectedAzureResource,
-  availableTableNames?: ReadonlySet<string>
+  availableTableNames?: ReadonlySet<string>,
+  category?: string
 ): TableDefinition {
   const type = resource.type.toLowerCase();
   const name = resource.name.toLowerCase();
   const has = (t: string): boolean => availableTableNames ? availableTableNames.has(t) : false;
+  const cleanCategory = category?.trim();
+  const hasSpecificCategory = cleanCategory !== undefined
+    && cleanCategory.length > 0
+    && cleanCategory.toLowerCase() !== 'alllogs';
+
+  // If a specific category matches a table in the workspace, target that dedicated table
+  if (hasSpecificCategory && availableTableNames) {
+    for (const tName of availableTableNames) {
+      if (tName.toLowerCase() === cleanCategory.toLowerCase()) {
+        return {
+          tableName: tName,
+          columns: knownCategoryColumns(tName),
+          // FunctionAppLogs mixes host and function entries; keep the function-only filter
+          ...(tName.toLowerCase() === 'functionapplogs'
+            ? { additionalFilter: '| where Category startswith "Function"' }
+            : {})
+        };
+      }
+    }
+  }
 
   // Azure Functions: target function execution logs with wide Message projection
   if (
@@ -56,15 +110,33 @@ function resolveResourceTable(
         columns: ['TimeGenerated', 'Message', 'SeverityLevel', 'OperationName']
       };
     }
+    const additionalFilter = hasSpecificCategory && cleanCategory.toLowerCase() !== 'functionapplogs'
+      ? `| where Category =~ '${cleanCategory}'`
+      : '| where Category startswith "Function"';
     return {
       tableName: 'FunctionAppLogs',
       columns: ['TimeGenerated', 'Message', 'FunctionName', 'ExceptionDetails'],
-      additionalFilter: '| where Category startswith "Function"'
+      additionalFilter
     };
   }
 
   // Azure App Service
   if (type.includes('microsoft.web/sites')) {
+    if (hasSpecificCategory) {
+      if (cleanCategory.toLowerCase() === 'appservicehttplogs'
+        || (has('AppServiceHTTPLogs') && !has('AppServiceConsoleLogs'))) {
+        return {
+          tableName: 'AppServiceHTTPLogs',
+          columns: ['TimeGenerated', 'CsMethod', 'CsUriStem', 'ScStatus', 'TimeTaken']
+        };
+      }
+      if (cleanCategory.toLowerCase() === 'appserviceconsolelogs') {
+        return {
+          tableName: 'AppServiceConsoleLogs',
+          columns: ['TimeGenerated', 'ResultDescription', 'Level']
+        };
+      }
+    }
     if (has('AppServiceHTTPLogs') && !has('AppServiceConsoleLogs')) {
       return {
         tableName: 'AppServiceHTTPLogs',
@@ -95,7 +167,8 @@ function resolveResourceTable(
     }
     return {
       tableName: 'AzureDiagnostics',
-      columns: ['TimeGenerated', 'OperationName', 'ResultType', 'CallerIPAddress']
+      columns: ['TimeGenerated', 'OperationName', 'ResultType', 'CallerIPAddress'],
+      ...(hasSpecificCategory ? { additionalFilter: `| where Category =~ '${cleanCategory}'` } : {})
     };
   }
 
@@ -110,7 +183,8 @@ function resolveResourceTable(
   // Fallback to AzureDiagnostics
   return {
     tableName: 'AzureDiagnostics',
-    columns: ['TimeGenerated', 'ResultDescription', 'Category', 'OperationName', 'ResultType']
+    columns: ['TimeGenerated', 'ResultDescription', 'Category', 'OperationName', 'ResultType'],
+    ...(hasSpecificCategory ? { additionalFilter: `| where Category =~ '${cleanCategory}'` } : {})
   };
 }
 
@@ -304,11 +378,13 @@ function parseTableSchemas(
  *
  * @param resources Currently selected Azure resources.
  * @param availableTables Optional set, array of table names, or schema table objects from the workspace.
+ * @param category Optional diagnostic category to target.
  * @returns List of query options including individual resource queries and combined options.
  */
 export function buildResourceKqlQueries(
   resources: readonly SelectedAzureResource[],
-  availableTables?: readonly SchemaTableLike[] | ReadonlySet<string> | readonly string[]
+  availableTables?: readonly SchemaTableLike[] | ReadonlySet<string> | readonly string[],
+  category?: string
 ): ResourceKqlQueryOption[] {
   if (resources.length === 0) {
     return [];
@@ -319,7 +395,7 @@ export function buildResourceKqlQueries(
 
   // Generate a tailored query for each individual selected resource
   for (const resource of resources) {
-    const tableDef = resolveResourceTable(resource, tableNames);
+    const tableDef = resolveResourceTable(resource, tableNames, category);
     const validColumns = filterValidColumns(tableDef.tableName, tableDef.columns, schemaMap);
     options.push({
       label: `${resource.name} (${tableDef.tableName})`,
@@ -327,6 +403,36 @@ export function buildResourceKqlQueries(
       query: formatKqlQuery(tableDef.tableName, [resource], validColumns, tableDef.additionalFilter),
       tableName: tableDef.tableName,
       resourceId: resource.id
+    });
+  }
+
+  // When multiple resources are selected, offer combined query options
+  if (resources.length > 1) {
+    const tableDefs = resources.map((r) => resolveResourceTable(r, tableNames, category));
+    const firstTable = tableDefs[0].tableName;
+    const sameTable = tableDefs.every((d) => d.tableName === firstTable);
+
+    if (sameTable) {
+      const validCols = filterValidColumns(firstTable, tableDefs[0].columns, schemaMap);
+      options.unshift({
+        label: `All selected (${firstTable})`,
+        description: `Combined logs for all selected resources from ${firstTable}`,
+        query: formatKqlQuery(firstTable, resources, validCols, tableDefs[0].additionalFilter),
+        tableName: firstTable
+      });
+    }
+
+    // Offer combined AzureDiagnostics option
+    const diagCols = filterValidColumns(
+      'AzureDiagnostics',
+      ['TimeGenerated', 'ResultDescription', 'Category', 'OperationName', 'ResultType'],
+      schemaMap
+    );
+    options.push({
+      label: 'All selected (AzureDiagnostics)',
+      description: 'Combined logs for all selected resources in AzureDiagnostics',
+      query: formatKqlQuery('AzureDiagnostics', resources, diagCols),
+      tableName: 'AzureDiagnostics'
     });
   }
 
@@ -338,12 +444,14 @@ export function buildResourceKqlQueries(
  *
  * @param resources Currently selected Azure resources.
  * @param availableTables Optional set, array of table names, or schema table objects from the workspace.
+ * @param category Optional diagnostic category to target.
  * @returns Formatted default KQL query or null.
  */
 export function buildDefaultResourceKqlQuery(
   resources: readonly SelectedAzureResource[],
-  availableTables?: readonly SchemaTableLike[] | ReadonlySet<string> | readonly string[]
+  availableTables?: readonly SchemaTableLike[] | ReadonlySet<string> | readonly string[],
+  category?: string
 ): string | null {
-  const options = buildResourceKqlQueries(resources, availableTables);
+  const options = buildResourceKqlQueries(resources, availableTables, category);
   return options.length > 0 ? options[0].query : null;
 }

@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { AppComponent } from './app.component';
 import { By } from '@angular/platform-browser';
 import { QueryEditorComponent } from './components/query-editor/query-editor.component';
-import { RESOURCE_GRAPH_TABLES } from './components/query-editor/kql';
+import { RESOURCE_GRAPH_TABLES } from './components/query-editor/extensions/kql';
 import { AuthService } from './services/azome/auth.service';
 import { ResourceSelectionService } from './services/azome/resource-selection.service';
 import { ResourceGraphDialogService } from './services/azome/resource-graph-dialog.service';

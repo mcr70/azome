@@ -179,5 +179,44 @@ describe('kql-resource-query', () => {
       expect(combined?.query).toContain(functionResource.id);
       expect(combined?.query).toContain(keyVaultResource.id);
     });
+
+    it('keeps the function category filter when category matches the FunctionAppLogs table', () => {
+      const options = buildResourceKqlQueries(
+        [functionResource],
+        ['FunctionAppLogs', 'Operation'],
+        'FunctionAppLogs'
+      );
+
+      expect(options[0].tableName).toBe('FunctionAppLogs');
+      expect(options[0].query).toContain('| where Category startswith "Function"');
+    });
+
+    it('tailors single resource query when a specific diagnostic category is provided', () => {
+      const httpOptions = buildResourceKqlQueries(
+        [appServiceResource],
+        ['AppServiceHTTPLogs', 'AppServiceConsoleLogs'],
+        'AppServiceHTTPLogs'
+      );
+      expect(httpOptions[0].tableName).toBe('AppServiceHTTPLogs');
+      expect(httpOptions[0].query).toContain('AppServiceHTTPLogs');
+      expect(httpOptions[0].query).toContain(`| where _ResourceId =~ '${appServiceResource.id}'`);
+
+      const auditOptions = buildResourceKqlQueries(
+        [keyVaultResource],
+        ['AzureDiagnostics'],
+        'AuditEvent'
+      );
+      expect(auditOptions[0].tableName).toBe('AzureDiagnostics');
+      expect(auditOptions[0].query).toContain('AzureDiagnostics');
+      expect(auditOptions[0].query).toContain('| where Category =~ \'AuditEvent\'');
+
+      const allLogsOptions = buildResourceKqlQueries(
+        [appServiceResource],
+        ['AppServiceConsoleLogs'],
+        'allLogs'
+      );
+      expect(allLogsOptions[0].tableName).toBe('AppServiceConsoleLogs');
+      expect(allLogsOptions[0].query).not.toContain('allLogs');
+    });
   });
 });
