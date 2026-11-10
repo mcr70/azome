@@ -158,6 +158,25 @@ export class CosmosDbService {
     return this.http.put<CosmosResource<T>>(this.url(account, path), document, { headers });
   }
 
+
+  /**
+   * Deletes a document by ID and partition key value.
+   */
+  deleteDocument(
+    account: string,
+    database: string,
+    container: string,
+    documentId: string,
+    partitionKeyValue: unknown
+  ): Observable<void> {
+    const path = `dbs/${encodeURIComponent(database)}/colls/${encodeURIComponent(container)}/docs/${encodeURIComponent(documentId)}`;
+    const headers = this.headers()
+      .set('x-ms-documentdb-partitionkey', JSON.stringify([partitionKeyValue]));
+
+    return this.http.delete<void>(this.url(account, path), { headers });
+  }
+
+
   private scanDocuments(
     account: string,
     database: string,

@@ -1,0 +1,73 @@
+<div class="table-container">
+  <table class="generic-table">
+    <thead>
+      <tr>
+        @if (selectable) {
+          <th class="selection-col" scope="col"><span class="visually-hidden">Selection</span></th>
+        }
+        @for (col of columns; track col.key) {
+          <th scope="col">{{ col.label }}</th>
+        }
+        @if (showDelete) {
+          <th class="actions-col" scope="col"><span class="visually-hidden">Actions</span></th>
+        }
+      </tr>
+    </thead>
+    <tbody>
+      @if (rows.length === 0) {
+        <tr>
+          <td [attr.colspan]="columns.length + (selectable ? 1 : 0) + (showDelete ? 1 : 0)" class="empty-row">
+            No results.
+          </td>
+        </tr>
+      }
+      @for (row of rows; track $index; let rowIndex = $index) {
+        <tr
+          class="table-row"
+          [class.expanded]="expandedRowIndex === rowIndex"
+          (click)="onRowClick(row, rowIndex, $event)"
+        >
+          @if (selectable) {
+            <td class="selection-cell">
+              <input
+                type="checkbox"
+                class="row-checkbox"
+                [checked]="selectedIndices.has(rowIndex)"
+                (change)="onToggleSelect(rowIndex, $event)"
+              />
+            </td>
+          }
+          @for (col of columns; track col.key) {
+            <td>
+              <span class="cell-content" [title]="getCellValue(row, col.key)">
+                {{ getCellValue(row, col.key) }}
+              </span>
+            </td>
+          }
+          @if (showDelete) {
+            <td class="actions-cell">
+              <button
+                type="button"
+                class="delete-row-btn"
+                title="Delete document"
+                aria-label="Delete document"
+                (click)="onDelete(row, rowIndex, $event)"
+              >
+                🗑
+              </button>
+            </td>
+          }
+        </tr>
+        @if (expandedRowIndex === rowIndex) {
+          <tr class="expanded-detail-row">
+            <td [attr.colspan]="columns.length + (selectable ? 1 : 0) + (showDelete ? 1 : 0)">
+              <div class="expanded-content">
+                <pre>{{ row | json }}</pre>
+              </div>
+            </td>
+          </tr>
+        }
+      }
+    </tbody>
+  </table>
+</div>

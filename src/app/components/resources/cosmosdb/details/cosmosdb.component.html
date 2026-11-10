@@ -1,306 +1,161 @@
-@if (view === 'overview') {
-  <div class="cosmos-db-container">
-    <h3 class="resource-detail-heading">Cosmos DB Account Details</h3>
-    @if (!properties) {
-      <div class="resource-detail-empty">
-        No Cosmos DB details available.
-      </div>
-    }
-    @if (properties) {
-      <div class="resource-detail-table-wrapper">
-        <table class="resource-detail-table">
-          <thead>
-            <tr>
-              <th>Property</th>
-              <th>Value</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Document Endpoint</strong></td>
-              <td>
-                @if (properties.documentEndpoint) {
-                  <a [href]="properties.documentEndpoint" target="_blank" rel="noopener noreferrer">
-                    {{ properties.documentEndpoint }}
-                  </a>
-                }
-                @if (!properties.documentEndpoint) {
-                  <span>-</span>
-                }
-              </td>
-            </tr>
-            <tr>
-              <td><strong>API Type</strong></td>
-              <td>{{ properties.EnabledApiTypes || 'Sql' }}</td>
-            </tr>
-            <tr>
-              <td><strong>Provisioning State</strong></td>
-              <td>{{ properties.provisioningState || '-' }}</td>
-            </tr>
-            <tr>
-              <td><strong>Public Network Access</strong></td>
-              <td>{{ properties.publicNetworkAccess || '-' }}</td>
-            </tr>
-            <tr>
-              <td><strong>Consistency Level</strong></td>
-              <td>{{ properties.consistencyPolicy?.defaultConsistencyLevel || '-' }}</td>
-            </tr>
-            <tr>
-              <td><strong>Free Tier</strong></td>
-              <td>{{ properties.enableFreeTier ? 'Enabled' : 'Disabled' }}</td>
-            </tr>
-            <tr>
-              <td><strong>Automatic Failover</strong></td>
-              <td>{{ properties.enableAutomaticFailover ? 'Enabled' : 'Disabled' }}</td>
-            </tr>
-            <tr>
-              <td><strong>Multi-region Writes</strong></td>
-              <td>{{ properties.enableMultipleWriteLocations ? 'Enabled' : 'Disabled' }}</td>
-            </tr>
-            <tr>
-              <td><strong>Disable Key-based Auth</strong></td>
-              <td>{{ properties.disableLocalAuth ? 'Yes' : 'No' }}</td>
-            </tr>
-            <tr>
-              <td><strong>Minimal TLS Version</strong></td>
-              <td>{{ properties.minimalTlsVersion || '-' }}</td>
-            </tr>
-            @if (properties.backupPolicy) {
-              <tr>
-                <td><strong>Backup Policy</strong></td>
-                <td>
-                  {{ properties.backupPolicy.type }}
-                  @if (properties.backupPolicy.periodicModeProperties) {
-                    ({{ properties.backupPolicy.periodicModeProperties.backupStorageRedundancy }} Redundant, Interval: {{ properties.backupPolicy.periodicModeProperties.backupIntervalInMinutes }}m, Retention: {{ properties.backupPolicy.periodicModeProperties.backupRetentionIntervalInHours }}h)
-                  }
-                </td>
-              </tr>
-            }
-            <tr>
-              <td><strong>Offer Type</strong></td>
-              <td>{{ properties.databaseAccountOfferType || '-' }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    }
-    @if (properties?.locations; as locations) {
-      @if (locations.length > 0) {
-        <h3 class="resource-detail-heading" style="margin-top: 1.5rem;">Replication Locations</h3>
-        <div class="resource-detail-table-wrapper">
-          <table class="resource-detail-table">
-            <thead>
-              <tr>
-                <th>Location</th>
-                <th>Priority</th>
-                <th>Zone Redundant</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              @for (loc of locations; track loc) {
-                <tr>
-                  <td><strong>{{ loc.locationName }}</strong></td>
-                  <td>{{ loc.failoverPriority }}</td>
-                  <td>{{ loc.isZoneRedundant ? 'Yes' : 'No' }}</td>
-                  <td>{{ loc.provisioningState }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        </div>
-      }
-    }
-  </div>
-}
-
-@if (view === 'browse') {
-  <section class="cosmos-browser">
-    <h3 class="resource-detail-heading">Browse data</h3>
+<section class="cosmos-browser">
+  <h3 class="resource-detail-heading">Browse data</h3>
+  
+  <div class="browser-controls">
+    <label>
+      Database
+      <select [(ngModel)]="database" (ngModelChange)="selectDatabase()">
+        @for (item of databases; track item.id) {
+          <option [value]="item.id">{{ item.id }}</option>
+        }
+      </select>
+    </label>
     
-    <!-- Ylärivi: Database, Container, Search mode, Max results ja + New Document -->
-    <div class="browser-controls">
-      <label>
-        Database
-        <select [(ngModel)]="database" (ngModelChange)="selectDatabase()">
-          @for (item of databases; track item) {
-            <option [value]="item.id">{{ item.id }}</option>
-          }
-        </select>
-      </label>
-      
-      <label>
-        Container
-        <select [(ngModel)]="container">
-          @for (item of containers; track item) {
-            <option [value]="item.id">{{ item.id }}</option>
-          }
-        </select>
-      </label>
-      
-      <label>
-        Search
-        <select [(ngModel)]="searchMode">
-          <option value="all">Full scan</option>
-          <option value="partition">Partition key</option>
-          <option value="id">ID</option>
-          <option value="sql">SQL query</option>
-        </select>
-      </label>
+    <label>
+      Container
+      <select [(ngModel)]="container" (ngModelChange)="updatePartitionPath()">
+        @for (item of containers; track item.id) {
+          <option [value]="item.id">{{ item.id }}</option>
+        }
+      </select>
+    </label>
+    
+    <label>
+      Search
+      <select [(ngModel)]="searchMode">
+        <option value="all">Full scan</option>
+        <option value="partition">Partition key</option>
+        <option value="id">ID</option>
+        <option value="sql">SQL query</option>
+      </select>
+    </label>
 
-      <label>
-        Max results
-        <input type="number" min="1" max="100" [(ngModel)]="resultLimit" />
-      </label>
+    <label>
+      Max results
+      <input type="number" min="1" max="100" [(ngModel)]="resultLimit" />
+    </label>
 
-      <button type="button" class="action-button secondary-button" (click)="openCreateDialog()" [disabled]="loading || !container">
-        + New Document
-      </button>
+    <button type="button" class="action-button secondary-button" (click)="openCreateDialog()" [disabled]="loading || !container">
+      + New Document
+    </button>
+  </div>
+
+  @if (searchMode === 'all') {
+    <div class="search-input-row">
+      <div class="sql-query-actions">
+        <button type="button" class="action-button primary-search-btn" (click)="search()" [disabled]="loading || !container">
+          Search
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (searchMode === 'partition' || searchMode === 'id') {
+    <div class="search-input-row">
+      <label class="search-input-label">
+        <span>{{ searchMode === 'id' ? 'Document ID' : 'Partition key (' + (partitionPath || 'unknown') + ')' }}</span>
+        <div class="search-input-group">
+          <input [(ngModel)]="searchValue" (keyup.enter)="search()" placeholder="Enter search value..." />
+          <button type="button" class="action-button primary-search-btn" (click)="search()" [disabled]="loading || !container">
+            Search
+          </button>
+        </div>
+      </label>
+    </div>
+  }
+
+  @if (searchMode === 'sql') {
+    <div class="sql-query-row">
+      <label class="sql-query-label">
+        <span>SQL query</span>
+        <app-query-editor
+          [value]="sqlQuery"
+          [editorId]="'cosmos-sql-editor'"
+          [ariaLabel]="'Cosmos DB SQL query editor'"
+          [extensions]="cosmosSqlEditorExtensions"
+          (valueChange)="sqlQuery = $event">
+        </app-query-editor>
+      </label>
+      <div class="sql-query-actions">
+        <button type="button" class="action-button primary-search-btn" (click)="search()" [disabled]="loading || !container">
+          Search
+        </button>
+      </div>
+    </div>
+  }
+
+  @if (createDialogOpen) {
+    <div class="document-dialog-backdrop">
+      <section class="document-dialog" role="dialog" aria-modal="true" aria-labelledby="new-document-title">
+        <h4 id="new-document-title">Create document</h4>
+        @if (partitionPath) {
+          <p class="browser-status">
+            This container requires the <strong>{{ partitionPath }}</strong> partition key. Its value
+            is read from that property in the document JSON and sent with the request.
+          </p>
+        }
+        <label for="new-document-json">Document JSON</label>
+        <textarea
+          id="new-document-json"
+          [(ngModel)]="newDocumentJson"
+          rows="10"
+          spellcheck="false"
+        ></textarea>
+        @if (error) {
+          <p class="browser-error" role="alert">{{ error }}</p>
+        }
+        <div class="document-dialog-actions">
+          <button type="button" (click)="createDialogOpen = false" [disabled]="creatingDocument">
+            Cancel
+          </button>
+          <button type="button" (click)="createDocument()" [disabled]="creatingDocument">
+            {{ creatingDocument ? 'Creating…' : 'Create' }}
+          </button>
+        </div>
+      </section>
+    </div>
+  }
+
+  @if (loading) {
+    <p class="browser-status">Loading Cosmos DB data…</p>
+  }
+
+  @if (error && !createDialogOpen) {
+    <p class="browser-error">{{ error }}</p>
+  }
+
+@if (results !== null && results.length > 0) {
+    <div class="resource-graph-results-header" style="margin-top: 16px;">
+      @if (selectedDocumentIndices.size > 0) {  <!-- Delete selected documents button -->
+        <button
+          type="button"
+          class="action-button secondary-button"
+          style="color: #dc2626; border-color: #dc2626;"
+          (click)="deleteSelectedDocuments()"
+        >
+          Delete selected ({{ selectedDocumentIndices.size }})
+        </button>
+      }
     </div>
 
-    <!-- Alarivi: Full scan -haun Search-nappi omalla rivillään oikealla -->
-    @if (searchMode === 'all') {
-      <div class="search-input-row">
-        <div class="sql-query-actions">
-          <button type="button" class="action-button primary-search-btn" (click)="search()" [disabled]="loading || !container">
-            Search
-          </button>
-        </div>
-      </div>
-    }
+    <div class="document-table-wrapper" style="margin-top: 16px;">
+      <app-table
+        [columns]="tableColumns"
+        [rows]="results"
+        [selectable]="true"
+        [selectedIndices]="selectedDocumentIndices"
+        [expandedRowIndex]="expandedRowIndex"
+        [showDelete]="true"
+        (rowClick)="toggleRowExpansion($event.index)"
+        (deleteRow)="deleteDocument($event)"
+        (selectionChange)="updateSelection($event)"
+      ></app-table>
+    </div>
+  }
 
-    <!-- Alarivi: Partition key tai ID -haku ja Search-nappi vierekkäin omalla alemmalla rivillään -->
-    @if (searchMode === 'partition' || searchMode === 'id') {
-      <div class="search-input-row">
-        <label class="search-input-label">
-          <span>{{ searchMode === 'id' ? 'Document ID' : 'Partition key (' + (partitionPath || 'unknown') + ')' }}</span>
-          <div class="search-input-group">
-            <input [(ngModel)]="searchValue" (keyup.enter)="search()" placeholder="Enter search value..." />
-            <button type="button" class="action-button primary-search-btn" (click)="search()" [disabled]="loading || !container">
-              Search
-            </button>
-          </div>
-        </label>
-      </div>
-    }
-
-    <!-- Alarivi: SQL-kyselyeditori ja Search-nappi oikealle alignoituna alapuolella -->
-    @if (searchMode === 'sql') {
-      <div class="sql-query-row">
-        <label class="sql-query-label">
-          <span>SQL query</span>
-          <app-query-editor
-            [value]="sqlQuery"
-            [editorId]="'cosmos-sql-editor'"
-            [ariaLabel]="'Cosmos DB SQL query editor'"
-            [extensions]="cosmosSqlEditorExtensions"
-            (valueChange)="sqlQuery = $event">
-          </app-query-editor>
-        </label>
-        <div class="sql-query-actions">
-          <button type="button" class="action-button primary-search-btn" (click)="search()" [disabled]="loading || !container">
-            Search
-          </button>
-        </div>
-      </div>
-    }
-
-    @if (createDialogOpen) {
-      <div class="document-dialog-backdrop">
-        <section class="document-dialog" role="dialog" aria-modal="true" aria-labelledby="new-document-title">
-          <h4 id="new-document-title">Create document</h4>
-          @if (partitionPath) {
-            <p class="browser-status">
-              This container requires the <strong>{{ partitionPath }}</strong> partition key. Its value
-              is read from that property in the document JSON and sent with the request.
-            </p>
-          }
-          @if (!partitionPath) {
-            <p class="browser-status">
-              The container did not return partition key metadata. If creation fails, check the
-              container's partition key and include that property in the document JSON.
-            </p>
-          }
-          <label for="new-document-json">Document JSON</label>
-          <textarea
-            id="new-document-json"
-            [(ngModel)]="newDocumentJson"
-            rows="12"
-            spellcheck="false"
-          ></textarea>
-          @if (error) {
-            <p class="browser-error" role="alert">{{ error }}</p>
-          }
-          <div class="document-dialog-actions">
-            <button type="button" (click)="createDialogOpen = false" [disabled]="creatingDocument">
-              Cancel
-            </button>
-            <button type="button" (click)="createDocument()" [disabled]="creatingDocument">
-              {{ creatingDocument ? 'Creating…' : 'Create' }}
-            </button>
-          </div>
-        </section>
-      </div>
-    }
-
-    @if (loading) {
-      <p class="browser-status">Loading Cosmos DB data…</p>
-    }
-
-    @if (error && !createDialogOpen) {
-      <p class="browser-error">{{ error }}</p>
-    }
-
-    @if (!loading && !error && databases.length === 0) {
-      <p class="browser-status">
-        No databases found or access is unavailable.
-      </p>
-    }
-
-    @if (documents.length > 0) {
-      <div class="document-table-wrapper">
-        <table class="document-table">
-          <thead>
-            <tr>
-              <th class="document-expand-column"></th>
-              <th>Partition {{ partitionPath ? ' (' + partitionPath + ')' : '' }}</th>
-              <th>ID</th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (document of documents; track document; let index = $index) {
-              <tr>
-                <td class="document-expand-column">
-                  <button
-                    type="button"
-                    class="document-expand-button"
-                    [attr.aria-expanded]="expandedDocumentIndexes.has(index)"
-                    [attr.aria-label]="expandedDocumentIndexes.has(index) ? 'Hide document data' : 'Show document data'"
-                    (click)="toggleDocumentDetails(index)"
-                    >
-                    {{ expandedDocumentIndexes.has(index) ? '▼' : '▶' }}
-                  </button>
-                </td>
-                <td>{{ partitionValue(document) }}</td>
-                <td>{{ document.id || '-' }}</td>
-              </tr>
-              @if (expandedDocumentIndexes.has(index)) {
-                <tr class="document-expanded-row">
-                  <td colspan="3">
-                    <pre>{{ formattedUserData(document) }}</pre>
-                  </td>
-                </tr>
-              }
-            }
-          </tbody>
-        </table>
-      </div>
-    }
-
-    @if (!loading && !error && container && documents.length === 0) {
-      <p class="browser-status">
-        No results loaded. Run a search to browse documents.
-      </p>
-    }
-  </section>
-}
+  @if (results !== null && results.length === 0 && !loading) {
+    <p class="browser-status">
+      No results loaded. Run a search to browse documents.
+    </p>
+  }
+</section>
