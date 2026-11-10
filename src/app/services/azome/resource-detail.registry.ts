@@ -12,6 +12,9 @@ import {
   DiagnosticSettingsComponent
 } from '@components/resources/diagnostic-settings/diagnostic-settings.component';
 import {
+  DataCollectionRuleComponent
+} from '@components/resources/dcr/data-collection-rule.component';
+import {
   AppServicePlanComponent
 } from '@components/resources/app-service-plan/details/app-service-plan.component';
 import {
@@ -42,18 +45,18 @@ export class ResourceDetailRegistryService {
   private registry = new Map<string, ResourceDetailComponentType>();
 
   constructor() {
-    this.register('microsoft.network/routetables', RouteTableComponent);
-    this.register('microsoft.network/networksecuritygroups', NsgComponent);
-    this.register('microsoft.network/virtualnetworks', VnetComponent);
-    this.register('microsoft.storage/storageaccounts', StorageAccountComponent);
-    this.register('microsoft.keyvault/vaults', KeyVaultComponent);
-    this.register('microsoft.documentdb/databaseaccounts', CosmosDbComponent);
-    this.register('microsoft.operationalinsights/workspaces', LogAnalyticsWorkspaceComponent);
+    this.register('microsoft.insights/dataCollectionRules', DataCollectionRuleComponent);
     this.register('microsoft.insights/diagnosticsettings', DiagnosticSettingsComponent);
+    this.register('microsoft.keyvault/vaults', KeyVaultComponent);
+    this.register('microsoft.network/networksecuritygroups', NsgComponent);
+    this.register('microsoft.network/routetables', RouteTableComponent);
+    this.register('microsoft.network/virtualnetworks', VnetComponent);
+    this.register('microsoft.operationalinsights/workspaces', LogAnalyticsWorkspaceComponent);
+    this.register('microsoft.policyinsights/policystates', PolicyViolationDetailComponent);
+    this.register('microsoft.resources/subscriptions', SubscriptionDetailComponent);
+    this.register('microsoft.storage/storageaccounts', StorageAccountComponent);
     this.register('microsoft.web/serverfarms', AppServicePlanComponent);
     this.register('microsoft.web/sites', WebSiteComponent);
-    this.register('microsoft.resources/subscriptions', SubscriptionDetailComponent);
-    this.register('microsoft.policyinsights/policystates', PolicyViolationDetailComponent);
   }
 
   public register(resourceType: string, component: ResourceDetailComponentType): void {

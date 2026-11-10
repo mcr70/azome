@@ -1,0 +1,66 @@
+<section aria-label="Data collection rule details">
+  <div class="dcr-heading">
+    <h3 class="resource-detail-heading">Data collection rule</h3>
+  </div>
+
+  @if (properties; as dcr) {
+    <div class="resource-detail-table-wrapper">
+      <table class="resource-detail-table" aria-label="Data collection rule settings">
+        <tbody>
+          <tr>
+            <th scope="row">Immutable ID</th>
+            <td>
+              <code class="resource-detail-code">{{ dcr.immutableId ?? '-' }}</code>
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Provisioning state</th>
+            <td>{{ dcr.provisioningState ?? '-' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Description</th>
+            <td>{{ dcr.description || '-' }}</td>
+          </tr>
+          <tr>
+            <th scope="row">Data flows</th>
+            <td>
+              @if (dataFlows.length > 0) {
+                <ul class="dcr-list">
+                  @for (flow of dataFlows; track flow) {
+                    <li>
+                      Streams: <code>{{ flow.streams?.join(', ') || '-' }}</code><br>
+                      Destinations: {{ flow.destinations?.join(', ') || '-' }}
+                    </li>
+                  }
+                </ul>
+              } @else {
+                -
+              }
+            </td>
+          </tr>
+          <tr>
+            <th scope="row">Destinations (Log Analytics)</th>
+            <td>
+              @if (logAnalyticsDestinations.length > 0) {
+                <ul class="dcr-list">
+                  @for (dest of logAnalyticsDestinations; track dest.name) {
+                    <li>
+                      <strong>{{ dest.name }}</strong><br>
+                      <code class="resource-detail-code">{{ dest.workspaceResourceId ?? '-' }}</code>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                -
+              }
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  } @else {
+    <p class="resource-detail-empty">
+      No data collection rule details available.
+    </p>
+  }
+</section>

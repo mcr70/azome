@@ -20,3 +20,29 @@ resource "azurerm_monitor_diagnostic_setting" "func_diag" {
     category = "FunctionAppLogs"
   }
 }
+
+resource "azurerm_monitor_data_collection_rule" "dcr_storage" {
+  name                = "dcr-${var.sa_name}"
+  resource_group_name = azurerm_resource_group.rg_app.name
+  location            = azurerm_resource_group.rg_app.location
+
+  # Jätetään data_sources pois, jos sitä ei vaadita välittömästi, 
+  # tai määritellään pelkkä tyhjä/yleinen rakenne, jotta validointi menee läpi.
+  destinations {
+    log_analytics {
+      workspace_resource_id = azurerm_log_analytics_workspace.law.id
+      name                  = "law-destination"
+    }
+  }
+
+  data_flow {
+    streams      = ["Microsoft-InsightsMetrics"]
+    destinations = ["law-destination"]
+  }
+}
+
+resource "azurerm_monitor_data_collection_rule_association" "dcra_storage" {
+  name                    = "dcra-${var.sa_name}"
+  target_resource_id      = azurerm_storage_account.sa_func.id
+  data_collection_rule_id = azurerm_monitor_data_collection_rule.dcr_storage.id
+}

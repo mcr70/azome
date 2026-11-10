@@ -1,0 +1,39 @@
+@use '../../resources/resource-details-shared';
+
+:host {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.resource-detail-table {
+  min-width: 0;
+  table-layout: fixed;
+}
+
+.resource-detail-table th,
+.resource-detail-table td {
+  overflow-wrap: anywhere;
+}
+
+.dcr-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.dcr-heading h3 {
+  margin: 0;
+}
+
+.dcr-list {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}

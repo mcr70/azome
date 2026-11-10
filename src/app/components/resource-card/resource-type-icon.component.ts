@@ -16,7 +16,10 @@ import {
   LucideShield,
   LucideWorkflow,
   LucideDynamicIcon,
-  LucideCircleQuestionMark
+  LucideCircleQuestionMark,
+  LucideListTree,
+  LucideSliders,
+  LucideFileText
 } from '@lucide/angular';
 
 @Component({
@@ -34,8 +37,12 @@ export class ResourceTypeIconComponent {
     const resourceType = this.type.toLowerCase();
 
     if (resourceType === 'microsoft.insights/diagnosticsettings') {
-      return LucideWorkflow.icon;
+      return LucideListTree.icon;
     }
+    if (resourceType === 'microsoft.insights/datacollectionrules') {
+      return LucideFileText.icon;
+    }
+
     if (resourceType === 'microsoft.web/serverfarms') {
       return LucideCloudCog.icon;
     }
