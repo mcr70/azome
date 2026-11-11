@@ -23,6 +23,7 @@ export type MonitoringResourceCategory =
   | 'Autoscale'
   | 'Workbooks'
   | 'Dashboards'
+  | 'Data Collection & Diagnostics'
   | 'Other';
 
 export interface MonitoringResource {
@@ -95,7 +96,9 @@ export class MonitoringService {
           ), 'Application Insights',
           type in~ (
               'microsoft.insights/datacollectionendpoints',
-              'microsoft.insights/datacollectionrules',
+              'microsoft.insights/datacollectionrules'
+          ), 'Data Collection & Diagnostics',
+          type in~ (
               'microsoft.insights/logprofiles',
               'microsoft.operationalinsights/dataexports',
               'microsoft.operationalinsights/savedsearches',

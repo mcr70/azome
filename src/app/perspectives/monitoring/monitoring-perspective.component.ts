@@ -27,7 +27,8 @@ import {
 import { matchesTextFilter } from '@app/utils/text-filter';
 import {
   groupResourcesByCategory,
-  PerspectiveResourceCategoryGroup
+  PerspectiveResourceCategoryGroup,
+  PerspectiveResourceTypeGroup
 } from '../perspective-resource-groups';
 import { selectFloatingPanel, selectPinnedPanels } from '../perspective-utils';
 import { ActivityLogComponent } from './activity-log/activity-log.component';
@@ -153,11 +154,39 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     MonitoringResource
   >[] {
     return groupResourcesByCategory(
-      this.filteredResources,
+      this.filteredResources.filter((resource) => resource.category !== 'Data Collection & Diagnostics'),
       (resource) => resource.category,
       (resource) => resource.type,
       (type) => this.resourceTypeLabel(type)
     );
+  }
+
+  /**
+   * Data collection rules and endpoints belonging to the Diagnostic settings category.
+   *
+   * @returns Type groups for diagnostic configuration resources.
+   */
+  public get diagnosticResourceTypes(): PerspectiveResourceTypeGroup<MonitoringResource>[] {
+    const diagnosticResources = this.filteredResources.filter(
+      (resource) => resource.category === 'Data Collection & Diagnostics'
+    );
+    const groups = groupResourcesByCategory(
+      diagnosticResources,
+      (resource) => resource.category,
+      (resource) => resource.type,
+      (type) => this.resourceTypeLabel(type)
+    );
+
+    return groups[0]?.types ?? [];
+  }
+
+  /**
+   * Total number of resource types in the Diagnostic settings category.
+   *
+   * @returns Total count of resource types.
+   */
+  public get diagnosticCategoryTypeCount(): number {
+    return this.diagnosticResourceTypes.length + 1;
   }
 
   /** Panels pinned into the side-by-side slots. */

@@ -153,76 +153,112 @@
             <header class="section-heading">
               <div>
                 <p class="resource-kind">Monitoring category</p>
-                <h2>Diagnostic settings</h2>
+                <h2>Data Collection & Diagnostics</h2>
               </div>
-              <div class="grid-heading-actions">
-                <span class="resource-count">{{ filteredDiagnosticSettings.length }} settings</span>
-                @if (!loadingDiagnostics && !diagnosticError) {
-                  <app-resource-grid-selection
-                    [resources]="filteredDiagnosticSettings"
-                    label="Diagnostic settings">
-                  </app-resource-grid-selection>
-                }
-              </div>
+              <span class="resource-count">
+                {{ diagnosticCategoryTypeCount }} resource types
+              </span>
             </header>
-            @if (loadingDiagnostics) {
-              <p role="status">
-                Discovering diagnostic settings across subscription resources...
-              </p>
-            } @else if (diagnosticError) {
-              <p class="error-message" role="alert">{{ diagnosticError }}</p>
-              <button class="refresh-button" type="button" (click)="loadDiagnosticSettings()">
-                Retry diagnostic settings
-              </button>
-            } @else {
-              @if (diagnosticFailures.length > 0) {
-                <div class="error-message" role="alert">
-                  Diagnostic settings could not be read for {{ diagnosticFailures.length }} resources.
-                  Results may be incomplete.
-                  <details>
-                    <summary>Failed resources</summary>
-                    <ul>
-                      @for (failure of diagnosticFailures; track failure.source.id) {
-                        <li>{{ failure.source.id }}: {{ failure.message }}</li>
+
+            @for (typeGroup of diagnosticResourceTypes; track typeGroup.type) {
+              <section
+                class="resource-type-section"
+                [attr.aria-label]="typeGroup.label">
+                <div class="type-heading">
+                  <h3>{{ typeGroup.label }}</h3>
+                  <div class="grid-heading-actions">
+                    <span>{{ typeGroup.resources.length }}</span>
+                    <app-resource-grid-selection
+                      [resources]="typeGroup.resources"
+                      [label]="typeGroup.label">
+                    </app-resource-grid-selection>
+                  </div>
+                </div>
+                <div class="resource-grid">
+                  @for (resource of typeGroup.resources; track resource.id) {
+                    <ng-container
+                      [ngTemplateOutlet]="resourceCard"
+                      [ngTemplateOutletContext]="{ $implicit: resource }">
+                    </ng-container>
+                  }
+                </div>
+              </section>
+            }
+
+            <section
+              class="resource-type-section"
+              aria-label="Diagnostic settings">
+              <div class="type-heading">
+                <h3>Diagnostic settings</h3>
+                <div class="grid-heading-actions">
+                  <span>{{ filteredDiagnosticSettings.length }}</span>
+                  @if (!loadingDiagnostics && !diagnosticError) {
+                    <app-resource-grid-selection
+                      [resources]="filteredDiagnosticSettings"
+                      label="Diagnostic settings">
+                    </app-resource-grid-selection>
+                  }
+                </div>
+              </div>
+              @if (loadingDiagnostics) {
+                <p role="status">
+                  Discovering diagnostic settings across subscription resources...
+                </p>
+              } @else if (diagnosticError) {
+                <p class="error-message" role="alert">{{ diagnosticError }}</p>
+                <button class="refresh-button" type="button" (click)="loadDiagnosticSettings()">
+                  Retry diagnostic settings
+                </button>
+              } @else {
+                @if (diagnosticFailures.length > 0) {
+                  <div class="error-message" role="alert">
+                    Diagnostic settings could not be read for {{ diagnosticFailures.length }} resources.
+                    Results may be incomplete.
+                    <details>
+                      <summary>Failed resources</summary>
+                      <ul>
+                        @for (failure of diagnosticFailures; track failure.source.id) {
+                          <li>{{ failure.source.id }}: {{ failure.message }}</li>
+                        }
+                      </ul>
+                    </details>
+                  </div>
+                }
+                <div class="resource-grid diagnostic-grid">
+                  @for (setting of filteredDiagnosticSettings; track setting.id) {
+                    <app-resource-card
+                      [type]="setting.type"
+                      [name]="setting.name"
+                      [resourceId]="setting.id"
+                      [resourceGroup]="setting.resourceGroup"
+                      [selectable]="true">
+                      <ng-container card-actions>
+                        <app-resource-details-action
+                          [resourceId]="setting.id"
+                          [resourceName]="setting.name"
+                          (detailsClick)="openResourceDetails($event.resourceId, $event.event)">
+                        </app-resource-details-action>
+                      </ng-container>
+
+                      <ng-container card-metadata>
+                        <span>{{ setting.resourceGroup || 'Subscription' }}</span>
+                        <span>{{ setting.location || 'Global' }}</span>
+                      </ng-container>
+                    </app-resource-card>
+                  } @empty {
+                    <p class="empty-state">
+                      @if (diagnosticFailures.length > 0 && diagnosticSettings.length === 0) {
+                        No diagnostic settings were found in the resources that could be read.
+                      } @else if (diagnosticSettings.length === 0) {
+                        No diagnostic settings were found.
+                      } @else {
+                        No diagnostic settings match this filter.
                       }
-                    </ul>
-                  </details>
+                    </p>
+                  }
                 </div>
               }
-              <div class="resource-grid diagnostic-grid">
-                @for (setting of filteredDiagnosticSettings; track setting.id) {
-                  <app-resource-card
-                    [type]="setting.type"
-                    [name]="setting.name"
-                    [resourceId]="setting.id"
-                    [resourceGroup]="setting.resourceGroup"
-                    [selectable]="true">
-                    <ng-container card-actions>
-                      <app-resource-details-action
-                        [resourceId]="setting.id"
-                        [resourceName]="setting.name"
-                        (detailsClick)="openResourceDetails($event.resourceId, $event.event)">
-                      </app-resource-details-action>
-                    </ng-container>
-                    
-                    <ng-container card-metadata>
-                      <span>{{ setting.resourceGroup || 'Subscription' }}</span>
-                      <span>{{ setting.location || 'Global' }}</span>
-                    </ng-container>
-                  </app-resource-card>
-                } @empty {
-                  <p class="empty-state">
-                    @if (diagnosticFailures.length > 0 && diagnosticSettings.length === 0) {
-                      No diagnostic settings were found in the resources that could be read.
-                    } @else if (diagnosticSettings.length === 0) {
-                      No diagnostic settings were found.
-                    } @else {
-                      No diagnostic settings match this filter.
-                    }
-                  </p>
-                }
-              </div>
-            }
+            </section>
           </section>
         }
 

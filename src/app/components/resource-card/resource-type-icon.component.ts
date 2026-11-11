@@ -19,7 +19,9 @@ import {
   LucideCircleQuestionMark,
   LucideListTree,
   LucideSliders,
-  LucideFileText
+  LucideFileText,
+  LucideDatabaseSearch,
+  LucideSearchCode
 } from '@lucide/angular';
 
 @Component({
@@ -75,7 +77,7 @@ export class ResourceTypeIconComponent {
       return LucideRadioTower.icon;
     }
     if (resourceType.includes('operationalinsights') || resourceType.includes('workspace')) {
-      return LucideActivity.icon;
+      return LucideSearchCode.icon;
     }
     if (resourceType.includes('/servers')) {
       return LucideServer.icon;

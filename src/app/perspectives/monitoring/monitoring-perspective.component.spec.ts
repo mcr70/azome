@@ -268,4 +268,36 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
       .toContain('not a valid Azure resource ID');
     fixture.destroy();
   });
+
+  it('groups Data Collection Rules under Diagnostic settings instead of Logs', () => {
+    const workspace: MonitoringResource = {
+      id: '/subscriptions/sub/resourceGroups/rg/providers/Microsoft.OperationalInsights/workspaces/law-lab',
+      name: 'law-lab',
+      type: 'Microsoft.OperationalInsights/workspaces',
+      resourceGroup: 'rg-app-lab',
+      location: 'westeurope',
+      category: 'Logs'
+    };
+    const dcr: MonitoringResource = {
+      id: '/subscriptions/sub/resourceGroups/rg/providers/Microsoft.Insights/dataCollectionRules/dcr-app',
+      name: 'dcr-app',
+      type: 'Microsoft.Insights/dataCollectionRules',
+      resourceGroup: 'rg-app-lab',
+      location: 'westeurope',
+      category: 'Diagnostic settings'
+    };
+    monitoring.getMonitoringResources.and.returnValue(of([workspace, dcr]));
+
+    const fixture = TestBed.createComponent(MonitoringPerspectiveComponent);
+    fixture.detectChanges();
+    const element: HTMLElement = fixture.nativeElement;
+
+    const logsGroup = element.querySelector('section[aria-label="Logs resources"]');
+    const diagnosticGroup = element.querySelector('section.category-section[aria-label="Diagnostic settings"]');
+
+    expect(logsGroup?.textContent).toContain('law-lab');
+    expect(logsGroup?.textContent).not.toContain('dcr-app');
+    expect(diagnosticGroup?.textContent).toContain('dcr-app');
+    expect(diagnosticGroup?.textContent).toContain('Data collection rules');
+  });
 });
