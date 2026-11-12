@@ -124,8 +124,7 @@ unsupported Network Watcher and route table resources are excluded before ARM
 requests. Other resource types remain eligible so that metric-only settings are
 not excluded by a log-only allowlist. Explicit ARM unsupported-type responses
 are also skipped. Other failures are listed and successful results remain
-visible. Cache scope and scan times are shown in the scan dialog. The filter also
-matches source and destination IDs and Event Hub names. Details show configured
+visible. The filter also matches source and destination IDs and Event Hub names. Details show configured
 routing and log/metric categories, not actual delivery.
 
 ## Networking perspective

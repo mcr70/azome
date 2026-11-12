@@ -50,15 +50,11 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
     );
     diagnostics.getCachedDiagnosticSettings.and.returnValue({
       settings: [setting],
-      failures: [],
-      scannedAt: null,
-      scopes: []
+      failures: []
     });
     diagnostics.scanDiagnosticSettings.and.returnValue(of({
       settings: [setting],
-      failures: [],
-      scannedAt: new Date().toISOString(),
-      scopes: []
+      failures: []
     }));
     resourceGroups = jasmine.createSpyObj<ResourceGroupService>(
       'ResourceGroupService', ['getResourceGroups']
@@ -186,9 +182,7 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
     expect(fixture.componentInstance.loadingDiagnostics).toBeTrue();
     response.next({
       settings: [setting],
-      failures: [{ source: setting.source, message: '403: Forbidden' }],
-      scannedAt: new Date().toISOString(),
-      scopes: []
+      failures: [{ source: setting.source, message: '403: Forbidden' }]
     });
     fixture.detectChanges();
     expect(element.querySelector('section[aria-label="Logs resources"]')).toBe(resourceGroup);

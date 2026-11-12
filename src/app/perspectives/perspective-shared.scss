@@ -79,6 +79,15 @@
   gap: 24px;
 }
 
+.type-heading-main { 
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+
 .perspective-heading {
   flex-wrap: wrap;
   margin-bottom: 28px;

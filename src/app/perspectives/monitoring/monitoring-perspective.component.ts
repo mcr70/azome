@@ -1,6 +1,6 @@
 import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
-import { LucideDynamicIcon, LucideSearch } from '@lucide/angular';
+import { NgTemplateOutlet } from '@angular/common';
+import { LucideDynamicIcon, LucideSearch, LucideX } from '@lucide/angular';
 import { ActivatedRoute } from '@angular/router';
 import { KqlComponent } from '@components/kql/kql.component';
 import { Subject, Subscription } from 'rxjs';
@@ -59,7 +59,6 @@ type MonitoringTab = 'overview' | 'metrics' | 'activity';
   standalone: true,
   imports: [
     NgTemplateOutlet,
-    DatePipe,
     LucideDynamicIcon,
     KqlComponent,
     ActivityLogComponent,
@@ -79,6 +78,7 @@ type MonitoringTab = 'overview' | 'metrics' | 'activity';
 export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
   @ViewChild('diagnosticScanDialog') private diagnosticScanDialog?: ElementRef<HTMLDialogElement>;
   public readonly searchIcon = LucideSearch.icon;
+  public readonly closeIcon = LucideX.icon;
   public kqlWorkspace: { id: string; name: string } | null = null;
   public activeTab: MonitoringTab = 'overview';
   public resources: MonitoringResource[] = [];
@@ -92,13 +92,11 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
   public selectedResources: SelectedAzureResource[] = [];
   public diagnosticSettings: DiagnosticSetting[] = [];
   public diagnosticFailures: DiagnosticSettingsResult['failures'] = [];
-  public diagnosticCacheScopes: { resourceGroup: string | null; scannedAt: string }[] = [];
   public loadingDiagnostics = false;
   public diagnosticError: string | null = null;
   public diagnosticScanScope: 'subscription' | 'resourceGroup' = 'subscription';
   public diagnosticResourceGroups: ResourceGroup[] = [];
   public selectedDiagnosticResourceGroup = '';
-  public diagnosticCacheScannedAt: string | null = null;
   public linkedMetricResource: SelectedAzureResource | null = null;
   public linkedMetricResourceLoading = false;
   public linkedMetricResourceError: string | null = null;
@@ -278,8 +276,6 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
         next: (result) => {
           this.diagnosticSettings = result.settings;
           this.diagnosticFailures = result.failures;
-          this.diagnosticCacheScannedAt = result.scannedAt;
-          this.diagnosticCacheScopes = result.scopes;
           this.loadingDiagnostics = false;
           this.diagnosticScanDialog?.nativeElement.close();
         },
@@ -318,13 +314,11 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     this.selectedDiagnosticResourceGroup = (event.target as HTMLSelectElement).value;
   }
 
-  /** Loads diagnostic settings and cache metadata without contacting Azure. */
+  /** Loads cached diagnostic settings without contacting Azure. */
   private loadCachedDiagnosticSettings(): void {
     const cached = this.diagnostics.getCachedDiagnosticSettings();
     this.diagnosticSettings = cached.settings;
     this.diagnosticFailures = cached.failures;
-    this.diagnosticCacheScannedAt = cached.scannedAt;
-    this.diagnosticCacheScopes = cached.scopes;
   }
 
   /**

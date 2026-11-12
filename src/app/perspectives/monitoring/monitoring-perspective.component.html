@@ -17,13 +17,6 @@
           <button
             class="refresh-button"
             type="button"
-            (click)="openDiagnosticScanDialog()"
-            [disabled]="loadingDiagnostics">
-            Scan diagnostic settings
-          </button>
-          <button
-            class="refresh-button"
-            type="button"
             (click)="loadMonitoringData()"
             [disabled]="loading || loadingDiagnostics">
             Refresh
@@ -172,7 +165,16 @@
               aria-label="Diagnostic settings">
               <div class="type-heading">
                 <h3>Diagnostic settings</h3>
+
                 <div class="grid-heading-actions">
+                  <button
+                    class="refresh-button"
+                    type="button"
+                    (click)="openDiagnosticScanDialog()"
+                    [disabled]="loadingDiagnostics">
+                    Scan diagnostic settings
+                  </button>
+
                   <span>{{ filteredDiagnosticSettings.length }}</span>
                   @if (!loadingDiagnostics && !diagnosticError) {
                     <app-resource-grid-selection
@@ -351,57 +353,68 @@
 
 <dialog
   #diagnosticScanDialog
-  class="diagnostic-scan-dialog"
+  class="diagnostic-scan-backdrop"
   aria-labelledby="diagnostic-scan-title">
-  <h2 id="diagnostic-scan-title">Scan diagnostic settings</h2>
-  <button type="button" (click)="closeDiagnosticScanDialog()">Close</button>
-  <label>
-    <input
-      type="radio"
-      name="diagnosticScanScope"
-      value="subscription"
-      [checked]="diagnosticScanScope === 'subscription'"
-      (change)="diagnosticScanScope = 'subscription'">
-    Entire subscription
-  </label>
-  <label>
-    <input
-      type="radio"
-      name="diagnosticScanScope"
-      value="resourceGroup"
-      [checked]="diagnosticScanScope === 'resourceGroup'"
-      (change)="diagnosticScanScope = 'resourceGroup'">
-    Resource group
-  </label>
-  @if (diagnosticScanScope === 'resourceGroup') {
-    <label for="diagnostic-resource-group">Resource group</label>
-    <select
-      id="diagnostic-resource-group"
-      [value]="selectedDiagnosticResourceGroup"
-      (change)="selectDiagnosticResourceGroup($event)">
-      <option value="">Select a resource group</option>
-      @for (group of diagnosticResourceGroups; track group.id) {
-        <option [value]="group.name">{{ group.name }}</option>
+  <section class="diagnostic-scan-dialog">
+    <header class="diagnostic-scan-header">
+      <h2 id="diagnostic-scan-title">Scan diagnostic settings</h2>
+      <button
+        type="button"
+        class="icon-button"
+        title="Close"
+        aria-label="Close diagnostic settings scan dialog"
+        (click)="closeDiagnosticScanDialog()">
+        <svg [lucideIcon]="closeIcon" [size]="20" aria-hidden="true"></svg>
+      </button>
+    </header>
+    <div class="diagnostic-scan-content">
+      <p class="scan-explanation">
+        Diagnostic settings are not discovered automatically. Start a scan to find them or refresh the cached results.
+        Once scanned, the discovered diagnostic settings will be cached for future use in this application.
+      </p>
+      <fieldset>
+        <legend>Scan scope</legend>
+        <label>
+          <input
+            type="radio"
+            name="diagnosticScanScope"
+            value="subscription"
+            [checked]="diagnosticScanScope === 'subscription'"
+            (change)="diagnosticScanScope = 'subscription'">
+          Entire subscription
+        </label>
+        <label>
+          <input
+            type="radio"
+            name="diagnosticScanScope"
+            value="resourceGroup"
+            [checked]="diagnosticScanScope === 'resourceGroup'"
+            (change)="diagnosticScanScope = 'resourceGroup'">
+          Resource group
+        </label>
+      </fieldset>
+      @if (diagnosticScanScope === 'resourceGroup') {
+        <label for="diagnostic-resource-group">Resource group</label>
+        <select
+          id="diagnostic-resource-group"
+          [value]="selectedDiagnosticResourceGroup"
+          (change)="selectDiagnosticResourceGroup($event)">
+          <option value="">Select a resource group</option>
+          @for (group of diagnosticResourceGroups; track group.id) {
+            <option [value]="group.name">{{ group.name }}</option>
+          }
+        </select>
       }
-    </select>
-  }
-  @if (diagnosticCacheScannedAt) {
-    <p>Last subscription scan: {{ diagnosticCacheScannedAt | date: 'medium' }}</p>
-  }
-  @if (diagnosticCacheScopes.length > 0) {
-    <ul aria-label="Diagnostic settings scan history">
-      @for (scan of diagnosticCacheScopes; track scan.resourceGroup ?? 'subscription') {
-        <li>
-          {{ scan.resourceGroup || 'Subscription' }}:
-          {{ scan.scannedAt | date: 'medium' }}
-        </li>
-      }
-    </ul>
-  }
-  <button
-    type="button"
-    (click)="loadDiagnosticSettings()"
-    [disabled]="loadingDiagnostics || (diagnosticScanScope === 'resourceGroup' && !selectedDiagnosticResourceGroup)">
-    Start scan
-  </button>
+    </div>
+    <footer class="diagnostic-scan-actions">
+      <button
+        type="button"
+        class="refresh-button"
+        (click)="loadDiagnosticSettings()"
+        [disabled]="loadingDiagnostics
+          || (diagnosticScanScope === 'resourceGroup' && !selectedDiagnosticResourceGroup)">
+        {{ loadingDiagnostics ? 'Scanning…' : 'Start scan' }}
+      </button>
+    </footer>
+  </section>
 </dialog>

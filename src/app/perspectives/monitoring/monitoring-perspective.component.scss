@@ -11,24 +11,139 @@
   margin-top: 16px;
 }
 
+.diagnostic-scan-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100vw;
+  max-width: none;
+  max-height: none;
+  height: 100dvh;
+  margin: 0;
+  padding: 24px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.diagnostic-scan-backdrop[open] {
+  display: flex;
+}
+
+.diagnostic-scan-backdrop::backdrop {
+  background: rgb(15 23 42 / 55%);
+}
+
 .diagnostic-scan-dialog {
-  width: min(480px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-sizing: border-box;
+  width: min(640px, 100%);
+  max-height: 90dvh;
+  overflow: auto;
   padding: 24px;
   border: 1px solid #cbd5e1;
   border-radius: 8px;
+  background: #ffffff;
   color: #172033;
+  box-shadow: 0 16px 32px rgb(15 23 42 / 25%);
 }
 
-.diagnostic-scan-dialog::backdrop {
-  background: rgba(15, 23, 42, 0.45);
+.diagnostic-scan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.diagnostic-scan-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.diagnostic-scan-dialog fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.diagnostic-scan-dialog legend {
+  margin-bottom: 12px;
+  font-weight: 700;
 }
 
 .diagnostic-scan-dialog label {
-  display: block;
-  margin: 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .diagnostic-scan-dialog select {
   width: 100%;
   padding: 8px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #ffffff;
+  color: inherit;
+  font: inherit;
+}
+
+.diagnostic-scan-content > label {
+  margin-bottom: -12px;
+  font-weight: 600;
+}
+
+.diagnostic-scan-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.diagnostic-scan-content > p {
+  margin: 0;
+  color: #475569;
+}
+
+.diagnostic-scan-content ul {
+  margin: 0;
+  padding-left: 24px;
+  color: #475569;
+}
+
+.diagnostic-scan-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.icon-button {
+  display: inline-flex;
+  flex: 0 0 36px;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #172033;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: #f1f5f9;
+}
+
+.icon-button:focus-visible {
+  outline: 2px solid #0f766e;
+  outline-offset: 2px;
 }
