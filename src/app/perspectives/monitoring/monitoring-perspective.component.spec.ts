@@ -2,8 +2,12 @@ import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, convertToParamMap, ParamMap } from '@angular/router';
 import { BehaviorSubject, of, Subject } from 'rxjs';
-import { DiagnosticSetting, DiagnosticSettingsResult } from '@services/azure/diagnostic-settings.model';
-import { DiagnosticSettingsService } from '@services/azure/diagnostic-settings.service';
+import { DiagnosticSetting } from '@services/azure/diagnostic-settings.model';
+import {
+  CachedDiagnosticSettings,
+  DiagnosticSettingsService
+} from '@services/azure/diagnostic-settings.service';
+import { ResourceGroupService } from '@services/azure/resource-group.service';
 import {
   ActivityLogEvent,
   MonitoringResource,
@@ -22,6 +26,7 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
   let diagnostics: jasmine.SpyObj<DiagnosticSettingsService>;
   let graph: jasmine.SpyObj<ResourceGraphService>;
   let monitoring: jasmine.SpyObj<MonitoringService>;
+  let resourceGroups: jasmine.SpyObj<ResourceGroupService>;
   let metrics: jasmine.SpyObj<AzureMetricsService>;
   let logs: jasmine.SpyObj<LogAnalyticsService>;
   let panelService: ResourceDetailPanelService;
@@ -41,9 +46,24 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
 
   beforeEach(async () => {
     diagnostics = jasmine.createSpyObj<DiagnosticSettingsService>(
-      'DiagnosticSettingsService', ['getDiagnosticSettings']
+      'DiagnosticSettingsService', ['getCachedDiagnosticSettings', 'scanDiagnosticSettings']
     );
-    diagnostics.getDiagnosticSettings.and.returnValue(of({ settings: [setting], failures: [] }));
+    diagnostics.getCachedDiagnosticSettings.and.returnValue({
+      settings: [setting],
+      failures: [],
+      scannedAt: null,
+      scopes: []
+    });
+    diagnostics.scanDiagnosticSettings.and.returnValue(of({
+      settings: [setting],
+      failures: [],
+      scannedAt: new Date().toISOString(),
+      scopes: []
+    }));
+    resourceGroups = jasmine.createSpyObj<ResourceGroupService>(
+      'ResourceGroupService', ['getResourceGroups']
+    );
+    resourceGroups.getResourceGroups.and.returnValue(of([]));
     graph = jasmine.createSpyObj<ResourceGraphService>('ResourceGraphService', ['getResourceDetails']);
     monitoring = jasmine.createSpyObj<MonitoringService>(
       'MonitoringService', ['getMonitoringResources', 'getActivityLog']
@@ -68,6 +88,7 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
         { provide: AzureMetricsService, useValue: metrics },
         { provide: LogAnalyticsService, useValue: logs },
         { provide: DiagnosticSettingsService, useValue: diagnostics },
+        { provide: ResourceGroupService, useValue: resourceGroups },
         { provide: ResourceGraphService, useValue: graph },
         {
           provide: ActivatedRoute,
@@ -81,6 +102,7 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
   it('shows compact cards and opens connection details without querying Graph', () => {
     const fixture = TestBed.createComponent(MonitoringPerspectiveComponent);
     fixture.detectChanges();
+    expect(diagnostics.scanDiagnosticSettings).not.toHaveBeenCalled();
     const element: HTMLElement = fixture.nativeElement;
     const group = element.querySelector('section[aria-label="Diagnostic settings"]');
     expect(group?.querySelector('.resource-name')?.textContent).toContain('export');
@@ -139,10 +161,11 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
   });
 
   it('keeps other data visible during discovery and reports partial failures', () => {
-    const response = new Subject<DiagnosticSettingsResult>();
-    diagnostics.getDiagnosticSettings.and.returnValue(response);
+    const response = new Subject<CachedDiagnosticSettings>();
+    diagnostics.scanDiagnosticSettings.and.returnValue(response);
     const fixture = TestBed.createComponent(MonitoringPerspectiveComponent);
     fixture.detectChanges();
+    fixture.componentInstance.loadDiagnosticSettings();
     fixture.componentInstance.resources = [{
       id: '/workspaces/law',
       name: 'law',
@@ -163,7 +186,9 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
     expect(fixture.componentInstance.loadingDiagnostics).toBeTrue();
     response.next({
       settings: [setting],
-      failures: [{ source: setting.source, message: '403: Forbidden' }]
+      failures: [{ source: setting.source, message: '403: Forbidden' }],
+      scannedAt: new Date().toISOString(),
+      scopes: []
     });
     fixture.detectChanges();
     expect(element.querySelector('section[aria-label="Logs resources"]')).toBe(resourceGroup);

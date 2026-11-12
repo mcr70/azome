@@ -1,0 +1,46 @@
+:host {
+  display: block;
+}
+
+.resource-type-section {
+  display: block;
+}
+
+:host + :host {
+  margin-top: 20px;
+}
+
+.resource-type-section + .resource-type-section {
+  margin-top: 20px;
+}
+
+.type-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 10px;
+}
+
+.type-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.grid-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.type-heading span {
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
+  align-content: start;
+  gap: 12px;
+}

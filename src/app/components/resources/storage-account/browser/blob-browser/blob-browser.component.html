@@ -4,7 +4,7 @@
       <label>
         Container
         <select [value]="container" (change)="selectContainer($any($event.target).value)">
-          @for (item of containers; track item) {
+          @for (item of containers; track item.name) {
             <option [value]="item.name">
               {{ item.name }}
             </option>
@@ -22,7 +22,7 @@
 
   @if (container) {
     <nav class="crumbs">
-      @for (crumb of crumbs; track crumb; let last = $last) {
+      @for (crumb of crumbs; track crumb.prefix; let last = $last) {
         <button
           type="button"
           [disabled]="last"
@@ -62,7 +62,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (item of items; track item) {
+        @for (item of items; track item.path + (item.isDirectory ? ':directory' : ':blob')) {
           <tr>
             <td>
               @if (item.isDirectory) {

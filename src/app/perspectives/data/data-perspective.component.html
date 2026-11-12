@@ -65,39 +65,14 @@
       }
 
       @for (category of categoryGroups; track category.category) {
-        <section
-          class="category-section"
-          [attr.aria-label]="category.category + ' resources'">
-          <header class="section-heading">
-            <div>
-              <p class="resource-kind">
-                Data category
-              </p>
-              <h2>
-                {{ category.category }}
-              </h2>
-            </div>
-            <span class="resource-count">
-              {{ category.types.length }} resource types
-            </span>
-          </header>
+        <app-perspective-category
+          [title]="category.category"
+          kind="Data category"
+          [resourceTypeCount]="category.types.length">
           @for (typeGroup of category.types; track typeGroup.type) {
-            <section
-              class="resource-type-section"
-              [attr.aria-label]="typeGroup.label">
-              <div class="type-heading">
-                <h3>
-                  {{ typeGroup.label }}
-                </h3>
-                <div class="grid-heading-actions">
-                  <span>{{ typeGroup.resources.length }}</span>
-                  <app-resource-grid-selection
-                    [resources]="typeGroup.resources"
-                    [label]="typeGroup.label">
-                  </app-resource-grid-selection>
-                </div>
-              </div>
-              <div class="resource-grid">
+            <app-perspective-type
+              [label]="typeGroup.label"
+              [resources]="typeGroup.resources">
                 @for (resource of typeGroup.resources; track resource.id) {
                   <app-resource-card
                     [type]="resource.type"
@@ -135,10 +110,9 @@
                     </ng-container>
                   </app-resource-card>
                 }
-              </div>
-            </section>
+            </app-perspective-type>
           }
-        </section>
+        </app-perspective-category>
       }
     </div>
 

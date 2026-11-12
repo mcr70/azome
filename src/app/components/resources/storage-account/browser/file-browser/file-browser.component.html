@@ -4,7 +4,7 @@
       <label>
         File share
         <select [value]="share" (change)="selectShare($any($event.target).value)">
-          @for (item of shares; track item) {
+          @for (item of shares; track item.name) {
             <option [value]="item.name">
               {{ item.name }}
             </option>
@@ -22,7 +22,7 @@
 
   @if (share) {
     <nav class="crumbs">
-      @for (crumb of crumbs; track crumb; let last = $last) {
+      @for (crumb of crumbs; track crumb.path; let last = $last) {
         <button
           type="button"
           [disabled]="last"
@@ -62,7 +62,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (item of items; track item) {
+        @for (item of items; track item.path + (item.isDirectory ? ':directory' : ':file')) {
           <tr>
             <td>
               @if (item.isDirectory) {

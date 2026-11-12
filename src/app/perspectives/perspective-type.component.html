@@ -1,0 +1,17 @@
+<section class="resource-type-section" [attr.aria-label]="label">
+  <div class="type-heading">
+    <h3>{{ label }}</h3>
+    <div class="grid-heading-actions">
+      <span>{{ resources.length }}</span>
+      @if (selectionEnabled) {
+        <app-resource-grid-selection
+          [resources]="resources"
+          [label]="label">
+        </app-resource-grid-selection>
+      }
+    </div>
+  </div>
+  <div class="resource-grid">
+    <ng-content></ng-content>
+  </div>
+</section>

@@ -17,6 +17,10 @@
         <ng-container
             *ngComponentOutlet="browserComponent; inputs: { resource: resource, view: 'browse' }">
         </ng-container>
+        } @else {
+        <p class="empty-state">
+            No data browser is registered for this resource type.
+        </p>
         }
     </div>
     </section>

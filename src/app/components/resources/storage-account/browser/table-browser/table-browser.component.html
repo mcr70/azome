@@ -4,7 +4,7 @@
       <label>
         Table
         <select [value]="table" (change)="selectTable($any($event.target).value)">
-          @for (item of tables; track item) {
+        @for (item of tables; track item.name) {
             <option [value]="item.name">
               {{ item.name }}
             </option>
@@ -57,7 +57,7 @@
         </tr>
       </thead>
       <tbody>
-        @for (entity of entities; track entity) {
+        @for (entity of entities; track (entity.PartitionKey ?? '') + ':' + (entity.RowKey ?? '')) {
           <tr>
             <td>
               {{ entity.PartitionKey }}

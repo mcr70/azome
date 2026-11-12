@@ -14,6 +14,9 @@ perspectives:
   `perspective-main-content`, and `view-tabs`.
 - `perspective-resource-groups.ts` – the generic category → resource type
   grouping used by the App, Data, and Monitoring overview grids.
+- `perspective-category.component.ts` and `perspective-type.component.ts` –
+  shared category and resource-type section wrappers used by the App, Data, and
+  Monitoring grids. Resource cards remain projected from each perspective.
 - `perspective-utils.ts` – helpers for pinned/floating panel selection and
   short resource type names.
 
@@ -105,20 +108,25 @@ The KQL dialog opened from Log Analytics workspace cards integrates with the glo
   menu to quickly switch between queries for individual resources, a combined query
   if they share the same table, or a fallback combined `AzureDiagnostics` query.
 
-Overview lists diagnostic settings in a separate group using the shared resource
-cards. Source-to-destination connections are shown in the resource detail pane,
-not on the cards. Discovery uses paginated Resource Graph inventory followed by ARM
-diagnostic-settings requests (at most six concurrent). It includes the subscription,
-discovered resources, and Storage blob/file/queue/table service
-children. It is limited to the configured subscription and resources visible to the
-signed-in identity; resources not present in inventory cannot be discovered.
-Resource containers are not queried: resource groups do not support diagnostic settings.
-Known unsupported Network Watcher and route table resources are excluded before ARM
-requests. Other resource types remain eligible so that metric-only settings are not
-excluded by a log-only allowlist. Explicit ARM unsupported-type responses are also
-skipped. Other failures are listed and successful results remain visible.
-The filter also matches source and destination IDs and Event Hub names.
-Details show configured routing and log/metric categories, not actual delivery.
+Overview lists cached diagnostic settings in a separate group using the shared
+resource cards. Opening Monitoring reads local storage and does not start
+discovery. Use **Scan diagnostic settings** to scan the subscription or one
+resource group. Resource-group scans update only that group's cached results;
+failed sources retain their previous settings. Source-to-destination connections
+are shown in the resource detail pane, not on the cards. Discovery uses paginated
+Resource Graph inventory followed by ARM diagnostic-settings requests (at most
+six concurrent). Subscription scans include the subscription resource and
+Storage blob/file/queue/table service children. Discovery is limited to the
+configured subscription and resources visible to the signed-in identity;
+resources not present in inventory cannot be discovered. Resource containers
+are not queried: resource groups do not support diagnostic settings. Known
+unsupported Network Watcher and route table resources are excluded before ARM
+requests. Other resource types remain eligible so that metric-only settings are
+not excluded by a log-only allowlist. Explicit ARM unsupported-type responses
+are also skipped. Other failures are listed and successful results remain
+visible. Cache scope and scan times are shown in the scan dialog. The filter also
+matches source and destination IDs and Event Hub names. Details show configured
+routing and log/metric categories, not actual delivery.
 
 ## Networking perspective
 

@@ -1,5 +1,5 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { NgTemplateOutlet } from '@angular/common';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { LucideDynamicIcon, LucideSearch } from '@lucide/angular';
 import { ActivatedRoute } from '@angular/router';
 import { KqlComponent } from '@components/kql/kql.component';
@@ -35,9 +35,15 @@ import { ActivityLogComponent } from './activity-log/activity-log.component';
 import { LinkedMetricResourceService } from './linked-metric-resource.service';
 import { MetricsComponent } from './metrics/metrics.component';
 import { monitoringResourceTypeLabel } from './monitoring-resource-labels';
-import { DiagnosticSettingsService } from '@services/azure/diagnostic-settings.service';
+import {
+  DiagnosticSettingsScanScope,
+  DiagnosticSettingsService
+} from '@services/azure/diagnostic-settings.service';
 import { DiagnosticSetting, DiagnosticSettingsResult } from '@services/azure/diagnostic-settings.model';
+import { ResourceGroup, ResourceGroupService } from '@services/azure/resource-group.service';
 import { ResourceDetailsActionComponent } from '@app/components/resource-card/actions/resource-details-action.component';
+import { PerspectiveCategoryComponent } from '../perspective-category.component';
+import { PerspectiveTypeComponent } from '../perspective-type.component';
 
 type MonitoringTab = 'overview' | 'metrics' | 'activity';
 
@@ -53,6 +59,7 @@ type MonitoringTab = 'overview' | 'metrics' | 'activity';
   standalone: true,
   imports: [
     NgTemplateOutlet,
+    DatePipe,
     LucideDynamicIcon,
     KqlComponent,
     ActivityLogComponent,
@@ -62,12 +69,15 @@ type MonitoringTab = 'overview' | 'metrics' | 'activity';
     ResourceDetailPaneComponent,
     ResourceSelectionBarComponent,
     TextFilterComponent,
-    ResourceDetailsActionComponent
-],
+    ResourceDetailsActionComponent,
+    PerspectiveCategoryComponent,
+    PerspectiveTypeComponent
+  ],
   templateUrl: './monitoring-perspective.component.html',
   styleUrls: ['../perspective-shared.scss', './monitoring-perspective.component.scss']
 })
 export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
+  @ViewChild('diagnosticScanDialog') private diagnosticScanDialog?: ElementRef<HTMLDialogElement>;
   public readonly searchIcon = LucideSearch.icon;
   public kqlWorkspace: { id: string; name: string } | null = null;
   public activeTab: MonitoringTab = 'overview';
@@ -82,8 +92,13 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
   public selectedResources: SelectedAzureResource[] = [];
   public diagnosticSettings: DiagnosticSetting[] = [];
   public diagnosticFailures: DiagnosticSettingsResult['failures'] = [];
+  public diagnosticCacheScopes: { resourceGroup: string | null; scannedAt: string }[] = [];
   public loadingDiagnostics = false;
   public diagnosticError: string | null = null;
+  public diagnosticScanScope: 'subscription' | 'resourceGroup' = 'subscription';
+  public diagnosticResourceGroups: ResourceGroup[] = [];
+  public selectedDiagnosticResourceGroup = '';
+  public diagnosticCacheScannedAt: string | null = null;
   public linkedMetricResource: SelectedAzureResource | null = null;
   public linkedMetricResourceLoading = false;
   public linkedMetricResourceError: string | null = null;
@@ -99,6 +114,7 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
     private readonly panelService: ResourceDetailPanelService,
     private readonly resourceGraph: ResourceGraphService,
     private readonly diagnostics: DiagnosticSettingsService,
+    private readonly resourceGroups: ResourceGroupService,
     private readonly linkedResource: LinkedMetricResourceService,
     private readonly route: ActivatedRoute
   ) {}
@@ -119,6 +135,7 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe((panels) => this.panels = panels);
     this.watchLinkedMetricResource();
+    this.loadCachedDiagnosticSettings();
     this.loadMonitoringData();
   }
 
@@ -200,12 +217,10 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Loads the monitoring resources, diagnostic settings, and activity log. The
-   * three requests are independent so each section renders as soon as its own
-   * data arrives.
+   * Loads the monitoring resources and activity log independently so each
+   * section renders as soon as its own data arrives.
    */
   public loadMonitoringData(): void {
-    this.loadDiagnosticSettings();
     this.loading = true;
     this.error = null;
     this.loadingActivity = true;
@@ -245,20 +260,28 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** Discovers diagnostic settings, replacing any discovery still in flight. */
+  /** Runs the selected diagnostic settings scan, replacing any scan still in flight. */
   public loadDiagnosticSettings(): void {
+    const scope: DiagnosticSettingsScanScope = this.diagnosticScanScope === 'resourceGroup'
+      ? { resourceGroup: this.selectedDiagnosticResourceGroup }
+      : {};
+    if (this.diagnosticScanScope === 'resourceGroup' && !scope.resourceGroup) {
+      return;
+    }
+
     this.diagnosticRequest?.unsubscribe();
     this.loadingDiagnostics = true;
     this.diagnosticError = null;
-    this.diagnosticSettings = [];
-    this.diagnosticFailures = [];
-    this.diagnosticRequest = this.diagnostics.getDiagnosticSettings()
+    this.diagnosticRequest = this.diagnostics.scanDiagnosticSettings(scope)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (result) => {
           this.diagnosticSettings = result.settings;
           this.diagnosticFailures = result.failures;
+          this.diagnosticCacheScannedAt = result.scannedAt;
+          this.diagnosticCacheScopes = result.scopes;
           this.loadingDiagnostics = false;
+          this.diagnosticScanDialog?.nativeElement.close();
         },
         error: (error: unknown) => {
           console.error('Failed to discover diagnostic settings:', error);
@@ -266,6 +289,42 @@ export class MonitoringPerspectiveComponent implements OnInit, OnDestroy {
           this.loadingDiagnostics = false;
         }
       });
+  }
+
+  /** Opens the dialog for choosing diagnostic settings scan scope. */
+  public openDiagnosticScanDialog(): void {
+    if (this.diagnosticResourceGroups.length === 0) {
+      this.resourceGroups.getResourceGroups()
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (groups) => {
+            this.diagnosticResourceGroups = groups;
+            this.diagnosticScanDialog?.nativeElement.showModal();
+          },
+          error: () => this.diagnosticError = 'Resource groups could not be loaded.'
+        });
+      return;
+    }
+    this.diagnosticScanDialog?.nativeElement.showModal();
+  }
+
+  /** Closes the diagnostic settings scan dialog. */
+  public closeDiagnosticScanDialog(): void {
+    this.diagnosticScanDialog?.nativeElement.close();
+  }
+
+  /** Stores the resource group selected in the scan dialog. */
+  public selectDiagnosticResourceGroup(event: Event): void {
+    this.selectedDiagnosticResourceGroup = (event.target as HTMLSelectElement).value;
+  }
+
+  /** Loads diagnostic settings and cache metadata without contacting Azure. */
+  private loadCachedDiagnosticSettings(): void {
+    const cached = this.diagnostics.getCachedDiagnosticSettings();
+    this.diagnosticSettings = cached.settings;
+    this.diagnosticFailures = cached.failures;
+    this.diagnosticCacheScannedAt = cached.scannedAt;
+    this.diagnosticCacheScopes = cached.scopes;
   }
 
   /**

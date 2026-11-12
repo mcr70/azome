@@ -10,3 +10,25 @@
 .diagnostic-grid {
   margin-top: 16px;
 }
+
+.diagnostic-scan-dialog {
+  width: min(480px, calc(100vw - 32px));
+  padding: 24px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #172033;
+}
+
+.diagnostic-scan-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.diagnostic-scan-dialog label {
+  display: block;
+  margin: 12px 0;
+}
+
+.diagnostic-scan-dialog select {
+  width: 100%;
+  padding: 8px;
+}

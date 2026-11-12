@@ -1,0 +1,10 @@
+<section class="category-section" [attr.aria-label]="ariaLabel || title + ' resources'">
+  <header class="section-heading">
+    <div>
+      <p class="resource-kind">{{ kind }}</p>
+      <h2>{{ title }}</h2>
+    </div>
+    <span class="resource-count">{{ resourceTypeCount }} resource types</span>
+  </header>
+  <ng-content></ng-content>
+</section>

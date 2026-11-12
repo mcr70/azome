@@ -5,7 +5,6 @@ import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { ResourceDetailPaneComponent } from '@components/resources/resource-detail-pane.component';
 import { ResourceCardComponent } from '@components/resource-card/resource-card.component';
-import { ResourceGridSelectionComponent } from '@components/resource-grid-selection/resource-grid-selection.component';
 import { DataBrowsePaneComponent } from './data-browse-pane.component';
 import { AzureDataResource, DataResourceCategory } from '@services/azure/data.model';
 import {
@@ -23,6 +22,8 @@ import {
 } from '../perspective-resource-groups';
 import { selectFloatingPanel, selectPinnedPanels } from '../perspective-utils';
 import { ResourceDetailsActionComponent } from '@app/components/resource-card/actions/resource-details-action.component';
+import { PerspectiveCategoryComponent } from '../perspective-category.component';
+import { PerspectiveTypeComponent } from '../perspective-type.component';
 
 /**
  * Data perspective.
@@ -36,12 +37,13 @@ import { ResourceDetailsActionComponent } from '@app/components/resource-card/ac
   imports: [
     ResourceDetailPaneComponent,
     ResourceCardComponent,
-    ResourceGridSelectionComponent,
     DataBrowsePaneComponent,
     TextFilterComponent,
     ResourceSelectionBarComponent,
-    ResourceDetailsActionComponent
-],
+    ResourceDetailsActionComponent,
+    PerspectiveCategoryComponent,
+    PerspectiveTypeComponent
+  ],
   templateUrl: './data-perspective.component.html',
   styleUrls: ['../perspective-shared.scss', './data-perspective.component.scss']
 })

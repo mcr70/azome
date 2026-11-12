@@ -47,6 +47,7 @@ export class ResourceDetailRegistryService {
   constructor() {
     this.register('microsoft.insights/dataCollectionRules', DataCollectionRuleComponent);
     this.register('microsoft.insights/diagnosticsettings', DiagnosticSettingsComponent);
+    this.register('microsoft.documentdb/databaseaccounts', CosmosDbComponent);
     this.register('microsoft.keyvault/vaults', KeyVaultComponent);
     this.register('microsoft.network/networksecuritygroups', NsgComponent);
     this.register('microsoft.network/routetables', RouteTableComponent);

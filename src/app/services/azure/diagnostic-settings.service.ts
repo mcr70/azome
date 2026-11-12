@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { EMPTY, Observable, catchError, expand, from, map, mergeMap, of, reduce, switchMap } from 'rxjs';
 import { environment } from '@environments/environment';
+import { LocalStorageService } from '@services/azome/local-storage.service';
 import { ArmApiService } from './arm-api.service';
 import { ResourceGraphApiService } from './resource-graph-api.service';
 import { AzureResource } from './resource-graph.service';
@@ -15,6 +16,19 @@ import {
 interface ResourcePage {
   data: AzureResource[];
   $skipToken?: string;
+}
+
+export interface DiagnosticSettingsScanScope {
+  resourceGroup?: string;
+}
+
+export interface CachedDiagnosticSettings extends DiagnosticSettingsResult {
+  scannedAt: string | null;
+  scopes: { resourceGroup: string | null; scannedAt: string }[];
+}
+
+interface DiagnosticSettingsCache extends CachedDiagnosticSettings {
+  subscriptionId: string;
 }
 
 interface DiagnosticSettingsResponse {
@@ -35,13 +49,54 @@ const unsupportedDiagnosticSourceTypes = new Set([
 export class DiagnosticSettingsService {
   constructor(
     private readonly armApi: ArmApiService,
-    private readonly resourceGraphApi: ResourceGraphApiService
+    private readonly resourceGraphApi: ResourceGraphApiService,
+    private readonly localStorage: LocalStorageService
   ) {
   }
 
-  public getDiagnosticSettings(): Observable<DiagnosticSettingsResult> {
+  /** Reads cached diagnostic settings without making an Azure request. */
+  public getCachedDiagnosticSettings(): CachedDiagnosticSettings {
+    const empty: CachedDiagnosticSettings = { settings: [], failures: [], scannedAt: null, scopes: [] };
+    const cached = this.localStorage.getItem(this.cacheKey());
+    if (!cached) {
+      return empty;
+    }
+
+    try {
+      const parsed = JSON.parse(cached) as DiagnosticSettingsCache;
+      if (parsed.subscriptionId !== environment.azure.subscriptionId) {
+        return empty;
+      }
+      const scopesByResourceGroup = new Map<string, CachedDiagnosticSettings['scopes'][number]>();
+      for (const scope of parsed.scopes ?? []) {
+        const key = scope.resourceGroup?.toLowerCase() ?? '';
+        const current = scopesByResourceGroup.get(key);
+        if (!current || current.scannedAt < scope.scannedAt) {
+          scopesByResourceGroup.set(key, scope);
+        }
+      }
+      return {
+        settings: parsed.settings ?? [],
+        failures: parsed.failures ?? [],
+        scannedAt: parsed.scannedAt ?? null,
+        scopes: Array.from(scopesByResourceGroup.values())
+      };
+    } catch {
+      this.localStorage.removeItem(this.cacheKey());
+      return empty;
+    }
+  }
+
+  /** Scans diagnostic settings in the subscription or one resource group and updates the cache.
+   *
+   * @param scope Optional resource-group scope; omitted to scan the subscription.
+   * @returns The merged cache state after the scan.
+   */
+  public scanDiagnosticSettings(
+    scope: DiagnosticSettingsScanScope = {}
+  ): Observable<CachedDiagnosticSettings> {
     const initialResult: DiagnosticSettingsResult = { settings: [], failures: [] };
-    return this.getSources().pipe(
+    return this.getSources(scope).pipe(
       switchMap((sources) => from(sources).pipe(
         mergeMap((source) => this.getForSource(source), 6),
         reduce((result, page) => ({
@@ -49,21 +104,22 @@ export class DiagnosticSettingsService {
           failures: [...result.failures, ...page.failures]
         }), initialResult)
       )),
-      map((result) => ({
-        ...result,
-        settings: result.settings.sort((a, b) =>
-          a.source.name.localeCompare(b.source.name) || a.name.localeCompare(b.name)
-        )
-      }))
+      map((result) => this.updateCache(result, scope))
     );
   }
 
-  private getSources(): Observable<AzureResource[]> {
+  /** Queries Resource Graph for the sources included in the requested scan scope.
+   *
+   * @param scope Scan scope.
+   * @returns Diagnostic setting sources to query through ARM.
+   */
+  private getSources(scope: DiagnosticSettingsScanScope): Observable<AzureResource[]> {
     const fetchPage = (skipToken?: string): Observable<ResourcePage> => {
       return this.resourceGraphApi.query<ResourcePage>({
         subscriptions: [environment.azure.subscriptionId],
         query: `
           Resources
+          ${scope.resourceGroup ? `| where resourceGroup =~ '${scope.resourceGroup.replace(/'/g, "''")}'` : ''}
           | where type !in~ (${Array.from(unsupportedDiagnosticSourceTypes, (type) => `'${type}'`).join(', ')})
           | project id, name, type, resourceGroup, location
           | order by id asc
@@ -86,7 +142,7 @@ export class DiagnosticSettingsService {
             .map((resource) => [resource.id.toLowerCase(), resource])
         );
         const subscriptionId = `/subscriptions/${environment.azure.subscriptionId}`;
-        if (!sources.has(subscriptionId.toLowerCase())) {
+        if (!scope.resourceGroup && !sources.has(subscriptionId.toLowerCase())) {
           sources.set(subscriptionId.toLowerCase(), {
             id: subscriptionId,
             name: environment.azure.subscriptionId,
@@ -114,6 +170,65 @@ export class DiagnosticSettingsService {
         return Array.from(sources.values());
       })
     );
+  }
+
+  /** Replaces scanned-scope entries and retains failed-source or out-of-scope entries.
+   *
+   * @param result Results from the completed ARM requests.
+   * @param scope Scope that was scanned.
+   * @returns Merged settings and cache metadata.
+   */
+  private updateCache(
+    result: DiagnosticSettingsResult,
+    scope: DiagnosticSettingsScanScope
+  ): CachedDiagnosticSettings {
+    const cached = this.getCachedDiagnosticSettings();
+    const scopedGroup = scope.resourceGroup?.toLowerCase() ?? null;
+    const failedSources = new Set(result.failures.map((failure) => failure.source.id.toLowerCase()));
+    const retained = cached.settings.filter((setting) => {
+      const inScope = scopedGroup === null
+        || setting.resourceGroup?.toLowerCase() === scopedGroup;
+      return !inScope || failedSources.has(setting.source.id.toLowerCase());
+    });
+    const settings = [...retained, ...result.settings]
+      .filter((setting, index, all) => all.findIndex((item) => item.id.toLowerCase()
+        === setting.id.toLowerCase()) === index)
+      .sort((a, b) => a.source.name.localeCompare(b.source.name) || a.name.localeCompare(b.name));
+    const scannedAt = new Date().toISOString();
+    const scopes = [
+      ...cached.scopes.filter((item) =>
+        (item.resourceGroup?.toLowerCase() ?? null) !== scopedGroup
+      ),
+      { resourceGroup: scope.resourceGroup ?? null, scannedAt }
+    ];
+    const failures = [
+      ...cached.failures.filter((failure) => scope.resourceGroup
+        && failure.source.resourceGroup?.toLowerCase() !== scopedGroup),
+      ...result.failures
+    ];
+    const completeSubscriptionScan = !scope.resourceGroup;
+    const cache: DiagnosticSettingsCache = {
+      subscriptionId: environment.azure.subscriptionId,
+      settings,
+      failures,
+      scannedAt: completeSubscriptionScan ? scannedAt : cached.scannedAt,
+      scopes
+    };
+    this.localStorage.setItem(this.cacheKey(), JSON.stringify(cache));
+    return {
+      settings: cache.settings,
+      failures: cache.failures,
+      scannedAt: cache.scannedAt,
+      scopes: cache.scopes
+    };
+  }
+
+  /** Builds a local-storage key scoped to the configured subscription.
+   *
+   * @returns Cache key.
+   */
+  private cacheKey(): string {
+    return `azome:diagnostic-settings:${environment.azure.subscriptionId}`;
   }
 
   private getForSource(source: AzureResource): Observable<DiagnosticSettingsResult> {

@@ -32,11 +32,12 @@ describe('DiagnosticSettingsService', () => {
 
   afterEach(() => {
     http.verify();
+    window.localStorage.removeItem(`azome:diagnostic-settings:${environment.azure.subscriptionId}`);
   });
 
   it('discovers every inventory page and preserves source, destination and category data', () => {
     let result: DiagnosticSettingsResult | undefined;
-    service.getDiagnosticSettings().subscribe((value) => result = value);
+    service.scanDiagnosticSettings().subscribe((value) => result = value);
     const firstPage = http.expectOne(graphUrl);
     expect(firstPage.request.body.subscriptions).toEqual([environment.azure.subscriptionId]);
     expect(firstPage.request.body.query).not.toContain('union ResourceContainers');
@@ -69,7 +70,7 @@ describe('DiagnosticSettingsService', () => {
       name: 'store',
       type: 'Microsoft.Storage/storageAccounts'
     };
-    service.getDiagnosticSettings().subscribe();
+    service.scanDiagnosticSettings().subscribe();
     http.expectOne(graphUrl).flush({ data: [storage, storage] });
     const requests = http.match((request) => request.method === 'GET');
     expect(requests.length).toBe(6);
@@ -83,7 +84,7 @@ describe('DiagnosticSettingsService', () => {
 
   it('does not request settings for resource groups, Network Watchers or route tables', () => {
     let result: DiagnosticSettingsResult | undefined;
-    service.getDiagnosticSettings().subscribe((value) => result = value);
+    service.scanDiagnosticSettings().subscribe((value) => result = value);
     const excludedTypes = [
       'Microsoft.Resources/subscriptions/resourceGroups',
       'Microsoft.Network/networkWatchers',
@@ -115,7 +116,7 @@ describe('DiagnosticSettingsService', () => {
   it('keeps successful results and reports access failures, skipping only explicit unsupported errors', () => {
     spyOn(console, 'error');
     let result: DiagnosticSettingsResult | undefined;
-    service.getDiagnosticSettings().subscribe((value) => result = value);
+    service.scanDiagnosticSettings().subscribe((value) => result = value);
     const unsupported = { ...source, id: `${source.id}-unsupported` };
     http.expectOne(graphUrl).flush({ data: [source, unsupported] });
     http.expectOne(diagnosticUrl(source.id)).flush(
@@ -136,7 +137,7 @@ describe('DiagnosticSettingsService', () => {
   });
 
   it('limits ARM concurrency to six requests', () => {
-    service.getDiagnosticSettings().subscribe();
+    service.scanDiagnosticSettings().subscribe();
     http.expectOne(graphUrl).flush({
       data: Array.from({ length: 8 }, (_, index) => ({ ...source, id: `${source.id}-${index}` }))
     });
@@ -150,7 +151,7 @@ describe('DiagnosticSettingsService', () => {
 
   it('propagates inventory errors instead of reporting an empty successful scan', () => {
     const error = jasmine.createSpy('error');
-    service.getDiagnosticSettings().subscribe({ error });
+    service.scanDiagnosticSettings().subscribe({ error });
     http.expectOne(graphUrl).flush('Forbidden', { status: 403, statusText: 'Forbidden' });
     expect(error).toHaveBeenCalled();
   });
