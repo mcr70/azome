@@ -34,6 +34,10 @@ resource "azurerm_storage_account" "azome_storage" {
     index_document     = "index.html"
     error_404_document = "index.html"
   }
+
+  tags = {
+    azome-apps = "Azome UI"
+  }
 }
 
 # Free Linux App Service hosts the companion data proxy.
@@ -65,6 +69,10 @@ resource "azurerm_linux_web_app" "azome_proxy" {
     "SCM_DO_BUILD_DURING_DEPLOYMENT" = "false"
     "ALLOWED_ORIGIN"                   = trimsuffix(azurerm_storage_account.azome_storage.primary_web_endpoint, "/")
     "WEBSITES_PORT"                    = "8080"
+  }
+
+  tags = {
+    azome-apps = "Azome UI"
   }
 }
 
