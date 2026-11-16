@@ -23,10 +23,10 @@
     <label>
       Search
       <select [(ngModel)]="searchMode">
+        <option value="sql">SQL query</option>
         <option value="all">Full scan</option>
         <option value="partition">Partition key</option>
         <option value="id">ID</option>
-        <option value="sql">SQL query</option>
       </select>
     </label>
 

@@ -24,7 +24,7 @@ export class CosmosDbComponent implements ResourceDetailItem, OnInit {
   public containers: CosmosResource<unknown>[] = [];
   public database = '';
   public container = '';
-  public searchMode: 'all' | 'partition' | 'id' | 'sql' = 'all';
+  public searchMode: 'all' | 'partition' | 'id' | 'sql' = 'sql';
   public searchValue = '';
   public sqlQuery = 'SELECT * FROM c';
   public resultLimit = 50;
