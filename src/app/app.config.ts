@@ -45,7 +45,7 @@ export function MSALInstanceFactory() {
       postLogoutRedirectUri: `${window.location.origin}/`
     },
     cache: {
-      cacheLocation: 'localStorage'
+      cacheLocation: 'sessionStorage'
     }
   });
 
