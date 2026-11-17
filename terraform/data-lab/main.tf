@@ -63,7 +63,7 @@ resource "azurerm_key_vault" "data_test" {
   sku_name = "standard"
 }
 
-# Cosmos DB Free Tier (0 € / 1 tilaus)
+# Cosmos DB Free Tier (0 € / 1 subscription)
 resource "azurerm_cosmosdb_account" "data_test" {
   name                = "cosmos-azome-lab-01"
   location            = azurerm_resource_group.data_lab.location

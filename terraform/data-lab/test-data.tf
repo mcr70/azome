@@ -65,3 +65,11 @@ resource "azurerm_cosmosdb_sql_container" "test_container" {
   partition_key_paths = ["/category"]
 }
 
+resource "azurerm_cosmosdb_sql_container" "test_2" {
+  name                = "azome"
+  resource_group_name = azurerm_resource_group.data_lab.name
+  account_name        = azurerm_cosmosdb_account.data_test.name
+  database_name       = azurerm_cosmosdb_sql_database.test_db.name
+  partition_key_paths = ["/component"]
+}
+

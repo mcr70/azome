@@ -28,7 +28,7 @@ export class CosmosDbComponent implements ResourceDetailItem, OnInit {
   public searchValue = '';
   public sqlQuery = 'SELECT * FROM c';
   public resultLimit = 50;
-  public partitionPath = '/category';
+  public partitionPath = '';
   
   public results: any[] | null = null;
   public loading = false;
@@ -36,7 +36,11 @@ export class CosmosDbComponent implements ResourceDetailItem, OnInit {
 
   public createDialogOpen = false;
   public creatingDocument = false;
-  public newDocumentJson = '{\n  "id": "new-doc-id",\n  "category": "sample",\n  "name": "Sample Record"\n}';
+  public newDocumentJsonTemplate = `{
+    "id": "new-doc-id",
+    "name": "Sample Record"
+  }`;
+  public newDocumentJson = this.newDocumentJsonTemplate;
 
   // Table component state
   public tableColumns: TableColumn[] = [];
@@ -179,25 +183,54 @@ public search(): void {
   }
 
   public openCreateDialog(): void {
+    try {
+      let parsedDoc: any;
+      parsedDoc = JSON.parse(this.newDocumentJsonTemplate);
+      console.log('Partition Path:', this.partitionPath);
+      const partitionKey = this.partitionPath.replace(/^\//, '');
+
+      // Add partition key if it doesn't exist
+      if (!(partitionKey in parsedDoc)) {
+        parsedDoc[partitionKey] = 'sample';
+      }
+
+      if (!parsedDoc.id) {
+        throw new Error('Document must contain an id.');
+      }
+
+      this.newDocumentJson = JSON.stringify(parsedDoc, null, 2);
+
+    } catch (e) {
+      this.error = e instanceof Error
+        ? e.message
+        : 'Invalid JSON format in document payload.';
+      return;
+    }
+
     this.createDialogOpen = true;
     this.error = null;
   }
 
-  public createDocument(): void {
-    if (!this.resource?.name || !this.database || !this.container) {
-      return;
+public createDocument(): void {
+  if (!this.resource?.name || !this.database || !this.container) {
+    return;
+  }
+
+  let parsedDoc: any;
+
+  try {
+    parsedDoc = JSON.parse(this.newDocumentJson);
+
+    const partitionKey = this.partitionPath.replace(/^\//, '');
+    const partitionKeyValue = parsedDoc[partitionKey];
+
+    if (partitionKeyValue === undefined || partitionKeyValue === null) {
+      throw new Error(`Missing partition key: ${this.partitionPath}`);
     }
 
-    let parsedDoc: any;
-    try {
-      parsedDoc = JSON.parse(this.newDocumentJson);
-    } catch (e) {
-      this.error = 'Invalid JSON format in document payload.';
-      return;
+    if (!parsedDoc.id) {
+      throw new Error('Document must contain an id.');
     }
-
-    const cleanPartitionKey = this.partitionPath.replace('/', '');
-    const partitionKeyValue = parsedDoc[cleanPartitionKey];
 
     this.creatingDocument = true;
     this.error = null;
@@ -216,10 +249,17 @@ public search(): void {
       },
       error: (err) => {
         this.creatingDocument = false;
-        this.error = 'Failed to create document: ' + (err.error?.message || err.message);
+        this.error = 'Failed to create document: ' +
+          (err.error?.message || err.message);
       }
     });
+
+  } catch (e) {
+    this.error = e instanceof Error
+      ? e.message
+      : 'Invalid JSON format in document payload.';
   }
+}
 
   public deleteDocument(event: { row: any; index: number }): void {
     const { row, index } = event;
