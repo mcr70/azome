@@ -1,6 +1,9 @@
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
+
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+
 import { MSAL_INSTANCE, MSAL_GUARD_CONFIG, MsalService, MsalGuard, MsalBroadcastService } from '@azure/msal-angular';import { PublicClientApplication, InteractionType } from '@azure/msal-browser';
 import { routes } from './app.routes';
 import {
@@ -54,6 +57,7 @@ export function MSALInstanceFactory() {
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideAnimationsAsync(),
     provideLucideIcons(
       LucideActivity,
       LucideBoxes,
