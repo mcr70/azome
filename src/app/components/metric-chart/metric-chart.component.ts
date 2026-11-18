@@ -1,8 +1,12 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NgxChartsModule, LegendPosition } from '@swimlane/ngx-charts';
-import { AzureMetricsService, MetricAggregation, AzureMetricDataPoint } from '@services/azure/azure-metrics.service';
+import { MetricChart as MetricChartModel } from '../../perspectives/monitoring/metrics/metrics.model';
 
+/**
+ * Shared chart component for displaying Azure metric points.
+ * It receives a MetricChart model containing pre‑fetched points and renders a line chart.
+ */
 @Component({
   selector: 'app-metric-chart',
   standalone: true,
@@ -11,66 +15,35 @@ import { AzureMetricsService, MetricAggregation, AzureMetricDataPoint } from '@s
   styleUrl: './metric-chart.component.scss'
 })
 export class MetricChartComponent implements OnChanges {
-  @Input({ required: true }) resourceId!: string;
-  @Input({ required: true }) metricName!: string;
-  @Input() aggregation: MetricAggregation = 'Total';
-  @Input() durationMinutes: number = 60;
-  @Input() start?: Date;
-  @Input() end?: Date;
-  @Input() interval: string = 'PT1M';
+  /** Metric data pre‑fetched by the parent view. */
+  @Input({ required: true }) metric!: MetricChartModel;
 
+  /** Chart series formatted for ngx‑charts. */
   chartData: any[] = [];
+
   legendPosition: LegendPosition = LegendPosition.Right;
 
-  constructor(private readonly azureMetricsService: AzureMetricsService) {}
-
   ngOnChanges(changes: SimpleChanges): void {
-    if (this.resourceId && this.metricName) {
-      this.loadMetric();
+    if (this.metric) {
+      this.prepareChart();
     }
   }
 
-loadMetric() {
-    const end = this.end ?? new Date();
-    const start = this.start ?? new Date(end.getTime() - this.durationMinutes * 60000);
-
-    const validAggregation: MetricAggregation = ['Average', 'Maximum', 'Total', 'Count'].includes(this.aggregation)
-      ? this.aggregation
-      : 'Total';
-
-    this.azureMetricsService.getMetric(
-      this.resourceId,
-      this.metricName,
-      validAggregation,
-      start,
-      end,
-      this.interval
-    ).subscribe({
-      next: (result) => {
-        this.chartData = [{
-          name: result.name,
-          series: (result.data || []).map((dp: AzureMetricDataPoint) => ({
-            name: new Date(dp.timeStamp),
-            value: this.getMetricValue(dp, validAggregation)
-          }))
-        }];
-      },
-      error: (err) => {
-        console.error('Metric load error:', err);
-        this.chartData = []; 
-      }
-    });
+  private prepareChart(): void {
+    const series = (this.metric.points || []).map((dp) => ({
+      name: new Date(dp.timeStamp),
+      value: this.selectValue(dp, this.metric.aggregation)
+    }));
+    this.chartData = [{ name: this.metric.name, series }];
   }
 
-
-  private getMetricValue(dp: AzureMetricDataPoint, aggregation: MetricAggregation): number {
-    const aggLower = aggregation.toLowerCase();
-    if (aggLower === 'average' && dp.average !== undefined) return dp.average;
-    if (aggLower === 'maximum' && dp.maximum !== undefined) return dp.maximum;
-    if (aggLower === 'minimum' && dp.minimum !== undefined) return dp.minimum;
-    if (aggLower === 'count' && dp.count !== undefined) return dp.count;
-    if (aggLower === 'total' && dp.total !== undefined) return dp.total;
-    
+  private selectValue(dp: any, aggregation: string): number {
+    const agg = aggregation?.toLowerCase();
+    if (agg === 'average' && dp.average !== undefined) return dp.average;
+    if (agg === 'maximum' && dp.maximum !== undefined) return dp.maximum;
+    if (agg === 'minimum' && dp.minimum !== undefined) return dp.minimum;
+    if (agg === 'count' && dp.count !== undefined) return dp.count;
+    if (agg === 'total' && dp.total !== undefined) return dp.total;
     return dp.total ?? dp.average ?? dp.maximum ?? dp.minimum ?? dp.count ?? 0;
   }
 }

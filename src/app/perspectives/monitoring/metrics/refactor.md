@@ -49,9 +49,8 @@ Add a focused standalone component in this folder, for example
 - Render loading, error, and empty-data states consistently for both callers.
 - Show the metric name, unit, aggregation, and useful latest value.
 - Provide hover details with the timestamp and formatted value for the point.
-- Support at least bar and line chart styles if both can represent the Azure
-  points clearly. Keep the selected chart style local to the chart unless a
-  broader persistence decision is made.
+- Support at least line chart styles if both can represent the Azure
+  points clearly. 
 - Offer an expand action that opens a larger chart in a native modal dialog,
   following the KQL dialog's close button, backdrop, focus, and Escape behavior.
   The expanded view must reuse the same data conversion and selected settings.
