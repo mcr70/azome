@@ -129,6 +129,7 @@
                 <p class="error-message" role="alert">{{ metric.error }}</p>
               } @else if (metric.points.length > 0) {
                 <p class="metric-value">
+                  {{ metricsSupport.formatMetricValue(metricsSupport.metricValue(metric.points[metric.points.length - 1], metric.aggregation)) }}
                   <span>{{ metric.unit || '' }}</span>
                 </p>
                 <app-metric-chart [metric]="metric"></app-metric-chart>

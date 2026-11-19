@@ -1,13 +1,6 @@
-<ngx-charts-line-chart
-  [scheme]="'vivid'"
-  [results]="chartData"
-  [animations]="false"
-  [xAxis]="true"
-  [yAxis]="true"
-  [legend]="false"
-  [showXAxisLabel]="false"
-  [showYAxisLabel]="false"
-  [xAxisLabel]="'Time'"
-  [yAxisLabel]="metric.aggregation"
-  [timeline]="false">
-</ngx-charts-line-chart>
+<div
+  #chartContainer
+  class="chart-container"
+  role="img"
+  [attr.aria-label]="metric.name">
+</div>

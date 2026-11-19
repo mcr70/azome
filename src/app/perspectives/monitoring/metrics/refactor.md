@@ -8,7 +8,7 @@ handoff guidance if implementation needs to continue in another session.
 
 - Render Auto-Metrics and Metric Explorer charts through one shared chart
   component.
-- Use `@swimlane/ngx-charts` for interactive charts with point hover details.
+- Use `echarts` for interactive charts with point hover details.
 - Let users open a chart in a larger modal using the existing KQL dialog as a
   visual and accessibility reference. If multiple metrics are visible in
   Auto-Metrics or Metric Explorer, let users switch the displayed metric and
@@ -34,9 +34,7 @@ handoff guidance if implementation needs to continue in another session.
   and optional error. Azure data points provide timestamps and optional
   aggregation values. Use `MetricsSupportService.metricValue` semantics so the
   chart, hover details, and latest value all show the selected aggregation.
-- `@swimlane/ngx-charts` is not currently listed in `package.json`. Add it as a
-  dependency during implementation after checking compatibility with this
-  repository's Angular version and updating the lockfile.
+- `echarts` is listed in `package.json`.
 
 ## Shared chart component
 
@@ -44,7 +42,7 @@ Add a focused standalone component in this folder, for example
 `metric-chart.component.ts/html/scss`. It should:
 
 - Accept a `MetricChart` and the display/query settings it needs as inputs.
-- Convert the metric points into the series shape required by ngx-charts in one
+- Convert the metric points into the series shape required by ECharts in one
   place. Keep timestamp ordering and selected-aggregation values correct.
 - Render loading, error, and empty-data states consistently for both callers.
 - Show the metric name, unit, aggregation, and useful latest value.
@@ -57,10 +55,10 @@ Add a focused standalone component in this folder, for example
 - Emit user changes as outputs. Do not inject `AzureMetricsService` or make
   Azure requests from this component.
 
-Check ngx-charts' Angular compatibility, data interfaces, tooltip support,
+Check ECharts configuration, data interfaces, tooltip support,
 responsive sizing, and required browser APIs before wiring it in. Keep the
 implementation behind the shared component so the two metric views do not
-depend directly on ngx-charts primitives.
+depend directly on ECharts primitives.
 
 ## Query parameters and ownership
 
@@ -101,7 +99,7 @@ the shared-aggregation behavior as part of chart extraction.
 
 ## Suggested implementation order
 
-1. Add and validate the ngx-charts dependency and choose the minimum chart types
+1. Add and validate the ECharts dependency and choose the minimum chart types
    supported by the current `MetricChart` data.
 2. Implement the shared chart component and its point/value conversion,
    tooltips, empty/error states, chart-style selector, and expanded modal.
