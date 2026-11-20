@@ -66,7 +66,7 @@
                   <span>{{ metric.unit || '' }}</span>
                 </p>
 
-                <app-metric-chart [metric]="metric"></app-metric-chart>
+                <app-metric-chart [metrics]="[metric]"></app-metric-chart>
               } @else {
                 <p class="empty-chart">No data is available for this time range.</p>
               }

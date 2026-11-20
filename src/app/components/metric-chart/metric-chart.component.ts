@@ -14,6 +14,8 @@ import { LineChart, LineSeriesOption } from 'echarts/charts';
 import {
   GridComponent,
   GridComponentOption,
+  LegendComponent,
+  LegendComponentOption,
   TooltipComponent,
   TooltipComponentOption
 } from 'echarts/components';
@@ -24,6 +26,7 @@ import { MetricChart as MetricChartModel } from '../../perspectives/monitoring/m
 echarts.use([
   LineChart,
   GridComponent,
+  LegendComponent,
   TooltipComponent,
   CanvasRenderer,
   SVGRenderer,
@@ -31,12 +34,23 @@ echarts.use([
 ]);
 
 type EChartsOption = echarts.ComposeOption<
-  LineSeriesOption | GridComponentOption | TooltipComponentOption
+  LineSeriesOption | GridComponentOption | LegendComponentOption | TooltipComponentOption
 >;
 
+const SERIES_COLORS = [
+  '#0284c7',
+  '#16a34a',
+  '#d97706',
+  '#dc2626',
+  '#7c3aed',
+  '#0d9488',
+  '#db2777',
+  '#4f46e5'
+];
+
 /**
- * Shared chart component for displaying Azure metric points.
- * It receives a MetricChart model containing pre-fetched points and renders an ECharts line chart.
+ * Shared chart component for displaying one or more Azure metric series.
+ * It receives pre-fetched MetricChart models and renders an ECharts line chart.
  */
 @Component({
   selector: 'app-metric-chart',
@@ -46,8 +60,8 @@ type EChartsOption = echarts.ComposeOption<
   styleUrl: './metric-chart.component.scss'
 })
 export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy {
-  /** Metric data pre-fetched by the parent view. */
-  @Input({ required: true }) metric!: MetricChartModel;
+  /** Metric series pre-fetched by the parent view. */
+  @Input({ required: true }) metrics: MetricChartModel[] = [];
 
   /** Reference to the chart DOM container. */
   @ViewChild('chartContainer') chartContainer?: ElementRef<HTMLDivElement>;
@@ -60,13 +74,22 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
 
   constructor() {}
 
+  /** Accessible label summarizing the plotted metric series. */
+  public get chartLabel(): string {
+    const list = this.metrics ?? [];
+    if (list.length === 0) {
+      return 'Metric chart';
+    }
+    return list.map((m) => m.name).join(', ');
+  }
+
   ngAfterViewInit(): void {
     this.setupResizeObserver();
     this.initChart();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['metric']) {
+    if (changes['metrics']) {
       if (this.chartInstance) {
         this.updateChart();
       } else if (this.chartContainer?.nativeElement) {
@@ -107,30 +130,73 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
   }
 
   /**
-   * Updates the ECharts configuration with the latest metric points. Returns no value.
+   * Updates the ECharts configuration with all provided metric series. Returns no value.
    */
   private updateChart(): void {
-    if (!this.chartInstance || !this.metric) {
+    const seriesList = this.metrics ?? [];
+    if (!this.chartInstance || seriesList.length === 0) {
       return;
     }
 
-    const rawPoints = this.metric.points || [];
-    const seriesData = rawPoints
-      .map((dp) => [
-        new Date(dp.timeStamp).getTime(),
-        this.selectValue(dp, this.metric.aggregation)
-      ])
-      .sort((first, second) => first[0] - second[0]);
+    const hasMultipleSeries = seriesList.length > 1;
+    const unitBySeriesIndex = new Map<number, string>();
 
-    const unit = this.metric.unit ? ` ${this.metric.unit}` : '';
-    const metricName = this.metric.name;
+    const echartsSeries: LineSeriesOption[] = seriesList.map((metric, index) => {
+      const color = SERIES_COLORS[index % SERIES_COLORS.length];
+      unitBySeriesIndex.set(index, metric.unit ? ` ${metric.unit}` : '');
+
+      const points = (metric.points || [])
+        .map((dp) => [
+          new Date(dp.timeStamp).getTime(),
+          this.selectValue(dp, metric.aggregation)
+        ])
+        .sort((first, second) => first[0] - second[0]);
+
+      const seriesName = this.buildSeriesName(metric, hasMultipleSeries);
+
+      const lineOption: LineSeriesOption = {
+        name: seriesName,
+        type: 'line',
+        data: points,
+        smooth: true,
+        showSymbol: true,
+        symbolSize: 4,
+        itemStyle: {
+          color
+        },
+        lineStyle: {
+          width: 2,
+          color
+        }
+      };
+
+      // Keep subtle area gradient on single-series charts; avoid overlapping fills on multi-series charts
+      if (!hasMultipleSeries) {
+        lineOption.areaStyle = {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(2, 132, 199, 0.25)' },
+            { offset: 1, color: 'rgba(2, 132, 199, 0.02)' }
+          ])
+        };
+      }
+
+      return lineOption;
+    });
 
     const option: EChartsOption = {
       animation: false,
+      legend: {
+        show: hasMultipleSeries,
+        bottom: 0,
+        textStyle: {
+          color: '#475569',
+          fontSize: 11
+        }
+      },
       grid: {
         top: 16,
         right: 16,
-        bottom: 24,
+        bottom: hasMultipleSeries ? 44 : 24,
         left: 12,
         containLabel: true
       },
@@ -140,14 +206,23 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
           if (!Array.isArray(params) || params.length === 0) {
             return '';
           }
-          const item = params[0];
-          const time = new Date(item.value[0]).toLocaleString();
-          const val = item.value[1];
-          const formattedVal =
-            typeof val === 'number'
-              ? new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(val)
-              : val;
-          return `${time}<br/><strong>${item.marker}${formattedVal}${unit}</strong>`;
+
+          const timestamp = params[0]?.value?.[0];
+          const timeLabel = timestamp !== undefined ? new Date(timestamp).toLocaleString() : '';
+
+          const rows = params.map((item: any) => {
+            const val = item?.value?.[1];
+            const seriesIdx = typeof item?.seriesIndex === 'number' ? item.seriesIndex : 0;
+            const unit = unitBySeriesIndex.get(seriesIdx) ?? '';
+            const formattedVal =
+              typeof val === 'number'
+                ? new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(val)
+                : val;
+
+            return `${item.marker}<span>${item.seriesName}:</span> <strong>${formattedVal}${unit}</strong>`;
+          });
+
+          return timeLabel ? `${timeLabel}<br/>${rows.join('<br/>')}` : rows.join('<br/>');
         }
       },
       xAxis: {
@@ -188,32 +263,21 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
           }
         }
       },
-      series: [
-        {
-          name: metricName,
-          type: 'line',
-          data: seriesData,
-          smooth: true,
-          showSymbol: true,
-          symbolSize: 4,
-          itemStyle: {
-            color: '#0284c7'
-          },
-          lineStyle: {
-            width: 2,
-            color: '#0284c7'
-          },
-          areaStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(2, 132, 199, 0.25)' },
-              { offset: 1, color: 'rgba(2, 132, 199, 0.02)' }
-            ])
-          }
-        }
-      ]
+      series: echartsSeries
     };
 
     this.chartInstance.setOption(option as any, true);
+  }
+
+  /**
+   * Builds a clear series name, adding resource context when multiple series are shown.
+   */
+  private buildSeriesName(metric: MetricChartModel, hasMultipleSeries: boolean): string {
+    const resourceName = (metric as any)?.resource?.name;
+    if (hasMultipleSeries && resourceName) {
+      return `${resourceName} · ${metric.name}`;
+    }
+    return metric.name;
   }
 
   /**
