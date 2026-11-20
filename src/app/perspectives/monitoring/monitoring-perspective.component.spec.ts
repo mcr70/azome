@@ -303,7 +303,7 @@ describe('MonitoringPerspectiveComponent diagnostic settings', () => {
       type: 'Microsoft.Insights/dataCollectionRules',
       resourceGroup: 'rg-app-lab',
       location: 'westeurope',
-      category: 'Diagnostic settings'
+      category: 'Data Collection & Diagnostics'
     };
     monitoring.getMonitoringResources.and.returnValue(of([workspace, dcr]));
 

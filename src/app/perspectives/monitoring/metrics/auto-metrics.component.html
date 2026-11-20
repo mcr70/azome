@@ -65,23 +65,8 @@
                   {{ metricsSupport.formatMetricValue(metricsSupport.metricValue(metric.points[metric.points.length - 1], metric.aggregation)) }}
                   <span>{{ metric.unit || '' }}</span>
                 </p>
-                <div
-                  class="metric-chart"
-                  role="img"
-                  [attr.aria-label]="metric.name + ' values for ' + metric.resource.name">
-                  @for (point of metric.points; track point.timeStamp) {
-                    <span
-                      class="metric-bar"
-                      [style.height.%]="metricsSupport.barHeight(metric, point)"
-                      [title]="(point.timeStamp | date: 'short') + ': '
-                        + metricsSupport.formatMetricValue(metricsSupport.metricValue(point, metric.aggregation))">
-                    </span>
-                  }
-                </div>
-                <div class="chart-range">
-                  <span>{{ metric.points[0].timeStamp | date: 'short' }}</span>
-                  <span>{{ metric.points[metric.points.length - 1].timeStamp | date: 'short' }}</span>
-                </div>
+
+                <app-metric-chart [metrics]="[metric]"></app-metric-chart>
               } @else {
                 <p class="empty-chart">No data is available for this time range.</p>
               }

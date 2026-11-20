@@ -15,11 +15,12 @@ import {
   METRIC_AGGREGATIONS
 } from './metrics.model';
 import { MetricsSupportService } from './metrics-support.service';
+import { MetricChartComponent } from '@components/metric-chart/metric-chart.component';
 
 @Component({
   selector: 'app-metric-explorer',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MetricChartComponent],
   templateUrl: './metric-explorer.component.html',
   styleUrls: ['./metrics-shared.scss', './metric-explorer.component.scss']
 })

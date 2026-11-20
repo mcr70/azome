@@ -6,6 +6,7 @@ import { SelectedAzureResource } from '@services/azome/resource-selection.servic
 import { MetricTimeRange } from './metrics.model';
 import { MetricsSupportService } from './metrics-support.service';
 import { MetricChart, MetricQuery } from './metrics.model';
+import { MetricChartComponent } from '@components/metric-chart/metric-chart.component';
 
 const METRIC_PROFILES: Record<string, string[]> = {
   'microsoft.storage/storageaccounts': [
@@ -51,7 +52,7 @@ const AUTOMATIC_METRICS_CONCURRENCY = 8;
 @Component({
   selector: 'app-auto-metrics',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MetricChartComponent],
   templateUrl: './auto-metrics.component.html',
   styleUrls: ['./metrics-shared.scss', './auto-metrics.component.scss']
 })
