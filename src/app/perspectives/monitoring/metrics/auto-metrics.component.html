@@ -61,11 +61,6 @@
               @if (metric.error) {
                 <p class="error-message" role="alert">{{ metric.error }}</p>
               } @else if (metric.points.length > 0) {
-                <p class="metric-value">
-                  {{ metricsSupport.formatMetricValue(metricsSupport.metricValue(metric.points[metric.points.length - 1], metric.aggregation)) }}
-                  <span>{{ metric.unit || '' }}</span>
-                </p>
-
                 <app-metric-chart [metrics]="[metric]"></app-metric-chart>
               } @else {
                 <p class="empty-chart">No data is available for this time range.</p>
