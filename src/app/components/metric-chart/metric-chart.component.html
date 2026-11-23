@@ -1,6 +1,41 @@
-<div
-  #chartContainer
-  class="chart-container"
-  role="img"
-  [attr.aria-label]="chartLabel">
+<div class="chart-wrapper">
+  <div
+    #chartContainer
+    class="chart-container"
+    role="img"
+    [attr.aria-label]="chartLabel">
+  </div>
+  <button
+    type="button"
+    class="expand-button"
+    aria-label="Expand metric chart"
+    title="Expand chart"
+    (click)="openExpandedChart()">
+    <span aria-hidden="true">⤢</span>
+  </button>
 </div>
+
+<dialog
+  #expandedDialog
+  class="expanded-dialog"
+  aria-labelledby="expanded-chart-title"
+  (close)="onExpandedDialogClosed()">
+  <section class="expanded-content">
+    <header class="expanded-header">
+      <h2 id="expanded-chart-title">{{ chartLabel }}</h2>
+      <button
+        type="button"
+        class="close-button"
+        aria-label="Close expanded chart"
+        (click)="closeExpandedChart()">
+        ×
+      </button>
+    </header>
+    <div
+      #expandedChartContainer
+      class="expanded-chart-container"
+      role="img"
+      [attr.aria-label]="chartLabel">
+    </div>
+  </section>
+</dialog>

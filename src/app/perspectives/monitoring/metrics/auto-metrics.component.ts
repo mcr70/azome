@@ -3,43 +3,58 @@ import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/
 import { from, of, Subject, Subscription } from 'rxjs';
 import { catchError, map, mergeMap, switchMap, takeUntil } from 'rxjs/operators';
 import { SelectedAzureResource } from '@services/azome/resource-selection.service';
-import { MetricTimeRange } from './metrics.model';
+import {
+  MetricTimeRange,
+  MetricChart,
+  MetricQuery,
+  ResourceMetricGroup
+} from './metrics.model';
 import { MetricsSupportService } from './metrics-support.service';
-import { MetricChart, MetricQuery } from './metrics.model';
 import { MetricChartComponent } from '@components/metric-chart/metric-chart.component';
+import { MetricAggregation } from '@services/azure/azure-metrics.service';
 
-const METRIC_PROFILES: Record<string, string[]> = {
+export type MetricProfileEntry = string | string[];
+
+export interface MetricChartCard {
+  id: string;
+  title: string;
+  subtitle: string;
+  series: MetricChart[];
+  error?: string;
+}
+
+export interface AutomaticMetricGroup extends ResourceMetricGroup {
+  cards: MetricChartCard[];
+}
+
+const METRIC_PROFILES: Record<string, MetricProfileEntry[]> = {
   'microsoft.storage/storageaccounts': [
     'UsedCapacity',
     'Transactions',
     'SuccessE2ELatency',
-    'Availability'
+    ['Ingress', 'Egress']
   ],
   'microsoft.compute/virtualmachines': [
     'Percentage CPU',
-    'Network In Total',
-    'Network Out Total',
-    'Disk Read Bytes',
-    'Disk Write Bytes'
+    ['Network In Total', 'Network Out Total'],
+    ['Disk Read Bytes', 'Disk Write Bytes']
   ],
   'microsoft.web/sites': [
     'Requests',
     'Http5xx',
-    'AverageResponseTime',
-    'CpuTime',
+    ['AverageResponseTime', 'CpuTime'],
     'MemoryWorkingSet'
   ],
   'microsoft.sql/servers/databases': [
     'cpu_percent',
     'dtu_consumption_percent',
-    'storage_percent',
-    'deadlock'
+    'storage_percent'
   ]
 };
 
 // Function apps share the microsoft.web/sites type but emit execution metrics
 // instead of meaningful HTTP metrics (e.g. timer/queue triggered functions).
-const FUNCTION_APP_PROFILE: string[] = [
+const FUNCTION_APP_PROFILE: MetricProfileEntry[] = [
   'FunctionExecutionCount',
   'FunctionExecutionUnits',
   'Requests',
@@ -62,6 +77,7 @@ export class AutoMetricsComponent implements OnChanges, OnDestroy {
   @Input() active = false;
 
   public automaticMetrics: MetricChart[] = [];
+  public automaticMetricGroups: AutomaticMetricGroup[] = [];
   public automaticFailedResources: SelectedAzureResource[] = [];
   public automaticQueryError: string | null = null;
   public automaticErrorsDismissed = false;
@@ -119,11 +135,117 @@ export class AutoMetricsComponent implements OnChanges, OnDestroy {
   }
 
   /**
+   * Builds chart cards for a resource, grouping array entries in the profile into a single chart.
+   */
+  public buildResourceCards(
+    resourceMetrics: MetricChart[],
+    resourceType: string,
+    definitions?: import('@services/azure/azure-metrics.service').AzureMetricDefinition[]
+  ): MetricChartCard[] {
+    const profile = this.resolveProfile(resourceType, definitions);
+    const remaining = [...resourceMetrics];
+    const cards: MetricChartCard[] = [];
+
+    const takeMetricByName = (name: string): MetricChart | undefined => {
+      const target = name.toLocaleLowerCase();
+      const idx = remaining.findIndex(
+        (m) => (m.name ?? '').toLocaleLowerCase() === target
+      );
+      if (idx === -1) {
+        return undefined;
+      }
+      const [found] = remaining.splice(idx, 1);
+      return found;
+    };
+
+    (profile ?? []).forEach((entry, entryIndex) => {
+      if (Array.isArray(entry)) {
+        const matchedSeries = entry
+          .map((name) => takeMetricByName(name))
+          .filter((m): m is MetricChart => m !== undefined);
+
+        if (matchedSeries.length > 0) {
+          cards.push(this.createCard(`group-${entryIndex}`, matchedSeries, entry.join(' · ')));
+        }
+      } else {
+        const metric = takeMetricByName(entry);
+        if (metric) {
+          cards.push(this.createCard(`single-${entryIndex}-${metric.name}`, [metric], metric.name));
+        }
+      }
+    });
+
+    remaining.forEach((metric, idx) => {
+      cards.push(this.createCard(`extra-${idx}-${metric.name}`, [metric], metric.name));
+    });
+
+    return cards;
+  }
+
+  /**
+   * Returns true if any series in the card has data points.
+   */
+  public hasAnyPoints(series: MetricChart[]): boolean {
+    return series.some((s) => Array.isArray(s.points) && s.points.length > 0);
+  }
+
+  private createCard(id: string, series: MetricChart[], fallbackTitle: string): MetricChartCard {
+    const error = series.map((s) => s.error).find((e): e is string => Boolean(e));
+    const aggregations = Array.from(
+      new Set(
+        series
+          .map((s) => s.aggregation)
+          .filter((a): a is MetricAggregation => Boolean(a))
+      )
+    );
+    const subtitle = aggregations.length === 1
+      ? aggregations[0]
+      : `${series.length} series`;
+
+    const title = series.length === 1 ? (series[0].name || fallbackTitle) : fallbackTitle;
+
+    return {
+      id,
+      title,
+      subtitle,
+      series,
+      error
+    };
+  }
+
+  private resolveProfile(
+    resourceType: string,
+    definitions?: import('@services/azure/azure-metrics.service').AzureMetricDefinition[]
+  ): MetricProfileEntry[] | undefined {
+    const type = resourceType.toLocaleLowerCase();
+    const hasFunctionExecution = definitions?.some(
+      (d) => d.name?.value?.toLocaleLowerCase() === 'functionexecutioncount'
+    );
+
+    if (type === 'microsoft.web/sites' && hasFunctionExecution) {
+      return FUNCTION_APP_PROFILE;
+    }
+
+    return METRIC_PROFILES[type];
+  }
+
+  /** Rebuilds grouped chart data after the automatic metrics change. */
+  private updateAutomaticMetricGroups(): void {
+    this.automaticMetricGroups = this.metricsSupport
+      .groupMetrics(this.automaticMetrics)
+      .map((group) => ({
+        ...group,
+        cards: this.buildResourceCards(group.metrics, group.resource.type)
+      }));
+  }
+
+  /**
    * Loads default metric charts for every available resource.
    */
   private loadAutomaticMetrics(): void {
     this.automaticRequest?.unsubscribe();
     this.automaticMetrics = [];
+    this.automaticMetricGroups = [];
     this.automaticFailedResources = [];
     this.automaticQueryError = null;
     this.automaticErrorsDismissed = false;
@@ -181,6 +303,7 @@ export class AutoMetricsComponent implements OnChanges, OnDestroy {
             (resourceOrder.get(first.resource.id.toLocaleLowerCase()) ?? 0)
             - (resourceOrder.get(second.resource.id.toLocaleLowerCase()) ?? 0)
           );
+          this.updateAutomaticMetricGroups();
         }
       },
       complete: () => {
@@ -219,7 +342,9 @@ export class AutoMetricsComponent implements OnChanges, OnDestroy {
       ? FUNCTION_APP_PROFILE
       : METRIC_PROFILES[type];
 
-    const preferred = (profile ?? [])
+    const flattenedProfile = (profile ?? []).flat();
+
+    const preferred = flattenedProfile
       .map((name) => available.get(name.toLocaleLowerCase()))
       .filter((definition): definition is import('@services/azure/azure-metrics.service').AzureMetricDefinition =>
         definition !== undefined
@@ -227,10 +352,11 @@ export class AutoMetricsComponent implements OnChanges, OnDestroy {
     const preferredNames = new Set(
       preferred.map((definition) => definition.name.value.toLocaleLowerCase())
     );
+    const maxSlots = Math.max(5, flattenedProfile.length);
     const candidates = profile
       ? [...preferred, ...definitions.filter((definition) =>
         !preferredNames.has(definition.name.value.toLocaleLowerCase())
-      )].slice(0, 5)
+      )].slice(0, maxSlots)
       : definitions.slice(0, 4);
 
     return candidates.flatMap((definition) => {

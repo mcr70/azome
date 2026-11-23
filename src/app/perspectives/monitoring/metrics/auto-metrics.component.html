@@ -42,7 +42,7 @@
 
 @if (automaticMetrics.length > 0) {
   <div class="resource-metrics-list">
-    @for (group of metricsSupport.groupMetrics(automaticMetrics); track group.resource.id) {
+    @for (group of automaticMetricGroups; track group.resource.id) {
       <article class="resource-metrics-card">
         <header class="resource-metrics-heading">
           <div>
@@ -52,16 +52,16 @@
           <span>{{ group.metrics.length }} metrics</span>
         </header>
         <div class="metric-grid">
-          @for (metric of group.metrics; track metric.name) {
+          @for (card of group.cards; track card.id) {
             <article class="metric-card">
               <header class="metric-card-heading">
-                <h4>{{ metric.name }}</h4>
-                <span class="aggregation">{{ metric.aggregation }}</span>
+                <h4>{{ card.title }}</h4>
+                <span class="aggregation">{{ card.subtitle }}</span>
               </header>
-              @if (metric.error) {
-                <p class="error-message" role="alert">{{ metric.error }}</p>
-              } @else if (metric.points.length > 0) {
-                <app-metric-chart [metrics]="[metric]"></app-metric-chart>
+              @if (card.error) {
+                <p class="error-message" role="alert">{{ card.error }}</p>
+              } @else if (hasAnyPoints(card.series)) {
+                <app-metric-chart [metrics]="card.series"></app-metric-chart>
               } @else {
                 <p class="empty-chart">No data is available for this time range.</p>
               }

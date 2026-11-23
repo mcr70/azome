@@ -17,7 +17,9 @@ import {
   LegendComponent,
   LegendComponentOption,
   TooltipComponent,
-  TooltipComponentOption
+  TooltipComponentOption,
+  DataZoomComponent,
+  DataZoomComponentOption
 } from 'echarts/components';
 import { CanvasRenderer, SVGRenderer } from 'echarts/renderers';
 import { LegacyGridContainLabel } from 'echarts/features';
@@ -28,13 +30,14 @@ echarts.use([
   GridComponent,
   LegendComponent,
   TooltipComponent,
+  DataZoomComponent,
   CanvasRenderer,
   SVGRenderer,
   LegacyGridContainLabel
 ]);
 
 type EChartsOption = echarts.ComposeOption<
-  LineSeriesOption | GridComponentOption | LegendComponentOption | TooltipComponentOption
+  LineSeriesOption | GridComponentOption | LegendComponentOption | TooltipComponentOption | DataZoomComponentOption
 >;
 
 const SERIES_COLORS = [
@@ -66,8 +69,15 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
   /** Reference to the chart DOM container. */
   @ViewChild('chartContainer') chartContainer?: ElementRef<HTMLDivElement>;
 
+  @ViewChild('expandedChartContainer') expandedChartContainer?: ElementRef<HTMLDivElement>;
+
+  @ViewChild('expandedDialog') expandedDialog?: ElementRef<HTMLDialogElement>;
+
   /** ECharts instance used to render the metric points. */
   chartInstance?: echarts.ECharts;
+
+  /** ECharts instance displayed in the expanded dialog. */
+  expandedChartInstance?: echarts.ECharts;
 
   /** ResizeObserver to automatically resize chart when container size changes. */
   private resizeObserver?: ResizeObserver;
@@ -108,6 +118,9 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
       this.chartInstance.dispose();
       this.chartInstance = undefined;
     }
+
+    this.expandedChartInstance?.dispose();
+    this.expandedChartInstance = undefined;
   }
 
   /**
@@ -134,10 +147,97 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
    */
   private updateChart(): void {
     const seriesList = this.metrics ?? [];
-    if (!this.chartInstance || seriesList.length === 0) {
+    if (seriesList.length === 0) {
       return;
     }
 
+    if (this.chartInstance) {
+      this.chartInstance.setOption(this.buildChartOption(seriesList, false) as any, true);
+    }
+
+    if (this.expandedChartInstance) {
+      this.expandedChartInstance.setOption(this.buildChartOption(seriesList, true) as any, true);
+      this.expandedChartInstance.resize();
+    }
+  }
+
+  /** Opens the expanded chart dialog and initializes its ECharts instance. */
+  openExpandedChart(): void {
+    const dialog = this.expandedDialog?.nativeElement;
+    if (!dialog || dialog.open) {
+      return;
+    }
+
+    dialog.showModal();
+    requestAnimationFrame(() => {
+      const element = this.expandedChartContainer?.nativeElement;
+      if (!element) {
+        return;
+      }
+
+      this.expandedChartInstance = echarts.init(element, null, { renderer: 'svg' });
+      this.updateChart();
+      this.expandedChartInstance.resize();
+    });
+  }
+
+  /** Closes the expanded chart dialog and releases its ECharts instance. */
+  closeExpandedChart(): void {
+    this.expandedDialog?.nativeElement.close();
+    this.releaseExpandedChart();
+  }
+
+  /** Releases the expanded chart after the native dialog closes. */
+  onExpandedDialogClosed(): void {
+    this.releaseExpandedChart();
+  }
+
+  /** Disposes and clears the expanded ECharts instance. */
+  private releaseExpandedChart(): void {
+    this.expandedChartInstance?.dispose();
+    this.expandedChartInstance = undefined;
+  }
+
+  /**
+   * Builds a clear series name, adding resource context when multiple series are shown.
+   */
+  private buildSeriesName(metric: MetricChartModel, hasMultipleSeries: boolean): string {
+    const resourceName = (metric as any)?.resource?.name;
+    if (hasMultipleSeries && resourceName) {
+      return `${resourceName} · ${metric.name}`;
+    }
+    return metric.name;
+  }
+
+  /**
+   * Sets up a ResizeObserver to automatically resize the chart on container width/height change.
+   */
+  private setupResizeObserver(): void {
+    const element = this.chartContainer?.nativeElement;
+    if (!element || typeof ResizeObserver === 'undefined') {
+      return;
+    }
+
+    this.resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
+          if (!this.chartInstance) {
+            this.initChart();
+          } else {
+            this.chartInstance.resize();
+          }
+        }
+      }
+    });
+
+    this.resizeObserver.observe(element);
+  }
+
+
+  /**
+   * Builds ECharts option for either the compact card chart or the expanded dialog chart.
+   */
+  private buildChartOption(seriesList: MetricChartModel[], isExpanded: boolean): EChartsOption {
     const hasMultipleSeries = seriesList.length > 1;
     const unitBySeriesIndex = new Map<number, string>();
 
@@ -170,7 +270,6 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
         }
       };
 
-      // Keep subtle area gradient on single-series charts; avoid overlapping fills on multi-series charts
       if (!hasMultipleSeries) {
         lineOption.areaStyle = {
           color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -183,11 +282,15 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
       return lineOption;
     });
 
-    const option: EChartsOption = {
+    const bottomMargin = isExpanded
+      ? hasMultipleSeries ? 92 : 72
+      : hasMultipleSeries ? 44 : 24;
+
+    return {
       animation: false,
       legend: {
         show: hasMultipleSeries,
-        bottom: 0,
+        bottom: isExpanded ? 42 : 0,
         textStyle: {
           color: '#475569',
           fontSize: 11
@@ -196,7 +299,7 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
       grid: {
         top: 16,
         right: 16,
-        bottom: hasMultipleSeries ? 44 : 24,
+        bottom: bottomMargin,
         left: 12,
         containLabel: true
       },
@@ -225,6 +328,36 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
           return timeLabel ? `${timeLabel}<br/>${rows.join('<br/>')}` : rows.join('<br/>');
         }
       },
+      ...(isExpanded
+        ? {
+            dataZoom: [
+              {
+                type: 'slider',
+                xAxisIndex: 0,
+                height: 22,
+                bottom: 8,
+                throttle: 50,
+                handleSize: '120%',
+                moveHandleSize: 6,
+                showDetail: false,
+                brushSelect: true,
+                fillerColor: 'rgba(59, 130, 246, 0.18)',
+                brushStyle: {
+                  color: '#3b82f6',
+                  opacity: 0.25
+                }
+              },
+              {
+                type: 'inside',
+                xAxisIndex: 0,
+                throttle: 50,
+                zoomOnMouseWheel: true,
+                moveOnMouseWheel: false,
+                moveOnMouseMove: false
+              }
+            ]
+          }
+        : {}),
       xAxis: {
         type: 'time',
         boundaryGap: [0, 0],
@@ -265,44 +398,8 @@ export class MetricChartComponent implements AfterViewInit, OnChanges, OnDestroy
       },
       series: echartsSeries
     };
-
-    this.chartInstance.setOption(option as any, true);
   }
 
-  /**
-   * Builds a clear series name, adding resource context when multiple series are shown.
-   */
-  private buildSeriesName(metric: MetricChartModel, hasMultipleSeries: boolean): string {
-    const resourceName = (metric as any)?.resource?.name;
-    if (hasMultipleSeries && resourceName) {
-      return `${resourceName} · ${metric.name}`;
-    }
-    return metric.name;
-  }
-
-  /**
-   * Sets up a ResizeObserver to automatically resize the chart on container width/height change.
-   */
-  private setupResizeObserver(): void {
-    const element = this.chartContainer?.nativeElement;
-    if (!element || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-
-    this.resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        if (entry.contentRect.width > 0 && entry.contentRect.height > 0) {
-          if (!this.chartInstance) {
-            this.initChart();
-          } else {
-            this.chartInstance.resize();
-          }
-        }
-      }
-    });
-
-    this.resizeObserver.observe(element);
-  }
 
   /**
    * Selects the metric value based on the specified aggregation type.

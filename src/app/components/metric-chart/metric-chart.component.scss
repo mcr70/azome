@@ -9,3 +9,97 @@
   height: 200px;
   min-height: 200px;
 }
+
+.chart-wrapper {
+  position: relative;
+}
+
+.expand-button,
+.close-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+}
+
+.expand-button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.chart-wrapper:hover .expand-button,
+.expand-button:focus-visible {
+  opacity: 1;
+}
+
+.expanded-dialog {
+  width: min(1100px, calc(100vw - 48px));
+  max-width: none;
+  height: min(760px, calc(100vh - 48px));
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.expanded-dialog::backdrop {
+  background: rgb(15 23 42 / 55%);
+}
+
+.expanded-content {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+  flex-direction: column;
+  padding: 20px 24px 16px;
+}
+
+.expanded-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.expanded-header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.close-button {
+  width: 32px;
+  height: 32px;
+  font-size: 24px;
+}
+
+.expanded-chart-container {
+  flex: 1;
+  min-height: 0;
+  box-sizing: border-box;
+  margin-top: 12px;
+}
+
+@media (max-width: 640px) {
+  .expanded-dialog {
+    width: calc(100vw - 24px);
+    height: calc(100vh - 24px);
+  }
+
+  .expanded-content {
+    padding: 16px 12px 12px;
+  }
+}

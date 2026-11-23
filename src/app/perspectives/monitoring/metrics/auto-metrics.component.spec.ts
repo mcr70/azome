@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { By } from '@angular/platform-browser';
 import { of, Subject } from 'rxjs';
 import {
   AzureMetricDefinition,
@@ -6,6 +7,7 @@ import {
 } from '@services/azure/azure-metrics.service';
 import { SelectedAzureResource } from '@services/azome/resource-selection.service';
 import { AutoMetricsComponent } from './auto-metrics.component';
+import { MetricChartComponent } from '@components/metric-chart/metric-chart.component';
 
 describe('AutoMetricsComponent', () => {
   let fixture: ComponentFixture<AutoMetricsComponent>;
@@ -148,5 +150,41 @@ describe('AutoMetricsComponent', () => {
 
     expect(element.querySelector('.metrics-loading')).toBeNull();
     expect(element.querySelectorAll('.resource-metrics-card').length).toBe(2);
+  });
+
+  it('keeps the chart zoom when change detection runs', (done) => {
+    fixture.componentRef.setInput('resources', [firstResource]);
+    fixture.componentRef.setInput('active', true);
+    fixture.detectChanges();
+
+    const chartDebugElement = fixture.debugElement
+      .queryAll(By.directive(MetricChartComponent))
+      .find((item) => item.componentInstance.metrics.length > 1);
+    expect(chartDebugElement).toBeDefined();
+
+    if (!chartDebugElement) {
+      done();
+      return;
+    }
+
+    const chartComponent = chartDebugElement.componentInstance as MetricChartComponent;
+    chartComponent.openExpandedChart();
+
+    requestAnimationFrame(() => {
+      const chart = chartComponent.expandedChartInstance;
+      expect(chart).toBeDefined();
+      if (!chart) {
+        done();
+        return;
+      }
+
+      chart.dispatchAction({ type: 'dataZoom', start: 20, end: 80 });
+      fixture.detectChanges();
+
+      const zoom = (chart.getOption()['dataZoom'] as Array<{ start?: number; end?: number }>)[0];
+      expect(zoom.start).toBe(20);
+      expect(zoom.end).toBe(80);
+      done();
+    });
   });
 });

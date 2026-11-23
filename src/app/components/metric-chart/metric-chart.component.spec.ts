@@ -36,7 +36,7 @@ describe('MetricChartComponent', () => {
 
     fixture = TestBed.createComponent(MetricChartComponent);
     component = fixture.componentInstance;
-    component.metric = mockMetric;
+    component.metrics = [mockMetric];
   });
 
   afterEach(() => {
@@ -72,9 +72,9 @@ describe('MetricChartComponent', () => {
         ]
       };
 
-      component.metric = updatedMetric;
+      component.metrics = [updatedMetric];
       component.ngOnChanges({
-        metric: new SimpleChange(mockMetric, updatedMetric, false)
+        metrics: new SimpleChange([mockMetric], [updatedMetric], false)
       });
 
       expect(chart.setOption).toHaveBeenCalled();
@@ -102,6 +102,79 @@ describe('MetricChartComponent', () => {
     expect(svg).toBeTruthy();
   });
 
+  it('zooms a multi-series chart when the slider handle is dragged', (done) => {
+    const secondMetric: MetricChart = {
+      ...mockMetric,
+      name: 'Network Out Total',
+      points: Array.from({ length: 12 }, (_, index) => ({
+        timeStamp: new Date(Date.parse('2026-11-19T10:00:00Z') + index * 60_000).toISOString(),
+        average: index * 2
+      }))
+    };
+
+    component.metrics = [mockMetric, secondMetric];
+    fixture.detectChanges();
+    component.openExpandedChart();
+
+    requestAnimationFrame(() => {
+      const chart = component.expandedChartInstance;
+      const svg = fixture.nativeElement.querySelector(
+        '.expanded-chart-container svg'
+      ) as SVGSVGElement | null;
+      expect(chart).toBeDefined();
+      expect(svg).not.toBeNull();
+
+      if (!chart || !svg) {
+        done();
+        return;
+      }
+
+      let zoomChanged = false;
+      chart.on('datazoom', () => {
+        zoomChanged = true;
+      });
+
+      const handler = chart.getZr().handler as any;
+
+      let handlePoint: { x: number; y: number } | undefined;
+      for (let x = 630; x <= 645 && !handlePoint; x += 1) {
+        for (let y = 260; y <= 296; y += 1) {
+          handler.dispatch('mousemove', { zrX: x, zrY: y, event: {} });
+          if (handler._hovered?.target?.cursor === 'ew-resize') {
+            handlePoint = { x, y };
+            break;
+          }
+        }
+      }
+
+      expect(handlePoint).toBeDefined();
+      if (!handlePoint) {
+        done();
+        return;
+      }
+
+      const dragEvent = (x: number, y: number) => ({
+        zrX: x,
+        zrY: y,
+        preventDefault: () => undefined,
+        stopPropagation: () => undefined
+      });
+
+      handler.dispatch('mousedown', dragEvent(handlePoint.x, handlePoint.y));
+      handler.dispatch('mousemove', dragEvent(handlePoint.x - 80, handlePoint.y));
+      handler.dispatch('mouseup', dragEvent(handlePoint.x - 80, handlePoint.y));
+
+      const zoomOptions = chart.getOption()['dataZoom'] as Array<{
+        start?: number;
+        end?: number;
+      }>;
+      const zoom = zoomOptions[0];
+      expect(zoomChanged).toBeTrue();
+      expect(zoom.end).toBeLessThan(100);
+      done();
+    });
+  });
+
   it('should handle null or zero metric data points without error', () => {
     const zeroMetric: MetricChart = {
       ...mockMetric,
@@ -110,7 +183,7 @@ describe('MetricChartComponent', () => {
         { timeStamp: '2026-11-19T10:05:00Z', average: undefined as any }
       ]
     };
-    component.metric = zeroMetric;
+    component.metrics = [zeroMetric];
     fixture.detectChanges();
     const container = fixture.nativeElement.querySelector('.chart-container');
     expect(container.querySelector('svg')).toBeTruthy();
